@@ -1,0 +1,3 @@
+#summary Diagram of database schema
+
+= Details =
