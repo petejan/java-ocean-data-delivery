@@ -1,3 +1,5 @@
 #summary Diagram of database schema
 
 = Details =
+
+http://java-ocean-data-delivery.googlecode.com/svn/wiki/ABOS-db.png
