@@ -50,7 +50,7 @@ import org.wiley.util.TextFileLogger;
 public class WETLabsFLNTUSCalculationForm extends MemoryWindow
 {
 
-    private static Logger logger = Logger.getLogger(SeabirdSBE43CalculationForm.class.getName());
+    private static Logger logger = Logger.getLogger(WETLabsFLNTUSCalculationForm.class.getName());
 
     private Mooring selectedMooring =null;
     private InstrumentCalibrationFile selectedFile = null;

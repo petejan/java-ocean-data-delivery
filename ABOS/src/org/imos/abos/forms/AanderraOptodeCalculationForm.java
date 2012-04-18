@@ -1,5 +1,5 @@
 /*
- * IMOS data delivery project
+ * Neonatal Screening Software Project
  * Written by Peter Wiley
  * This code is copyright (c) Peter Wiley 2000 - ?
  * It is made available under the BSD Software Licence in the hope that it may be useful.
@@ -24,7 +24,9 @@ import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.sql.Types;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.TimeZone;
 import java.util.Vector;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
@@ -63,6 +65,7 @@ public class AanderraOptodeCalculationForm extends MemoryWindow
     /** Creates new form AanderraOptodeCalculationForm */
     public AanderraOptodeCalculationForm()
     {
+        TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
         initComponents();
     }
 
@@ -341,6 +344,8 @@ public class AanderraOptodeCalculationForm extends MemoryWindow
         }
 
         calculateOxygenValues();
+
+        //insertData();
         displayData();
     }
 
@@ -375,11 +380,23 @@ public class AanderraOptodeCalculationForm extends MemoryWindow
             //
             // finally use Aanderra supplied algorithm to convert DPhase value to dissolved oxygen
             //
-            row.calculatedDissolvedOxygenPerKg = AanderraOptodeOxygenCalculator.calculateOxygenValue(
+            row.calculatedDissolvedOxygenPerKg = AanderraOptodeOxygenCalculator.calculateDissolvedOxygenInUMolesPerKg(
                                                                                             row.optodeTemperatureValue,
                                                                                             row.optodeDPhaseValue,
-                                                                                            row.calculatedSalinityValue
+                                                                                            row.calculatedSalinityValue,
+                                                                                            row.pressureValue
                                                                                             );
+        }
+    }
+
+    private void insertData()
+    {
+        boolean ok = true;
+
+        for(int i = 0; i < dataSet.size(); i++)
+        {
+            optodeData row = dataSet.get(i);
+
             ProcessedInstrumentData pid = new ProcessedInstrumentData();
 
             pid.setDataTimestamp(row.dataTimestamp);
@@ -400,19 +417,29 @@ public class AanderraOptodeCalculationForm extends MemoryWindow
             pid.setParameterValue(row.calculatedSalinityValue);
 
             ok = pid.insert();
+
         }
     }
 
     private void displayData()
     {
+        SimpleDateFormat df = new SimpleDateFormat("yyyyMMddHHmmss");
         String $HOME = System.getProperty("user.home");
 
-        String filename = $HOME + "/optodeOxygenData";
+        String filename = $HOME + "/OptodeData_" + df.format(Common.current());
         TextFileLogger file = new TextFileLogger(filename,"csv");
 
         try
         {
-            String header = "Timestamp,Optode Temp,Optode BPhase,Optode DPhase, Salinity Temp, Salinity Conduct, Salinity Press, Calc Salinity, Calc Oxygen";
+            String header = "Timestamp," +
+                    "Optode Temp," +
+                    "Optode BPhase," +
+                    "Optode DPhase, " +
+                    "Salinity Temp, " +
+                    "Salinity Conduct, " +
+                    "Salinity Press, " +
+                    "Calc Salinity, " +
+                    "Calc Oxygen (uM/kg";
 
             file.open();
 

@@ -1,5 +1,5 @@
 /*
- * IMOS data delivery project
+ * Neonatal Screening Software Project
  * Written by Peter Wiley
  * This code is copyright (c) Peter Wiley 2000 - ?
  * It is made available under the BSD Software Licence in the hope that it may be useful.
@@ -36,13 +36,6 @@ public class AanderraOptodeOxygenCalculator
     private static double b3 = -4.29155e-3;
     private static double c0 = -3.11680e-7;
 
-//    private static double C0Coeffs[];
-//    private static double C1Coeffs[];
-//    private static double C2Coeffs[];
-//    private static double C3Coeffs[];
-//    private static double C4Coeffs[];
-    //*/
-
     private static AanderraOptodeConstants constants;
 
     public AanderraOptodeOxygenCalculator()
@@ -64,7 +57,7 @@ public class AanderraOptodeOxygenCalculator
      * 
      * @return dissolved oxygen in micromoles per kg of water
      */
-    public static Double calculateOxygenValue(Double optodeTemperature, Double optodeDPhaseValue, Double salinity)
+    public static Double calculateDissolvedOxygenInUMolesPerKg(Double optodeTemperature, Double optodeDPhaseValue, Double salinity, Double pressure)
     {
         if(constants == null)
         {
@@ -72,7 +65,7 @@ public class AanderraOptodeOxygenCalculator
             return null;
         }
 
-        if (optodeTemperature == null || optodeDPhaseValue == null || salinity == null)
+        if (optodeTemperature == null || optodeDPhaseValue == null || salinity == null || pressure == null)
         {
             return null;
         }
@@ -136,85 +129,14 @@ public class AanderraOptodeOxygenCalculator
         //;
         //;convert to umol/kg
         //;
-        double density = seawaterDensity(salinity.doubleValue(), optodeTemperature) / 1000.0;
-        //;
-        o2 = o2 / density;
+        double density = SeawaterParameterCalculator.calculateSeawaterDensityAtSurface(salinity.doubleValue(), optodeTemperature) / 1000.0;
+        o2 = o2/density;
+
+        double correctedDensity = SeawaterParameterCalculator.calculateSeawaterDensityAtDepth(salinity, optodeTemperature, pressure);
+        o2 = (o2 * correctedDensity)/1000;
 
         //logger.debug("Temperature & density adjusted oxygen: " + o2);
         return new Double(o2);
-    }
-
-    private static double seawaterDensity(double salinity, double temperature)
-    {
-        //; DEFINE CONSTANTS
-        //;----------------------
-        //;     UNESCO 1983 eqn(13) p17.
-
-        double B0 = 8.24493e-1;
-        double B1 = -4.0899e-3;
-        double B2 = 7.6438e-5;
-        double B3 = -8.2467e-7;
-        double B4 = 5.3875e-9;
-        double C0 = -5.72466e-3;
-        double C1 = +1.0227e-4;
-        double C2 = -1.6546e-6;
-        double D0 = 4.8314e-4;
-
-        double sw_dens0 = sw_smow(temperature)
-                + (B0 + (B1 + (B2 + (B3 + B4 * temperature) * temperature) * temperature) * temperature) * salinity
-                + (C0 + (C1 + C2 * temperature) * temperature) * salinity * Math.sqrt(salinity)
-                + D0 * Math.pow(salinity, 2);
-        return sw_dens0;
-    }
-
-    private static double sw_smow(double temp)
-    {
-        /*
-        ; SW_SMOW    Denisty of standard mean ocean water (pure water)
-        ;=======================================================================
-        ; SW_SMOW  $Revision: 1.1 $  $Date: 2007/03/20 00:31:30 $
-        ;          Copyright (C) CSIRO, Phil Morgan 1992.
-        ;
-        ; USAGE:  dens = sw_smow(T)
-        ;
-        ; DESCRIPTION:
-        ;    Denisty of Standard Mean Ocean Water (Pure Water) using EOS 1980.
-        ;
-        ; INPUT:
-        ;   T = temperature [degree C (IPTS-68)]
-        ;
-        ; OUTPUT:
-        ;   dens = density  [kg/m^3]
-        ;
-        ; AUTHOR:  Phil Morgan 92-11-05  (morgan@ml.csiro.au)
-        ;
-        ; IDL CONVERSION: Andrew Lenton (andrew.lenton@marine.csiro.au) 1999
-        ;
-        ; DISCLAIMER:
-        ;   This software is provided "as is" without warranty of any kind.
-        ;   See the file sw_copy.m for conditions of use and licence.
-        ;
-        ; REFERENCES:
-        ;     Unesco 1983. Algorithms for computation of fundamental properties
-        ;     of seawater, 1983. _Unesco Tech. Pap. in Mar. Sci._, No. 44, 53 pp
-        ;     UNESCO 1983 p17  Eqn(14)
-        ;
-        ;     Millero, F.J & Poisson, A.
-        ;     INternational one-atmosphere equation of state for seawater.
-        ;     Deep-Sea Research Vol28A No.6. 1981 625-629.    Eqn (6)
-        ;=======================================================================
-
-        Java conversion Peter Wiley, Australian Antarctic Division 2007-02-03
-         */
-
-        double a0 = 999.842594d;
-        double a1 = 6.793952e-2;
-        double a2 = -9.095290e-3;
-        double a3 = 1.001685e-4;
-        double a4 = -1.120083e-6;
-        double a5 = 6.536332e-9;
-        double val = a0 + (a1 + (a2 + (a3 + (a4 + a5 * temp) * temp) * temp) * temp) * temp;
-        return val;
     }
 }
 
