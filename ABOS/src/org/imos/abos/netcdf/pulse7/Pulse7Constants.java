@@ -22,5 +22,5 @@ public class Pulse7Constants extends BaseNetCDFConstants
     public static String field_trip_description = "Pulse 7 Mooring Recovery" ;
     public static String title = "Pulse 7 Mooring Temperature & Pressure Data" ;
     public static String site_code = "Pulse 7 Mooring" ;
-    public static String platform_code = "PULSE" ;
+    public static String platform_code = "PULSE7" ;
 }

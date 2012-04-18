@@ -29,7 +29,9 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.TimeZone;
+import org.imos.abos.dbms.Instrument;
 import org.imos.abos.dbms.Mooring;
+import org.imos.abos.dbms.ParameterCodes;
 import org.wiley.util.StringUtilities;
 import ucar.ma2.ArrayInt;
 
@@ -200,8 +202,6 @@ public class Pulse7NetCDFCreator
             dims = new ArrayList();
             dims.add(timeDim);
             //dims.add(lvlDim);
-            dataFile.addVariable("temperature", DataType.FLOAT, dims);
-
             //
             // got to add the variables before you can write their attributes
             //
@@ -249,22 +249,23 @@ public class Pulse7NetCDFCreator
                         ArrayList<ParamDatum> dataSet = masterSet.get(setSize);
 
                         ParamDatum d = dataSet.get(0);
-                        logger.debug("Processing instrument/parameter "
-                                    + d.instrumentID
-                                    + "/"
-                                    + d.paramCode
-                                    + " for depth "
-                                    + depthArray.get(lvl))
-                                    ;
 
-                        String varName = d.instrumentID 
-                                        + "_"
-                                        + d.paramCode
+                        String varName = d.paramCode
                                         + "_DEPTH_"
-                                        + depthArray.get(lvl).intValue();
+                                        + depthArray.get(lvl).intValue()
+                                        + "_"
+                                        + d.instrumentID
+                                        ;
+
+                        logger.debug("Processing instrument/parameter "
+                                    + varName)
+                                    ;                    
 
                         varNames.add(varName);
+
                         dataFile.addVariable(varName, DataType.FLOAT, dims);
+
+                        addVariableAttributes(d.instrumentID, d.paramCode, varName);
 
                         for (int record = 0; record < RECORD_COUNT; record++)
                         {
@@ -406,6 +407,26 @@ public class Pulse7NetCDFCreator
         }
         logger.debug("Found 0 records for pressure data for depth " + depth);
         return null;
+    }
+
+    private void addVariableAttributes(Integer instrumentID, String paramCode, String variable)
+    {
+        Instrument ins = Instrument.selectByInstrumentID(instrumentID);
+        ParameterCodes param = ParameterCodes.selectByID(paramCode);
+
+        if(ins != null)
+        {
+            dataFile.addVariableAttribute(variable, "Make", ins.getMake());
+            dataFile.addVariableAttribute(variable, "Model", ins.getModel());
+            dataFile.addVariableAttribute(variable, "Serial_No", ins.getSerialNumber());
+        }
+
+        dataFile.addVariableAttribute(variable, "name", param.getDescription());
+        dataFile.addVariableAttribute(variable, "units", param.getUnits());
+        dataFile.addVariableAttribute(variable, "standard_name", param.getNetCDFName());
+        dataFile.addVariableAttribute(variable, "valid_min", -999999);
+        dataFile.addVariableAttribute(variable, "valid_max", 999999);
+        dataFile.addVariableAttribute(variable, "quality_control_set", 1.0);
     }
 
     private void writeGlobalAttributes()
