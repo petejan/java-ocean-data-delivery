@@ -274,15 +274,15 @@ public class Pulse7NetCDFCreator
 
                             for(int i = rowIterator; i < dataSet.size(); i++)
                             {
-                                ParamDatum d0 = dataSet.get(i);
+                                ParamDatum currentValue = dataSet.get(i);
 
-                                if(d0.ts.equals(currentTime))
+                                if(currentValue.ts.equals(currentTime))
                                 {
-                                    SST = d.val;
+                                    SST = currentValue.val;
                                     rowIterator = i;
                                     break;
                                 }
-                                if(d0.ts.after(currentTime))
+                                if(currentValue.ts.after(currentTime))
                                 {
                                     //
                                     // safest to reset to 0
