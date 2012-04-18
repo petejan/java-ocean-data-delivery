@@ -1,5 +1,5 @@
 /*
- * IMOS data delivery project
+ * Neonatal Screening Software Project
  * Written by Peter Wiley
  * This code is copyright (c) Peter Wiley 2000 - ?
  * It is made available under the BSD Software Licence in the hope that it may be useful.
@@ -24,15 +24,19 @@ import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.sql.Types;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.TimeZone;
 import java.util.Vector;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
+import org.imos.abos.calc.OxygenSolubilityCalculator;
 import org.imos.abos.calc.SalinityCalculator;
 import org.imos.abos.calc.SeabirdSBE43OxygenCalculator;
+import org.imos.abos.calc.SeawaterParameterCalculator;
 import org.imos.abos.dbms.Instrument;
 import org.imos.abos.dbms.InstrumentCalibrationFile;
 import org.imos.abos.dbms.Mooring;
@@ -61,6 +65,7 @@ public class SeabirdSBE43CalculationForm extends MemoryWindow
     /** Creates new form SeabirdSBE43CalculationForm */
     public SeabirdSBE43CalculationForm()
     {
+        TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
         initComponents();
     }
 
@@ -302,19 +307,18 @@ public class SeabirdSBE43CalculationForm extends MemoryWindow
                 SBE43Data sbe = new SBE43Data();
                 sbe.setData(data);
 
-                Double DO2 = SeabirdSBE43OxygenCalculator.calculateOxygenValueInMlPerLitre
+                sbe.calculatedDissolvedOxygenMlPerLitre = SeabirdSBE43OxygenCalculator.calculateOxygenValueInMlPerLitre
                                                                                 ( sbe.salinityTemperature,
                                                                                 sbe.pressureValue,
-                                                                                sbe.salinityTemperature,
+                                                                                sbe.calculatedSalinityValue,
                                                                                 sbe.sbe43Voltage);
-                sbe.calculatedDissolvedOxygenMlPerLitre = DO2;
-
-                sbe.dissolvedOxygenMicroMolesPerKg = SeabirdSBE43OxygenCalculator.calculateOxygenValueInUMolesPerKg( sbe.salinityTemperature,
+                
+                sbe.calculatedDissolvedOxygenMicroMolesPerKg = SeabirdSBE43OxygenCalculator.calculateOxygenValueInUMolesPerKg( sbe.salinityTemperature,
                                                                                 sbe.pressureValue,
-                                                                                sbe.salinityTemperature,
+                                                                                sbe.calculatedSalinityValue,
                                                                                 sbe.sbe43Voltage);
                 /*
-                sbe.dissolvedOxygenMicroMolesPerKg = DO2 * (44600/(1000 + sigmaTheta(sbe.pressureValue,
+                sbe.calculatedDissolvedOxygenMicroMolesPerKg = DO2 * (44600/(1000 + sigmaTheta(sbe.pressureValue,
                                                                                     sbe.salinityTemperature,
                                                                                     sbe.calculatedSalinityValue)
                                                                                     ));
@@ -374,7 +378,7 @@ public class SeabirdSBE43CalculationForm extends MemoryWindow
             row.setLongitude(selectedMooring.getLongitudeIn());
             row.setMooringID(selectedMooring.getMooringID());
             row.setParameterCode("DO2_UMOLES_PER_KG");
-            row.setParameterValue(sbe.dissolvedOxygenMicroMolesPerKg);
+            row.setParameterValue(sbe.calculatedDissolvedOxygenMicroMolesPerKg);
             row.setSourceFileID(sbe.sourceFileID);
             row.setQualityCode("RAW");
 
@@ -399,9 +403,10 @@ public class SeabirdSBE43CalculationForm extends MemoryWindow
 
     public void displayData()
     {
+        SimpleDateFormat df = new SimpleDateFormat("yyyyMMddHHmmss");
         String $HOME = System.getProperty("user.home");
 
-        String filename = $HOME + "/sbe43_data";
+        String filename = $HOME + "/sbe43_data_" + df.format(Common.current());
         TextFileLogger file = new TextFileLogger(filename,"csv");
 
         try
@@ -413,7 +418,9 @@ public class SeabirdSBE43CalculationForm extends MemoryWindow
                             + " Salinity Press,"
                             + " Calc Salinity,"
                             + " Calc Oxygen (ml/l),"
-                            + " Calc Oxygen (uM/kg)"
+                            + " Calc Oxygen (uM/kg),"
+                            + " Calc Oxy Sol (ml/l),"
+                            + " Calc density"
                             ;
 
             file.open();
@@ -441,7 +448,11 @@ public class SeabirdSBE43CalculationForm extends MemoryWindow
                         + ","
                         + row.calculatedDissolvedOxygenMlPerLitre
                         + ","
-                        + row.dissolvedOxygenMicroMolesPerKg
+                        + row.calculatedDissolvedOxygenMicroMolesPerKg
+                        + ","
+                        + row.calculatedOxygenSolubility
+                        + ","
+                        + row.calculatedSeawaterDensity
                         );
 
                 file.receiveLine(
@@ -459,7 +470,11 @@ public class SeabirdSBE43CalculationForm extends MemoryWindow
                         + ","
                         + row.calculatedDissolvedOxygenMlPerLitre
                         + ","
-                        + row.dissolvedOxygenMicroMolesPerKg
+                        + row.calculatedDissolvedOxygenMicroMolesPerKg
+                        + ","
+                        + row.calculatedOxygenSolubility
+                        + ","
+                        + row.calculatedSeawaterDensity
                         );
             }
 
@@ -563,7 +578,9 @@ public class SeabirdSBE43CalculationForm extends MemoryWindow
 
         public Double calculatedSalinityValue;
         public Double calculatedDissolvedOxygenMlPerLitre;
-        public Double dissolvedOxygenMicroMolesPerKg;
+        public Double calculatedDissolvedOxygenMicroMolesPerKg;
+        public Double calculatedSeawaterDensity;
+        public Double calculatedOxygenSolubility;
 
         public void setData(Vector row)
         {
@@ -586,6 +603,13 @@ public class SeabirdSBE43CalculationForm extends MemoryWindow
                                                                                             conductivityValue * 10,
                                                                                             pressureValue
                                                                                             );
+            calculatedSeawaterDensity = SeawaterParameterCalculator.calculateSeawaterDensityAtDepth(calculatedSalinityValue,
+                                                                                                    salinityTemperature,
+                                                                                                    pressureValue);
+
+            calculatedOxygenSolubility = OxygenSolubilityCalculator.calculateOxygenSolubilityInMlPerLitre(salinityTemperature,
+                                                                                                          calculatedSalinityValue);
+
         }
     }
 }

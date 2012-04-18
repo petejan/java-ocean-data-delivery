@@ -18,7 +18,7 @@ import org.imos.abos.instrument.WETLabsPARConstants;
  */
 public class WETLabsPARCalculator
 {
-    private static Logger logger = Logger.getLogger(WETLabsFLNTUSCalculator.class.getName());
+    private static Logger logger = Logger.getLogger(WETLabsPARCalculator.class.getName());
 
     private static WETLabsPARConstants constants = null;
 

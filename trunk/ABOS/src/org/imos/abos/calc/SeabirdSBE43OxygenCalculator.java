@@ -1,5 +1,5 @@
 /*
- * IMOS data delivery project
+ * Neonatal Screening Software Project
  * Written by Peter Wiley
  * This code is copyright (c) Peter Wiley 2000 - ?
  * It is made available under the BSD Software Licence in the hope that it may be useful.
@@ -97,20 +97,26 @@ public class SeabirdSBE43OxygenCalculator
         //
         // ok, got everything we need - calculate
         //
-        Double kelvinTemperature = new Double(273.15 + temperature);
-
-        Double DO2 = constants.Soc
-                    *
-                    (voltage + constants.VOffset)
-                    *
-                    (1.0 + constants.A_Coefficient * temperature
-                         + (constants.B_Coefficient * Math.pow(temperature, 2))
-                         + (constants.C_Coefficient * Math.pow(temperature, 3))
-                    )
-                    *
-                    OxygenSolubilityCalculator.calculateOxygenSolubilityInUMolesPerKg(temperature, salinity)
-                    *
-                    Math.exp(constants.E_Nominal_Coefficient * pressure/kelvinTemperature);
+//        Double kelvinTemperature = new Double(273.15 + temperature);
+//
+//        Double DO2 = constants.Soc
+//                    *
+//                    (voltage + constants.VOffset)
+//                    *
+//                    (1.0 + constants.A_Coefficient * temperature
+//                         + (constants.B_Coefficient * Math.pow(temperature, 2))
+//                         + (constants.C_Coefficient * Math.pow(temperature, 3))
+//                    )
+//                    *
+//                    OxygenSolubilityCalculator.calculateOxygenSolubilityInUMolesPerKg(temperature, salinity)
+//                    *
+//                    Math.exp(constants.E_Nominal_Coefficient * pressure/kelvinTemperature);
+        
+        Double DO2 = calculateOxygenValueInMlPerLitre(temperature, pressure, salinity, voltage);
+        //
+        // correct for pressure
+        //
+        DO2 = DO2 * (44660/SeawaterParameterCalculator.calculateSeawaterDensityAtDepth(salinity, temperature, pressure));
 
         return DO2;
     }

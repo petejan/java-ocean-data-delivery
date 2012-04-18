@@ -1,5 +1,5 @@
 /*
- * IMOS data delivery project
+ * Neonatal Screening Software Project
  * Written by Peter Wiley
  * This code is copyright (c) Peter Wiley 2000 - ?
  * It is made available under the BSD Software Licence in the hope that it may be useful.
@@ -81,6 +81,7 @@ public class OxygenSolubilityCalculator
                                 + salinityComponent
                                 );
 
+        /*
         logger.debug("Calc oxySol for temp "
                     + temperature
                     + " and salinity "
@@ -88,7 +89,7 @@ public class OxygenSolubilityCalculator
                     + " is "
                     + oxySol
                     );
-        
+        */
         return oxySol;
     }
 
@@ -107,9 +108,6 @@ public class OxygenSolubilityCalculator
             logger.error("Cannot calculate oxygen solubility if temperature or salinity is null");
             return null;
         }
-        //
-        // ok, calculate TS value
-        //
         //
         // magic numbers (coefficients) from Seabird Application Note 64 Revised Feb 2011
         // SBE43 Dissolved Oxygen Sensor Appendix A
@@ -151,6 +149,7 @@ public class OxygenSolubilityCalculator
                                 + salinityComponent
                                 );
 
+        /*
         logger.debug("Calc oxySol for temp "
                     + temperature
                     + " and salinity "
@@ -158,7 +157,7 @@ public class OxygenSolubilityCalculator
                     + " is "
                     + oxySol
                     );
-
+        */
         return oxySol;
     }
 }
