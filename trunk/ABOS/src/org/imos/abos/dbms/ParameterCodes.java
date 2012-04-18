@@ -12,6 +12,9 @@ package org.imos.abos.dbms;
 /**
  *
  * @author peter
+ * @modified
+ *
+ * 2012-04-18 PDW Added extra columns for netCDF descriptors
  */
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
@@ -63,17 +66,23 @@ public class ParameterCodes  implements Cloneable
 
     private String code;
     private String description;
+    private String netCDFName;
+    private String units;
     private String displayCode;
 
     private static String[] columnNames = new String[]
     {
         "Code",
         "Description",
+        "NetCDF Name",
+        "Units",
         "Display"
     };
 
     private static Class[] columnClasses = new Class[]
     {
+        String.class,
+        String.class,
         String.class,
         String.class,
         Boolean.class
@@ -82,50 +91,28 @@ public class ParameterCodes  implements Cloneable
     private static String selectSQL = "select"
                 + " code,"
                 + " description,"
+                + " netcdf_name,"
+                + " units,"
                 + " display_code"
                 + " from parameters"
                 ;
 
-    private static String[] createTableSQL = new String[]
-        {
-            // all databases
-            "create table parameters \n"
-            + "  (\n"
-            + "code char(20) not null primary key ,\n"
-            + "description char(60),\n"
-            + "display_code char(1)"
-            + "  )\n"
-        };
+    
 
     private static String insertSQL  = "insert into parameters"
             + "("
             + " code,"
             + " description,"
+            + " netcdf_name,"
+            + " units,"
             + " display_code"
             + ")"
             + " values "
             + "("
-            + "?"
-            + ","
-            + "?"
-            + ","
-            + "?"
+            + "?,?,?,?,?"
             + ")"
             ;
-    private static String[] createIndexSQL = new String[]
-        {
-        }
-        ;
-    public static String[] getCreateTableSQL()
-    {
-        return createTableSQL;
-    }
-
-    public static String[] getCreateIndexSQL()
-    {
-        return createIndexSQL;
-    }
-
+    
     public static String getInsertSQL()
     {
         return insertSQL;
@@ -135,6 +122,8 @@ public class ParameterCodes  implements Cloneable
     {
         return "update parameters "
                 + " set description = ?,\n"
+                + " netcdf_name = ?,\n"
+                + " units = ?,\n"
                 + " display_code = ?\n"
                 + " where code = ?";
     }
@@ -154,9 +143,9 @@ public class ParameterCodes  implements Cloneable
     }
 
     /**
-     * select a single Country using its unique ID
+     * select a single ParameterCodes object using its unique ID
      * @param id
-     * @return a OrganisaCountrytion object, or null if not found
+     * @return a ParameterCodes object, or null if not found
      */
     public static ParameterCodes selectByID(String id)
     {
@@ -268,12 +257,16 @@ public class ParameterCodes  implements Cloneable
         else if(columnIndex == 1)
             return description;
         else if(columnIndex == 2)
+            return netCDFName;
+        else if(columnIndex == 3)
+            return units;
+        else if(columnIndex == 4)
             return getDisplayCodeAsBoolean();
         else
             return null;
     }
 
-    public boolean setCountryID(Object value)
+    public boolean setParameterCode(Object value)
     {
         if(value == null)
         {
@@ -283,7 +276,7 @@ public class ParameterCodes  implements Cloneable
         }
         if(value instanceof String)
         {
-            setCountryID((String) value);
+            setParameterCode((String) value);
             isEdited = true;
             return true;
         }
@@ -299,10 +292,14 @@ public class ParameterCodes  implements Cloneable
     protected boolean setColumn(int aColumn, Object value)
     {
         if(aColumn == 0)
-            return setCountryID((String) value);
+            return setParameterCode((String) value);
         else if(aColumn == 1)
             return setDescription(value);
         else if(aColumn == 2)
+            return setNetCDFName((String) value);
+        else if(aColumn == 3)
+            return setUnits((String) value);
+        else if(aColumn == 4)
             return setDisplayCode(value);
         else
             return false;
@@ -438,8 +435,10 @@ public class ParameterCodes  implements Cloneable
         try
         {
             psql.setString(1, description);
-            psql.setString(2, displayCode);
-            psql.setString(3, code);
+            psql.setString(2, netCDFName);
+            psql.setString(3, units);
+            psql.setString(4, displayCode);
+            psql.setString(5, code);
 
             int affectedRows = psql.executeUpdate();
             if(affectedRows == 1)
@@ -464,15 +463,17 @@ public class ParameterCodes  implements Cloneable
 
     private void create(Vector currentRow)
     {
-        setCountryID( (String) currentRow.elementAt(0) );
+        setParameterCode( (String) currentRow.elementAt(0) );
         setDescription((String) currentRow.elementAt(1));
-        setDisplayCode((String) currentRow.elementAt(2));
+        setNetCDFName((String) currentRow.elementAt(2));
+        setUnits((String) currentRow.elementAt(3));
+        setDisplayCode((String) currentRow.elementAt(4));
 
         isNew = false;
         isEdited = false;
     }
 
-    public boolean setCountryID(String string)
+    public boolean setParameterCode(String string)
     {
         if(string != null)
         {
@@ -493,10 +494,56 @@ public class ParameterCodes  implements Cloneable
 
     public String getDescription()
     {
-        if(description == null)
+        if(description == null || description.trim().isEmpty())
             return null;
         else
             return description.trim();
+    }
+
+    public boolean setNetCDFName(String string)
+    {
+        if(string != null && (! string.isEmpty()))
+        {
+            netCDFName = string.trim();
+        }
+        else
+        {
+            netCDFName = null;
+        }
+
+        isEdited = true;
+        return true;
+    }
+
+    public String getNetCDFName()
+    {
+        if(netCDFName == null || netCDFName.trim().isEmpty())
+            return null;
+        else
+            return netCDFName.trim();
+    }
+
+    public boolean setUnits(String string)
+    {
+        if(string != null && (! string.isEmpty()))
+        {
+            units = string.trim();
+        }
+        else
+        {
+            units = null;
+        }
+
+        isEdited = true;
+        return true;
+    }
+
+    public String getUnits()
+    {
+        if(units == null || units.trim().isEmpty())
+            return null;
+        else
+            return units.trim();
     }
 
     /**
@@ -618,7 +665,9 @@ public class ParameterCodes  implements Cloneable
         {
             psql.setString(1, code);
             psql.setString(2, description);
-            psql.setString(3, displayCode);
+            psql.setString(3, netCDFName);
+            psql.setString(4, units);
+            psql.setString(5, displayCode);
 
             int affectedRows = psql.executeUpdate();
             if(affectedRows == 1)
