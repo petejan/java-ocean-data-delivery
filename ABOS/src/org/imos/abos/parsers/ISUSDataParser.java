@@ -45,6 +45,9 @@ public class ISUSDataParser extends AbstractDataParser
     @Override
     protected void parseData(String dataLine) throws ParseException, NoSuchElementException
     {
+        if( ! dataLine.startsWith("SATNLF"))
+            return;
+
         TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
         
         SimpleDateFormat dateParser = new SimpleDateFormat("dd MMM yyyy HH:mm:ss");
