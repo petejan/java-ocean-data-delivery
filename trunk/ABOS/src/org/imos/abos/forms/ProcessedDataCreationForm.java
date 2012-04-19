@@ -66,6 +66,7 @@ public class ProcessedDataCreationForm extends MemoryWindow
         quitButton = new javax.swing.JButton();
         jPanel1 = new javax.swing.JPanel();
         mooringCombo1 = new org.imos.abos.dbms.fields.MooringCombo();
+        deleteDataBox = new javax.swing.JCheckBox();
         mooringDescriptionField = new org.wiley.util.basicField();
         sourceInstrumentCombo = new org.imos.abos.dbms.fields.InstrumentSelectorCombo();
         targetInstrumentCombo = new org.imos.abos.dbms.fields.InstrumentSelectorCombo();
@@ -105,6 +106,14 @@ public class ProcessedDataCreationForm extends MemoryWindow
             }
         });
 
+        deleteDataBox.setSelected(true);
+        deleteDataBox.setText("Delete any existing processed data for target instrument & parameter");
+        deleteDataBox.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                deleteDataBoxActionPerformed(evt);
+            }
+        });
+
         mooringDescriptionField.setEnabled(false);
 
         sourceInstrumentCombo.setLabel("Source Instrument");
@@ -134,7 +143,8 @@ public class ProcessedDataCreationForm extends MemoryWindow
                         .add(sourceInstrumentCombo, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 562, Short.MAX_VALUE)
                         .add(targetInstrumentCombo, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 562, Short.MAX_VALUE))
                     .add(sourceParameterSelector, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 562, Short.MAX_VALUE)
-                    .add(targetParameterSelector, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 562, Short.MAX_VALUE))
+                    .add(targetParameterSelector, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 562, Short.MAX_VALUE)
+                    .add(deleteDataBox, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 488, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
                 .addContainerGap())
         );
 
@@ -155,25 +165,30 @@ public class ProcessedDataCreationForm extends MemoryWindow
                 .add(sourceParameterSelector, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 26, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
                 .add(targetParameterSelector, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 26, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                .add(295, 295, 295))
+                .addPreferredGap(org.jdesktop.layout.LayoutStyle.UNRELATED)
+                .add(deleteDataBox)
+                .add(262, 262, 262))
         );
 
         org.jdesktop.layout.GroupLayout layout = new org.jdesktop.layout.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-            .add(layout.createSequentialGroup()
-                .add(11, 11, 11)
-                .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-                    .add(org.jdesktop.layout.GroupLayout.TRAILING, jPanel2, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 606, Short.MAX_VALUE)
-                    .add(org.jdesktop.layout.GroupLayout.TRAILING, jPanel1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-                .add(29, 29, 29))
+            .add(org.jdesktop.layout.GroupLayout.TRAILING, layout.createSequentialGroup()
+                .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.TRAILING)
+                    .add(layout.createSequentialGroup()
+                        .addContainerGap()
+                        .add(jPanel2, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 606, Short.MAX_VALUE))
+                    .add(layout.createSequentialGroup()
+                        .add(11, 11, 11)
+                        .add(jPanel1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
+                .add(37, 37, 37))
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
             .add(layout.createSequentialGroup()
                 .addContainerGap()
-                .add(jPanel1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 224, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                .add(jPanel1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 222, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.UNRELATED)
                 .add(jPanel2, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                 .addContainerGap(org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
@@ -204,6 +219,14 @@ public class ProcessedDataCreationForm extends MemoryWindow
         {
             Common.showMessage(this,"No Mooring Selected","You must select a mooring before running any calculations");
             return;
+        }
+
+        if(deleteDataBox.isSelected())
+        {
+            ProcessedInstrumentData.deleteDataForMooringAndInstrumentAndParameter(selectedMooring.getMooringID(),
+                                                                                  targetInstrument.getInstrumentID(),
+                                                                                  targetParameter.getParameterCode())
+                                                                      ;
         }
 
         final Color bg = runButton.getBackground();
@@ -287,6 +310,10 @@ public class ProcessedDataCreationForm extends MemoryWindow
         }
 }//GEN-LAST:event_mooringCombo1PropertyChange
 
+    private void deleteDataBoxActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_deleteDataBoxActionPerformed
+        // TODO add your handling code here:
+}//GEN-LAST:event_deleteDataBoxActionPerformed
+
     @Override
     public void initialise()
     {
@@ -334,6 +361,7 @@ public class ProcessedDataCreationForm extends MemoryWindow
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
+    private javax.swing.JCheckBox deleteDataBox;
     private javax.swing.JPanel jPanel1;
     private javax.swing.JPanel jPanel2;
     private org.imos.abos.dbms.fields.MooringCombo mooringCombo1;

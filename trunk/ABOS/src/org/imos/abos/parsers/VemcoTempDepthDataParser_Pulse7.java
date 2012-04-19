@@ -146,8 +146,8 @@ public class VemcoTempDepthDataParser_Pulse7 extends VemcoDataParser_Pulse7
             row.setLatitude(currentMooring.getLatitudeIn());
             row.setLongitude(currentMooring.getLongitudeIn());
             row.setMooringID(currentMooring.getMooringID());
-            row.setParameterCode("WATER_DEPTH");
-            row.setParameterValue(waterTemp);
+            row.setParameterCode("WATER_PRESSURE");
+            row.setParameterValue(waterDepth);
             row.setSourceFileID(currentFile.getDataFilePrimaryKey());
             row.setQualityCode("RAW");
 

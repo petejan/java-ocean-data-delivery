@@ -33,11 +33,56 @@ public class ProcessedInstrumentData  implements Cloneable
         TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
     }
 
+    /**
+     * delete all data that was derived from the specified file ID
+     * @param instrumentDataFileID
+     * @return
+     */
     public static boolean deleteDataForFile(Integer instrumentDataFileID)
     {
         String deleteSQL = "delete from processed_instrument_data"
-                + " where instrument_id = "
+                + " where source_file_id = "
                 + instrumentDataFileID
+                ;
+
+        boolean success = Common.executeSQL(deleteSQL);
+        return success;
+    }
+
+    /**
+     * delete all data for the specified instrument and mooring
+     * @param mooring
+     * @param instrument
+     * @return
+     */
+    public static boolean deleteDataForMooringAndInstrument(String mooring, Integer instrument)
+    {
+        String deleteSQL = "delete from processed_instrument_data"
+                + " where instrument_id = "
+                + instrument
+                + " and mooring_id = "
+                + StringUtilities.quoteString(mooring)
+                ;
+
+        boolean success = Common.executeSQL(deleteSQL);
+        return success;
+    }
+
+    /**
+     * delete all data for the specified instrument and mooring and parameter
+     * @param mooring
+     * @param instrument
+     * @return
+     */
+    public static boolean deleteDataForMooringAndInstrumentAndParameter(String mooring, Integer instrument, String param)
+    {
+        String deleteSQL = "delete from processed_instrument_data"
+                + " where instrument_id = "
+                + instrument
+                + " and mooring_id = "
+                + StringUtilities.quoteString(mooring)
+                + " and parameter_code = "
+                + StringUtilities.quoteString(param)
                 ;
 
         boolean success = Common.executeSQL(deleteSQL);
