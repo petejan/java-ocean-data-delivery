@@ -28,7 +28,7 @@ import ucar.nc2.dataset.VariableDS;
  */
 public class ReadCDF
 {
-    SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss");
+    SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
     public ReadCDF()
     {
