@@ -461,9 +461,6 @@ public class Pulse7NetCDFCreator
         Pulse7Constants.time_coverage_start = df.format(startTime);
         Pulse7Constants.time_coverage_end = df.format(endTime);
 
-        //dataFile.addGlobalAttribute("instrument_make",Pulse7Constants.instrument_make) ;
-        //dataFile.addGlobalAttribute("instrument_model",Pulse7Constants.instrument_model) ;
-        //dataFile.addGlobalAttribute("instrument_serial_no",Pulse7Constants.instrument_serial_no) ;
         dataFile.addGlobalAttribute("level",Pulse7Constants.level) ;
         dataFile.addGlobalAttribute("date_created",Pulse7Constants.date_created) ;
         dataFile.addGlobalAttribute("field_trip_id",Pulse7Constants.field_trip_id) ;
@@ -494,7 +491,7 @@ public class Pulse7NetCDFCreator
         dataFile.addGlobalAttribute("author",Pulse7Constants.author) ;
         dataFile.addGlobalAttribute("principal_investigator",Pulse7Constants.principal_investigator) ;
         dataFile.addGlobalAttribute("principal_investigator_email",Pulse7Constants.principal_investigator_email) ;
-        dataFile.addGlobalAttribute("acknowledgement_ = ",Pulse7Constants.acknowledgement) ;
+        dataFile.addGlobalAttribute("acknowledgement",Pulse7Constants.acknowledgement) ;
         dataFile.addGlobalAttribute("raw_data_file",Pulse7Constants.raw_data_file) ;
         dataFile.addGlobalAttribute("index",Pulse7Constants.index) ;
     }

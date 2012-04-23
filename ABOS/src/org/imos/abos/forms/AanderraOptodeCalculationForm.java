@@ -90,6 +90,7 @@ public class AanderraOptodeCalculationForm extends MemoryWindow
         calibrationFileCombo1 = new org.imos.abos.dbms.fields.CalibrationFileCombo();
         sourceInstrumentCombo = new org.imos.abos.dbms.fields.InstrumentSelectorCombo();
         targetInstrumentCombo = new org.imos.abos.dbms.fields.InstrumentSelectorCombo();
+        deleteDataBox = new javax.swing.JCheckBox();
         jPanel2 = new javax.swing.JPanel();
         runButton = new javax.swing.JButton();
         quitButton = new javax.swing.JButton();
@@ -121,6 +122,14 @@ public class AanderraOptodeCalculationForm extends MemoryWindow
         targetInstrumentCombo.setLabel("Target Instrument");
         targetInstrumentCombo.setOrientation(0);
 
+        deleteDataBox.setSelected(true);
+        deleteDataBox.setText("Delete any existing processed data for target instrument");
+        deleteDataBox.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                deleteDataBoxActionPerformed(evt);
+            }
+        });
+
         org.jdesktop.layout.GroupLayout jPanel1Layout = new org.jdesktop.layout.GroupLayout(jPanel1);
         jPanel1.setLayout(jPanel1Layout);
         jPanel1Layout.setHorizontalGroup(
@@ -128,6 +137,7 @@ public class AanderraOptodeCalculationForm extends MemoryWindow
             .add(jPanel1Layout.createSequentialGroup()
                 .addContainerGap()
                 .add(jPanel1Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
+                    .add(deleteDataBox, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 398, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                     .add(jPanel1Layout.createSequentialGroup()
                         .add(mooringCombo1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 169, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                         .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
@@ -150,7 +160,9 @@ public class AanderraOptodeCalculationForm extends MemoryWindow
                 .add(targetInstrumentCombo, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 26, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                 .add(18, 18, 18)
                 .add(calibrationFileCombo1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                .add(307, 307, 307))
+                .addPreferredGap(org.jdesktop.layout.LayoutStyle.UNRELATED)
+                .add(deleteDataBox)
+                .add(274, 274, 274))
         );
 
         jPanel2.setBorder(javax.swing.BorderFactory.createEtchedBorder());
@@ -178,15 +190,15 @@ public class AanderraOptodeCalculationForm extends MemoryWindow
             .add(layout.createSequentialGroup()
                 .addContainerGap()
                 .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-                    .add(jPanel1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .add(org.jdesktop.layout.GroupLayout.TRAILING, jPanel2, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 606, Short.MAX_VALUE))
+                    .add(org.jdesktop.layout.GroupLayout.TRAILING, jPanel1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .add(jPanel2, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 606, Short.MAX_VALUE))
                 .addContainerGap())
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
             .add(layout.createSequentialGroup()
                 .addContainerGap()
-                .add(jPanel1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 189, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                .add(jPanel1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 218, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.UNRELATED)
                 .add(jPanel2, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                 .addContainerGap(org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
@@ -227,6 +239,13 @@ public class AanderraOptodeCalculationForm extends MemoryWindow
             return;
         }
 
+        if(deleteDataBox.isSelected())
+        {
+            ProcessedInstrumentData.deleteDataForMooringAndInstrument(selectedMooring.getMooringID(),
+                                                                      targetInstrument.getInstrumentID())
+                                                                      ;
+        }
+
         final Color bg = runButton.getBackground();
         runButton.setText("Running...");
         runButton.setBackground(Color.RED);
@@ -265,6 +284,10 @@ public class AanderraOptodeCalculationForm extends MemoryWindow
             calibrationFileCombo1.setMooring(selectedItem);
         }
     }//GEN-LAST:event_mooringCombo1PropertyChange
+
+    private void deleteDataBoxActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_deleteDataBoxActionPerformed
+        // TODO add your handling code here:
+}//GEN-LAST:event_deleteDataBoxActionPerformed
 
     private void processData()
     {
@@ -345,7 +368,7 @@ public class AanderraOptodeCalculationForm extends MemoryWindow
 
         calculateOxygenValues();
 
-        //insertData();
+        insertData();
         displayData();
     }
 
@@ -580,6 +603,7 @@ public class AanderraOptodeCalculationForm extends MemoryWindow
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private org.imos.abos.dbms.fields.CalibrationFileCombo calibrationFileCombo1;
+    private javax.swing.JCheckBox deleteDataBox;
     private javax.swing.JPanel jPanel1;
     private javax.swing.JPanel jPanel2;
     private org.imos.abos.dbms.fields.MooringCombo mooringCombo1;
