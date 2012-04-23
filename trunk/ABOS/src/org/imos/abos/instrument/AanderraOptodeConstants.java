@@ -76,6 +76,10 @@ public class AanderraOptodeConstants extends AbstractInstrumentConstants
                 }
             }
         }
+        else
+        {
+            logger.error("AanderraOptodeConstants:: Instrument " + ins + " Mooring " + m);
+        }
     }
 
     @Override
@@ -86,6 +90,8 @@ public class AanderraOptodeConstants extends AbstractInstrumentConstants
         //
         String paramName = row.getParameterCode();
         String paramValue = row.getParameterValue();
+        
+        // logger.debug("AanderraOptodeConstants::parse " + paramName + " " + paramValue);
 
         if(paramName.equalsIgnoreCase("C0"))
         {
@@ -115,13 +121,17 @@ public class AanderraOptodeConstants extends AbstractInstrumentConstants
 
         double[] coeffs = new double[st.countTokens()];
 
-        for(int i = 0; i < st.countTokens(); i++)
+        //for(int i = 0; i < st.countTokens(); i++)
+        int i = 0;
+        while(st.hasMoreTokens())
         {
             String s = st.nextToken();
             try
             {
                 Double d = new Double(s);
                 coeffs[i] = d;
+                // System.out.println("parseData: " + i + " input " + s + " " + coeffs[i]);
+                i++;
             }
             catch(NumberFormatException nex)
             {
