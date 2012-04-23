@@ -48,6 +48,7 @@ public class ReadCDF
 
             return;
         }
+        String tvarString = varT.getShortName();
 
         System.err.println("Time type " + varT.getDataType());
 
@@ -66,18 +67,20 @@ public class ReadCDF
         ArrayList headers = new ArrayList();
         for (Variable var : ncd.getVariables())
         {
-            System.err.println("Var " + var.getShortName());
-            if (!var.getShortName().toLowerCase().startsWith("time"))
+            System.err.print("Var " + var.getShortName() + " (");
+            if (!var.getShortName().startsWith(tvarString))
             {
                 for (Dimension d : var.getDimensions())
                 {
-                    if (d.getName().toLowerCase().startsWith("time"))
+                    System.err.print(" " + d.getName());
+                    if (d.getName().startsWith(tvarString))
                     {
                         headers.add(var.getShortName());
                         timeArrays.add(var.read());
                     }
                 }
             }
+            System.err.println(")");
         }
         
         // print header
