@@ -26,6 +26,7 @@ import java.sql.Timestamp;
 import java.sql.Types;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.TimeZone;
 import java.util.Vector;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
@@ -59,8 +60,10 @@ public class SeabirdSBE37CalculationForm extends MemoryWindow
     private ArrayList<SBE37Data> dataSet = new ArrayList();
 
     /** Creates new form SeabirdSBE37CalculationForm */
-    public SeabirdSBE37CalculationForm() {
+    public SeabirdSBE37CalculationForm()
+    {
         initComponents();
+        TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
     }
 
     /** This method is called from within the constructor to

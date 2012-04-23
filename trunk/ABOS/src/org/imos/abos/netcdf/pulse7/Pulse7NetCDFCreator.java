@@ -55,6 +55,11 @@ public class Pulse7NetCDFCreator
 
     private TimeZone tz = TimeZone.getTimeZone("GMT");
 
+    public void Pulse7NetCDFCreator()
+    {
+        TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
+    }
+
     public static void main(String args[])
     {
         String $HOME = System.getProperty("user.home");

@@ -19,6 +19,7 @@ import java.awt.Color;
 import java.io.IOException;
 import java.sql.Timestamp;
 import java.util.ArrayList;
+import java.util.TimeZone;
 import java.util.Vector;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
@@ -56,6 +57,7 @@ public class WETLabsPARCalculationForm extends MemoryWindow
     public WETLabsPARCalculationForm()
     {
         initComponents();
+        TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
     }
 
     @Override

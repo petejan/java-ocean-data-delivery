@@ -25,6 +25,7 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.sql.Types;
 import java.util.ArrayList;
+import java.util.TimeZone;
 import java.util.Vector;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
@@ -63,6 +64,7 @@ public class WETLabsFLNTUSCalculationForm extends MemoryWindow
     public WETLabsFLNTUSCalculationForm()
     {
         initComponents();
+        TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
     }
 
     @Override
