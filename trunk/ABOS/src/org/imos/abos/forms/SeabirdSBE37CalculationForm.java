@@ -334,7 +334,7 @@ public class SeabirdSBE37CalculationForm extends MemoryWindow
             }
         }
 
-        //insertData();
+        insertData();
         displayData();
     }
 
