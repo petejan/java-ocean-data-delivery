@@ -65,8 +65,8 @@ public class AanderraOptodeCalculationForm extends MemoryWindow
     /** Creates new form AanderraOptodeCalculationForm */
     public AanderraOptodeCalculationForm()
     {
-        TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
         initComponents();
+        TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
     }
 
     @Override

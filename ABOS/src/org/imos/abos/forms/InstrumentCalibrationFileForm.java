@@ -17,6 +17,7 @@ package org.imos.abos.forms;
 
 import java.awt.Frame;
 import java.awt.event.ActionEvent;
+import java.util.TimeZone;
 import javax.swing.JFrame;
 import org.apache.log4j.Logger;
 import org.imos.abos.dbms.Instrument;
@@ -48,6 +49,7 @@ public class InstrumentCalibrationFileForm extends MemoryWindow
     public InstrumentCalibrationFileForm()
     {
         initComponents();
+        TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
     }
 
     public void clearForm()

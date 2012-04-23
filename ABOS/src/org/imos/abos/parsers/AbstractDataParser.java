@@ -55,6 +55,11 @@ public abstract class AbstractDataParser
     abstract protected void parseHeader(String dataLine) throws ParseException, NoSuchElementException;
     abstract protected void parseData(String dataLine) throws ParseException, NoSuchElementException;
 
+    public void AbstractDataParser()
+    {
+        TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
+    }
+
     public ArrayList<String> getHeaders()
     {
         return headers;

@@ -17,6 +17,7 @@ package org.imos.abos.forms;
 
 import java.awt.Color;
 import java.util.ArrayList;
+import java.util.TimeZone;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
@@ -50,6 +51,7 @@ public class ProcessedDataCreationForm extends MemoryWindow
     public ProcessedDataCreationForm()
     {
         initComponents();
+        TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
     }
 
     /** This method is called from within the constructor to

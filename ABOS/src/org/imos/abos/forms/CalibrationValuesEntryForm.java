@@ -16,6 +16,7 @@
 package org.imos.abos.forms;
 
 import java.awt.Frame;
+import java.util.TimeZone;
 import javax.swing.JComboBox;
 import javax.swing.JFrame;
 import javax.swing.JTable;
@@ -55,6 +56,7 @@ public class CalibrationValuesEntryForm extends MemoryWindow
     public CalibrationValuesEntryForm()
     {
         initComponents();
+        TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
     }
 
     public void setParent(Frame parent)

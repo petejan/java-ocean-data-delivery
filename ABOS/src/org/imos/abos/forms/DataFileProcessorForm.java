@@ -17,6 +17,7 @@ package org.imos.abos.forms;
 
 import java.awt.Color;
 import java.awt.Frame;
+import java.util.TimeZone;
 import javax.swing.JFrame;
 import javax.swing.SwingUtilities;
 import org.apache.log4j.Logger;
@@ -47,6 +48,7 @@ public class DataFileProcessorForm extends MemoryWindow
     public DataFileProcessorForm()
     {
         initComponents();
+        TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
     }
 
     @Override
