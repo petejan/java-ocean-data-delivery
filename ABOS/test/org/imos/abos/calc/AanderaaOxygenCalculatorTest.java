@@ -74,7 +74,7 @@ public class AanderaaOxygenCalculatorTest
         
         System.out.println("Constants " + aoc);
         
-        double dox = aooc.calculateDissolvedOxygenInUMolesPerKg(8.707, 37.36512725, 34.56124872, 34.56124872); // Values from 2010-10-01 00:00
+        double dox = aooc.calculateDissolvedOxygenInUMolesPerKg(8.707, 37.36512725, 34.56124872, 34.387); // Values from 2010-10-01 00:00
         
         System.out.println("DO = " + dox);
         
