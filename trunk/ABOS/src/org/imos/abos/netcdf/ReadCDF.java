@@ -6,44 +6,108 @@
  * It has NO WARRANTY OF FITNESS OR SUITABILITY FOR ANY PURPOSE.
  * Feel free to fix any bugs that you may find.
  */
-
 package org.imos.abos.netcdf;
 
 import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.*;
 import ucar.ma2.Array;
+import ucar.nc2.Attribute;
 import ucar.nc2.Dimension;
 import ucar.nc2.Variable;
+import ucar.nc2.dataset.CoordinateAxis1DTime;
 import ucar.nc2.dataset.NetcdfDataset;
+import ucar.nc2.dataset.VariableDS;
 
 /**
  *
  * @author peter
+ * 
+ * this is not a general netCDF reader, but intended only to read the generated NetCDF 
+ * 
  */
 public class ReadCDF
 {
+    SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss");
+
     public ReadCDF()
     {
-        
+        sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
     }
-    
-    public void process(NetcdfDataset ncd) throws IOException
-    {
-        Variable v = ncd.findVariable("time");
-        System.out.println("Time type " + v.getDataType());
-        
-        if (null == v) return;
 
-        Array data = v.read();
-        
-        for(Variable vars : ncd.getVariables())
+    public void process(NetcdfDataset ncd) throws IOException, Exception
+    {
+        Variable varT = ncd.findVariable("TIME");
+        if (varT == null)
         {
-            System.out.println("Var " + vars.getShortName());
-            for (Dimension d : vars.getDimensions())
+            varT = ncd.findVariable("time");
+        }
+        if (varT == null)
+        {
+            System.err.println("No TIME variable, giving up");
+
+            return;
+        }
+
+        System.err.println("Time type " + varT.getDataType());
+
+        Attribute tunit = varT.findAttribute("units");
+
+        System.err.println("Time type " + tunit.getDataType() + " value " + tunit.toString());
+
+        Formatter fmt = new Formatter();
+        fmt.format("CoordinateAxis1DTime %s: %n %s is %d %n %s is %f", fmt.getClass(), "Integer", 10, "Float", 10.4);
+        CoordinateAxis1DTime tm = CoordinateAxis1DTime.factory(ncd, new VariableDS(null, varT, true), fmt);
+        Date times[] = tm.getTimeDates();
+
+        System.err.println(sdf.format(times[0]) + " CoordinateAxis1DTime " + tm);
+
+        ArrayList timeArrays = new ArrayList();
+        ArrayList headers = new ArrayList();
+        for (Variable var : ncd.getVariables())
+        {
+            System.err.println("Var " + var.getShortName());
+            if (!var.getShortName().toLowerCase().startsWith("time"))
             {
-                System.out.println("Dim " + d.getName());
+                for (Dimension d : var.getDimensions())
+                {
+                    if (d.getName().toLowerCase().startsWith("time"))
+                    {
+                        headers.add(var.getShortName());
+                        timeArrays.add(var.read());
+                    }
+                }
             }
         }
         
+        // print header
+        System.out.print("TIME,");
+        for (ListIterator<String> it = headers.listIterator(); it.hasNext();)
+        {
+            String v = it.next();
+            System.out.print(v);
+            if (it.hasNext())
+            {
+                System.out.print(",");
+            }
+        }
+        System.out.println();
+        
+        // print data
+        for(int i=0;i<times.length;i++)
+        {
+            System.out.print(sdf.format(times[i]) + ",");
+            for (ListIterator<Array> it = timeArrays.listIterator(); it.hasNext();)
+            {
+                Array v = it.next();
+                System.out.print(v.getDouble(i));
+                if (it.hasNext())
+                {
+                    System.out.print(",");
+                }
+            }
+            System.out.println();
+        }
     }
 
     public void read(String filename, boolean header)
@@ -56,12 +120,16 @@ public class ReadCDF
             {
                 System.out.println(ncd);
             }
-            
+
             process(ncd);
         }
         catch (IOException ioe)
         {
             System.out.println("trying to open " + filename + " " + ioe);
+        }
+        catch (Exception e)
+        {
+            e.printStackTrace();
         }
         finally
         {
@@ -84,7 +152,7 @@ public class ReadCDF
         ReadCDF r = new ReadCDF();
         boolean header = false;
         int file = 0;
-        
+
         if (args[0].startsWith("-h"))
         {
             header = true;
@@ -92,5 +160,4 @@ public class ReadCDF
         }
         r.read(args[file], header);
     }
-    
 }
