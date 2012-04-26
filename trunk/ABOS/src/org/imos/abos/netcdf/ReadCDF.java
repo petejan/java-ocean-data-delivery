@@ -29,6 +29,9 @@ import ucar.nc2.dataset.VariableDS;
 public class ReadCDF
 {
     SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+    ArrayList timeArrays = new ArrayList();
+    ArrayList headers = new ArrayList();
+    Date times[];
 
     public ReadCDF()
     {
@@ -59,12 +62,11 @@ public class ReadCDF
         Formatter fmt = new Formatter();
         fmt.format("CoordinateAxis1DTime %s: %n %s is %d %n %s is %f", fmt.getClass(), "Integer", 10, "Float", 10.4);
         CoordinateAxis1DTime tm = CoordinateAxis1DTime.factory(ncd, new VariableDS(null, varT, true), fmt);
-        Date times[] = tm.getTimeDates();
+        times = tm.getTimeDates();
 
         System.err.println(sdf.format(times[0]) + " CoordinateAxis1DTime " + tm);
 
-        ArrayList timeArrays = new ArrayList();
-        ArrayList headers = new ArrayList();
+        // iterate over all variables, extracting the time based ones
         for (Variable var : ncd.getVariables())
         {
             System.err.print("Var " + var.getShortName() + " (");
@@ -82,7 +84,10 @@ public class ReadCDF
             }
             System.err.println(")");
         }
-        
+    }
+    
+    public void csvOutput()
+    {   
         // print header
         System.out.print("TIME,");
         for (ListIterator<String> it = headers.listIterator(); it.hasNext();)
@@ -162,5 +167,7 @@ public class ReadCDF
             file++;
         }
         r.read(args[file], header);
+        
+        r.csvOutput();
     }
 }
