@@ -1,11 +1,13 @@
 /*
- * Neonatal Screening Software Project
+ * IMOS data delivery project
  * Written by Peter Wiley
  * This code is copyright (c) Peter Wiley 2000 - ?
  * It is made available under the BSD Software Licence in the hope that it may be useful.
  * It has NO WARRANTY OF FITNESS OR SUITABILITY FOR ANY PURPOSE.
  * Feel free to fix any bugs that you may find.
  */
+
+/* see Sea Bird application note 64, SBE 43 Dissolved Oxygen Sensor – Background Information, Deployment Recommendations, and Cleaning and Storage */
 
 package org.imos.abos.calc;
 
@@ -57,6 +59,13 @@ public class SeabirdSBE43OxygenCalculator
         //
         Double kelvinTemperature = new Double(273.15 + temperature);
         
+//        logger.debug("SBE43Calc:: DO calc: SOC " + constants.Soc + " VOffset " + constants.VOffset + " A " + constants.A_Coefficient + " B " + constants.B_Coefficient + " C " + constants.C_Coefficient + " E(nom) " + constants.E_Nominal_Coefficient);
+//        logger.debug("SBE43Calc:: oxfactor " + (constants.Soc * (voltage + constants.VOffset)) + 
+//                                 " Temp Fact " + (1.0 + constants.A_Coefficient * temperature + (constants.B_Coefficient * Math.pow(temperature, 2)) + (constants.C_Coefficient * Math.pow(temperature, 3))) +
+//                                 " OxSOL " + OxygenSolubilityCalculator.calculateOxygenSolubilityInMlPerLitre(temperature, salinity) +
+//                                 " Pressure Fact " + Math.exp(constants.E_Nominal_Coefficient * pressure/kelvinTemperature)
+//                );
+        
         Double DO2 = constants.Soc
                     *
                     (voltage + constants.VOffset)
@@ -97,24 +106,11 @@ public class SeabirdSBE43OxygenCalculator
         //
         // ok, got everything we need - calculate
         //
-//        Double kelvinTemperature = new Double(273.15 + temperature);
-//
-//        Double DO2 = constants.Soc
-//                    *
-//                    (voltage + constants.VOffset)
-//                    *
-//                    (1.0 + constants.A_Coefficient * temperature
-//                         + (constants.B_Coefficient * Math.pow(temperature, 2))
-//                         + (constants.C_Coefficient * Math.pow(temperature, 3))
-//                    )
-//                    *
-//                    OxygenSolubilityCalculator.calculateOxygenSolubilityInUMolesPerKg(temperature, salinity)
-//                    *
-//                    Math.exp(constants.E_Nominal_Coefficient * pressure/kelvinTemperature);
         
         Double DO2 = calculateOxygenValueInMlPerLitre(temperature, pressure, salinity, voltage);
+        
         //
-        // correct for pressure
+        // correct for pressure, sea bird application note 64, SBE 43 Dissolved Oxygen Sensor – Background Information, Deployment Recommendations, and Cleaning and Storage
         //
         DO2 = DO2 * (44660/SeawaterParameterCalculator.calculateSeawaterDensityAtDepth(salinity, temperature, pressure));
 

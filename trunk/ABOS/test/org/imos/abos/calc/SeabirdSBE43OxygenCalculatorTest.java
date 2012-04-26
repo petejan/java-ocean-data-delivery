@@ -82,18 +82,24 @@ public class SeabirdSBE43OxygenCalculatorTest
         
         System.out.println("calculateOxygenValue");
 
-        Double pressure = 1.0;
-
-        double[] temperature = new double[] {2.00,  6.00, 12.00, 20.00, 26.00, 30.00,  6.00,  2.00, 12.00, 20.00, 26.00, 30.00};
-        double[] salinity    = new double[] {0.00,  0.01,  0.01,  0.01,  0.01,  0.02,  0.01,  0.00,  0.01,  0.01,  0.01,  0.02};
-        double[] voltage     = new double[] {0.750, 0.781, 0.831, 0.901, 0.957, 0.998, 1.466, 1.364, 1.626, 1.847, 2.032, 2.164};
-        double[] expResult   = new double[] {1.23,  1.23,  1.24,  1.25,  1.26,  1.26,  4.10,  4.11,  4.11,  4.12,  4.14,  4.15};
+        double[] temperature = new double[] {2.00,  6.00, 12.00, 20.00, 26.00, 30.00,  6.00,  2.00, 12.00, 20.00, 26.00, 30.00, 8.6868};
+        double[] pressure = new double[] {0,  0, 0, 0, 0, 0,  0,  0, 0, 0, 0, 0, 34.387};
+        double[] salinity    = new double[] {0.00,  0.01,  0.01,  0.01,  0.01,  0.02,  0.01,  0.00,  0.01,  0.01,  0.01,  0.02, 34.56124872};
+        double[] voltage     = new double[] {0.750, 0.781, 0.831, 0.901, 0.957, 0.998, 1.466, 1.364, 1.626, 1.847, 2.032, 2.164, 2.3567};
+        double[] expResult   = new double[] {1.23,  1.23,  1.24,  1.25,  1.26,  1.26,  4.10,  4.11,  4.11,  4.12,  4.14,  4.15, 5.88};
 
         for(int i = 0; i < temperature.length; i++)
         {
-            double result = SeabirdSBE43OxygenCalculator.calculateOxygenValueInMlPerLitre(temperature[i], pressure, salinity[i], voltage[i]);
+            double result = SeabirdSBE43OxygenCalculator.calculateOxygenValueInMlPerLitre(temperature[i], pressure[i], salinity[i], voltage[i]);
+            System.out.println("SBE43OxygenCalculatorTest::" + result + " expected " + expResult[i] + " error " + (result - expResult[i]));
             assertEquals(expResult[i], result, 0.01);
         }
+        
+        double result = SeabirdSBE43OxygenCalculator.calculateOxygenValueInUMolesPerKg(8.6868, 34.387, 34.56124872, 2.3567);
+        double expr = 255.51;
+        System.out.println("SBE43OxygenCalculatorTest::" + result + " expected " + expr + " error " + (result - expr));
+        assertEquals(expr, result, 0.01);
+        
         // TODO review the generated test code and remove the default call to fail.
         //fail("The test case is a prototype.");
     }
