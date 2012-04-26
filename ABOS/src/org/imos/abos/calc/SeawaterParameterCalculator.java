@@ -1,5 +1,5 @@
 /*
- * Neonatal Screening Software Project
+ * IMOS data delivery project
  * Written by Peter Wiley
  * This code is copyright (c) Peter Wiley 2000 - ?
  * It is made available under the BSD Software Licence in the hope that it may be useful.
