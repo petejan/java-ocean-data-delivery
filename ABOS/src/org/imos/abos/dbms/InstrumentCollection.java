@@ -276,7 +276,7 @@ public class InstrumentCollection extends AbstractTableModel
     void setMooring(Mooring m)
     {
         parentMooring = m;
-        rows = Instrument.selectDataFilesForMooring(parentMooring.getMooringID());
+        rows = Instrument.selectInstrumentsAttachedToMooring(parentMooring.getMooringID());
     }
 }
 
