@@ -338,6 +338,7 @@ public class CalibrationValuesEntryForm extends MemoryWindow
         
         collection.setSelectedMooring(selectedMooring);
         collection.setParentCalibrationFile(currentCalFile);
+        collection.loadFromPersistentStore();
         collection.addBlankRows(20);
         collection.setParentFrame(this);
 

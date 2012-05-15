@@ -44,12 +44,20 @@ public class InstrumentCalibrationValueCollection extends AbstractTableModel
     {
         parentFile = p;
         parentInstrument = Instrument.selectByInstrumentID(parentFile.getInstrumentID());
-        rows = InstrumentCalibrationValue.selectByCalibrationFileID(parentFile.getDataFilePrimaryKey());
     }
 
     public void loadFromPersistentStore()
     {
-        rows = InstrumentCalibrationValue.selectAll();
+        if(selectedMooring != null && parentFile != null)
+        {
+            rows = InstrumentCalibrationValue.selectByCalibrationFileIDAndMooring(parentFile.getDataFilePrimaryKey(), selectedMooring.getMooringID());
+        }
+        else if(selectedMooring == null && parentFile != null)
+        {
+            rows = InstrumentCalibrationValue.selectByCalibrationFileID(parentFile.getDataFilePrimaryKey());
+        }
+        else
+            rows = InstrumentCalibrationValue.selectAll();
     }
 
     public int getRowCount()

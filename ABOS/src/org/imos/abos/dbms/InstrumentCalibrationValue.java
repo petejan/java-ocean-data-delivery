@@ -554,6 +554,24 @@ public class InstrumentCalibrationValue implements Cloneable
         return doSelect(sql);
     }
 
+    /**
+     * select all the calibration values linked to a specified cal file for a specified mooring
+     * @param code
+     * @param mooringID
+     * @return
+     */
+    public static ArrayList<InstrumentCalibrationValue> selectByCalibrationFileIDAndMooring(Integer code, String mooringID)
+    {
+        String sql = selectSQL
+                + " where datafile_pk = "
+                + code
+                + " and mooring_id = "
+                + StringUtilities.quoteString(mooringID)
+                + getDefaultSortOrder()
+                ;
+        return doSelect(sql);
+    }
+
     private static ArrayList<InstrumentCalibrationValue> doSelect(String sql)
     {
         ArrayList<InstrumentCalibrationValue> items = new ArrayList();
