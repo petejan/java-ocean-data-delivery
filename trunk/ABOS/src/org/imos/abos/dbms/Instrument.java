@@ -607,12 +607,37 @@ public class Instrument  implements Cloneable
                         + getDefaultSortOrder());
     }
 
+    /**
+     * select all instruments with a data file linked to the specified mooring
+     * 
+     * @param mooringID
+     * @return
+     */
     public static ArrayList<Instrument> selectDataFilesForMooring(String mooringID)
     {
         return doSelect( selectSQL
                         + " where instrument_id in "
                         + "("
                         + " select distinct instrument_id from instrument_data_files "
+                        + " where mooring_id = "
+                        + StringUtilities.quoteString(mooringID)
+                        + ")"
+                        + getDefaultSortOrder());
+    }
+
+    /**
+     * select all instruments assigned to a mooring regardless of whether they have any
+     * data files linked to them - this can happen with instruments attached to an SBE16
+     *
+     * @param mooringID
+     * @return
+     */
+    public static ArrayList<Instrument> selectInstrumentsAttachedToMooring(String mooringID)
+    {
+        return doSelect( selectSQL
+                        + " where instrument_id in "
+                        + "("
+                        + " select distinct instrument_id from mooring_attached_instruments "
                         + " where mooring_id = "
                         + StringUtilities.quoteString(mooringID)
                         + ")"
