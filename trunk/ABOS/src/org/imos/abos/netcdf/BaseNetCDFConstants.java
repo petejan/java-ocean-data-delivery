@@ -40,10 +40,10 @@ public class BaseNetCDFConstants
     public static String field_trip_id = "" ;
     public static String field_trip_description = "" ;
     public static String project = "Integrated Marine Observing System (IMOS)" ;
-    public static String conventions = "IMOS version 1.2" ;
+    public static String conventions = "CF-1.6;IMOS-1.3" ;
     public static String title = "Pulse 7 Mooring Temperature & Pressure Data" ;
-    public static String institution = "ANMN-NRS" ;
-    public static String source = "Wetlabs WQM" ;
+    public static String institution = "CSIRO" ;
+    public static String source = "" ;
     public static String netcdf_version = "3.6" ;
     public static String quality_control_set = "1." ;
     public static String site_code = "" ;
@@ -68,4 +68,16 @@ public class BaseNetCDFConstants
     public static String acknowledgement = "Data was sourced from the Integrated Marine Observing System (IMOS) - an initiative of the Australian Government being conducted as part of the National Collaborative Research Infrastructure Strategy." ;
     public static String raw_data_file = "" ;
     public static String index = "1." ;
+
+    public static String institution_address = "CSIRO Marine Laboratories, Castray Esp, Hobart, Tasmania 7001, Australia" ;
+    public static String file_version = "Level 1 - Quality Controlled data" ;
+    public static String geospatial_lat_units = "degrees_north" ;
+    public static String geospatial_lon_units = "degrees_east" ;
+    public static String geospatial_vertical_units = "metres" ;
+
+    public static String distribution_statement = "Data may be re-used, provided that related metadata explaining the data has been reviewed by the user, and the data is appropriately	acknowledged. Data, products and services from IMOS are provided 'as is' without any warranty as to fitness for a particular purpose."
+            ;
+
+    public static String citation = "Integrated Marine Observing System. 2010, 'Southern Ocean Time Series (SOTS) data', http://imosmest.aodn.org.au/geonetwork/srv/en/metadata.show?id=11673&currTab=simple"
+            ;
 }

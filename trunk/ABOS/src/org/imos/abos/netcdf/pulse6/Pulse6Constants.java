@@ -1,5 +1,5 @@
 /*
- * IMOS data delivery project
+ * Neonatal Screening Software Project
  * Written by Peter Wiley
  * This code is copyright (c) Peter Wiley 2000 - ?
  * It is made available under the BSD Software Licence in the hope that it may be useful.
@@ -7,7 +7,7 @@
  * Feel free to fix any bugs that you may find.
  */
 
-package org.imos.abos.netcdf.pulse7;
+package org.imos.abos.netcdf.pulse6;
 
 import org.imos.abos.netcdf.BaseNetCDFConstants;
 
@@ -15,18 +15,18 @@ import org.imos.abos.netcdf.BaseNetCDFConstants;
  *
  * @author peter
  */
-public class Pulse7Constants extends BaseNetCDFConstants
+public class Pulse6Constants extends BaseNetCDFConstants
 {
     public static String level = "15" ;
     public static String field_trip_id = "" ;
-    public static String field_trip_description = "Pulse 7 Mooring Recovery" ;
-    public static String site_code = "Pulse 7 Mooring" ;
-    public static String platform_code = "PULSE7" ;
+    public static String field_trip_description = "Pulse 6 Mooring Recovery" ;
+    public static String site_code = "Pulse 6 Mooring" ;
+    public static String platform_code = "PULSE6" ;
 
-    public static String title = "Pulse 7 Mooring Data" ;
+    public static String title = "Pulse 6 Mooring Data" ;
     public static Double geospatial_vertical_max = 4500.0 ;
-    
-    public static String Abstract = "The Pulse 7 mooring was deployed from September 2010 to April 2011 at Lat -46.93, Lon 142.26. "
+
+    public static String Abstract = "The Pulse 6 mooring was deployed from September 2009 to March 2010 at Lat -46.3224, Lon 140.6776. "
                                 + "Moored instruments are deployed by the IMOS Australian Bluewater Observing System (ABOS) Southern Ocean Time Series sub-facility for "
                                 + "time-series observations of physical, biological, and chemical properties, in the Sub-Antarctic Zone southwest of Tasmania, with yearly servicing. "
                                 + "The Southern Ocean Time Series (SOTS) Sub-Facility is responsible for the deployment of Pulse moorings. "
@@ -38,5 +38,4 @@ public class Pulse7Constants extends BaseNetCDFConstants
                                 + "Oceans->Ocean Chemistry->Water Temperature, Oceans->Ocean Optics->Turbidity, Oceans->Salinity/Depth->Salinity"
                                 ;
 
-    
 }

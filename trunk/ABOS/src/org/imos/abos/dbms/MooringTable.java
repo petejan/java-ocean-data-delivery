@@ -22,12 +22,15 @@ import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.table.TableColumnModel;
 import org.apache.log4j.PropertyConfigurator;
 import org.imos.abos.parsers.AbstractDataParser;
+import org.wiley.JDBCAdapter;
 import org.wiley.LabMaster.Common;
+import org.wiley.table.BaseTable;
 import org.wiley.table.DateTimeField;
 import org.wiley.table.EditableBaseTable;
 import org.wiley.table.StringEditor;
 import org.wiley.table.DateTimeEditor;
 import org.wiley.util.SettableCaseJTextField;
+import org.wiley.util.StringUtilities;
 
 public class MooringTable extends EditableBaseTable
 {
@@ -123,6 +126,18 @@ public class MooringTable extends EditableBaseTable
         spareButton3.setVisible(true);
         spareButton3.setEnabled(true);
 
+        spareButton4.setText("Raw Data");
+        spareButton4.setMnemonic('a');
+        spareButton4.setToolTipText("Display raw data summary for this mooring");
+        spareButton4.setVisible(true);
+        spareButton4.setEnabled(true);
+
+        spareButton5.setText("Proc. Data");
+        spareButton5.setMnemonic('p');
+        spareButton5.setToolTipText("Display processed data summary for this mooring");
+        spareButton5.setVisible(true);
+        spareButton5.setEnabled(true);
+
         this.setVisible( true );
     }
 
@@ -182,6 +197,15 @@ public class MooringTable extends EditableBaseTable
 
         spareButton2.setMaximumSize(new Dimension(maxSize,27));
         spareButton2.setPreferredSize(new Dimension(prefSize, 27));
+
+        spareButton3.setMaximumSize(new Dimension(maxSize,27));
+        spareButton3.setPreferredSize(new Dimension(prefSize, 27));
+
+        spareButton4.setMaximumSize(new Dimension(maxSize,27));
+        spareButton4.setPreferredSize(new Dimension(prefSize, 27));
+
+        spareButton5.setMaximumSize(new Dimension(maxSize,27));
+        spareButton5.setPreferredSize(new Dimension(prefSize, 27));
 
     }
 
@@ -353,5 +377,108 @@ public class MooringTable extends EditableBaseTable
             }
         }
     }
-   
+
+    @Override
+    public void spareButton4_actionPerformed(ActionEvent e)
+    {
+        Integer currentRow = getSelectedRowNumber();
+        if(currentRow == null || currentRow < 0)
+        {
+            Common.showMessage(this, "No Row Selection","There is no row selected, data display is not possible.");
+            return;
+        }
+        Mooring selectedRow = (Mooring) collection.getSelectedRow(currentRow);
+        //
+        // check to see if we got a valid row
+        //
+        if(selectedRow == null)
+        {
+            Common.showMessage(this, "No Data","There is no row selected, data display is not possible.");
+            return;
+        }
+
+        String SQL = "select instrument_id, depth, parameter_code, count(*)"
+                    + " from raw_instrument_data"
+                    + " where mooring_id = "
+                    + StringUtilities.quoteString(selectedRow.getMooringID())
+                    + " group by instrument_id, depth, parameter_code"
+                    + " order by depth, instrument_id, parameter_code"
+                    ;
+
+        JDBCAdapter dataSelector = new JDBCAdapter(Common.getConnection());
+        dataSelector.executeQuery(SQL);
+        DataDisplayTable table = new DataDisplayTable();
+        table.setRunStatus(false);
+        table.setDataTitle("Summary of Raw Data For Mooring " + selectedRow.getMooringID());
+        table.setData(dataSelector);
+        table.initialise();
+    }
+
+    @Override
+    public void spareButton5_actionPerformed(ActionEvent e)
+    {
+        Integer currentRow = getSelectedRowNumber();
+        if(currentRow == null || currentRow < 0)
+        {
+            Common.showMessage(this, "No Row Selection","There is no row selected, data display is not possible.");
+            return;
+        }
+        Mooring selectedRow = (Mooring) collection.getSelectedRow(currentRow);
+        //
+        // check to see if we got a valid row
+        //
+        if(selectedRow == null)
+        {
+            Common.showMessage(this, "No Data","There is no row selected, data display is not possible.");
+            return;
+        }
+
+        String SQL = "select instrument_id, depth, parameter_code, count(*)"
+                    + " from processed_instrument_data"
+                    + " where mooring_id = "
+                    + StringUtilities.quoteString(selectedRow.getMooringID())
+                    + " group by instrument_id, depth, parameter_code"
+                    + " order by depth, instrument_id, parameter_code"
+                    ;
+
+        JDBCAdapter dataSelector = new JDBCAdapter(Common.getConnection());
+        dataSelector.executeQuery(SQL);
+        DataDisplayTable table = new DataDisplayTable();
+        table.setRunStatus(false);
+        table.setDataTitle("Summary of Processed Data For Mooring " + selectedRow.getMooringID());
+        table.setData(dataSelector);
+        table.initialise();
+    }
+
+    private class DataDisplayTable extends BaseTable
+    {
+        private String title = "Data Display";
+        private JDBCAdapter collection;
+
+        public void setDataTitle(String text)
+        {
+            title = text;
+        }
+
+        public void setData(JDBCAdapter set)
+        {
+            collection = set;
+        }
+
+        @Override
+        public void initialise()
+        {
+            super.initialise();
+
+            setTitle( title );
+            setDataStore( collection );
+
+            deleteButton.setEnabled(false);
+            insertButton.setEnabled(false);
+            updateButton.setEnabled(false);
+
+            this.setSize(400, 600 );
+            this.setVisible( true );
+        }
+    }
 }
