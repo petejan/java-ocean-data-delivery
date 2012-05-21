@@ -315,10 +315,7 @@ public class WETLabsFLNTUSCalculationForm extends MemoryWindow
             results = (ResultSet) proc.getObject(1);
             ResultSetMetaData resultsMetaData = results.getMetaData();
             int colCount        = resultsMetaData.getColumnCount();
-
-            //AanderraOptodeData dataset = new AanderraOptodeData();
-            //dataset.setInstrumentCalibrationFile(selectedFile);
-
+            
             while (results.next())
             {
                 Vector data = new Vector();

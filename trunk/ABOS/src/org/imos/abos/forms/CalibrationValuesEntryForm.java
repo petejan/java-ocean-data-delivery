@@ -19,6 +19,7 @@ import java.awt.Frame;
 import java.util.TimeZone;
 import javax.swing.JComboBox;
 import javax.swing.JFrame;
+import javax.swing.JOptionPane;
 import javax.swing.JTable;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
@@ -30,6 +31,7 @@ import org.imos.abos.dbms.InstrumentCalibrationFile;
 import org.imos.abos.dbms.InstrumentCalibrationValue;
 import org.imos.abos.dbms.InstrumentCalibrationValueCollection;
 import org.imos.abos.dbms.Mooring;
+import org.imos.abos.dbms.fields.MooringCombo;
 import org.wiley.core.Common;
 import org.wiley.core.forms.MemoryWindow;
 import org.wiley.table.ComboBoxEditor;
@@ -51,6 +53,8 @@ public class CalibrationValuesEntryForm extends MemoryWindow
     private InstrumentCalibrationFile currentCalFile = null;
     private Instrument currentInstrument = null;
     private Mooring selectedMooring = null;
+
+    private InstrumentCalibrationValueCollection collection = null;
 
     /** Creates new form CalibrationValuesEntryForm */
     public CalibrationValuesEntryForm()
@@ -130,6 +134,7 @@ public class CalibrationValuesEntryForm extends MemoryWindow
         calFileDisplayField = new org.wiley.util.basicField();
         jPanel1 = new javax.swing.JPanel();
         runButton = new javax.swing.JButton();
+        cloneButton = new javax.swing.JButton();
         dataScrollPane = new javax.swing.JScrollPane();
         dataTable = new javax.swing.JTable();
         buttonPanel = new javax.swing.JPanel();
@@ -162,6 +167,15 @@ public class CalibrationValuesEntryForm extends MemoryWindow
             }
         });
         jPanel1.add(runButton);
+
+        cloneButton.setText("Clone");
+        cloneButton.setEnabled(false);
+        cloneButton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                cloneButtonActionPerformed(evt);
+            }
+        });
+        jPanel1.add(cloneButton);
 
         org.jdesktop.layout.GroupLayout topPanelLayout = new org.jdesktop.layout.GroupLayout(topPanel);
         topPanel.setLayout(topPanelLayout);
@@ -271,12 +285,63 @@ public class CalibrationValuesEntryForm extends MemoryWindow
             Common.showMessage(this,"No Selected Mooring","You must select a mooring before selecting/adding data");
             return;
         }
+
+        cloneButton.setEnabled(true);
         fetchDataForFile();
     }//GEN-LAST:event_runButtonActionPerformed
 
     private void formWindowClosing(java.awt.event.WindowEvent evt) {//GEN-FIRST:event_formWindowClosing
         cleanup();
     }//GEN-LAST:event_formWindowClosing
+
+    private void cloneButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_cloneButtonActionPerformed
+        if(selectedMooring == null)
+        {
+            Common.showMessage(this,"No Selected Mooring","You must select a mooring before cloning data");
+            return;
+        }
+
+        String[] ConnectOptionNames = { "Select", "Cancel" };
+        MooringCombo mc = new MooringCombo();
+
+        int selectedOption = JOptionPane.showOptionDialog(
+                                                      this,
+                                                      mc,
+                                                      "Select Target Mooring For Values Clone",
+                                                      JOptionPane.DEFAULT_OPTION,
+                                                      JOptionPane.INFORMATION_MESSAGE,
+                                                      null,
+                                                      ConnectOptionNames,
+                                                      ConnectOptionNames[0]
+                                                      )
+                                                      ;
+
+        if (selectedOption == 0)
+        {
+            // got something
+            Mooring targetMooring = mc.getSelectedMooring();
+            if(targetMooring != null)
+            {
+                logger.debug("Selected mooring " + targetMooring.getMooringID());
+                
+                for(int i = 0; i < collection.getRowCount(); i++)
+                {
+                    InstrumentCalibrationValue v = (InstrumentCalibrationValue) collection.getSelectedRow(i);
+                    
+                    try
+                    {
+                        InstrumentCalibrationValue v2 = (InstrumentCalibrationValue) v.clone();
+                        v2.setMooringID(targetMooring.getMooringID());
+                        v2.insert();
+                    }
+                    catch(CloneNotSupportedException cne)
+                    {
+                        logger.error(cne);
+                    }
+                }
+            }
+        }
+    }//GEN-LAST:event_cloneButtonActionPerformed
 
     /**
     * @param args the command line arguments
@@ -321,6 +386,7 @@ public class CalibrationValuesEntryForm extends MemoryWindow
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JPanel buttonPanel;
     private org.wiley.util.basicField calFileDisplayField;
+    private javax.swing.JButton cloneButton;
     private javax.swing.JScrollPane dataScrollPane;
     private javax.swing.JTable dataTable;
     private org.wiley.util.basicField instrumentDisplayField;
@@ -334,7 +400,7 @@ public class CalibrationValuesEntryForm extends MemoryWindow
 
     private void fetchDataForFile()
     {
-        InstrumentCalibrationValueCollection collection = new InstrumentCalibrationValueCollection();
+        collection = new InstrumentCalibrationValueCollection();
         
         collection.setSelectedMooring(selectedMooring);
         collection.setParentCalibrationFile(currentCalFile);
