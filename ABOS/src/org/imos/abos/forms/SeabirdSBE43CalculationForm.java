@@ -406,6 +406,7 @@ public class SeabirdSBE43CalculationForm extends MemoryWindow
             row.setInstrumentID(sourceInstrument.getInstrumentID());
             row.setParameterCode("SALINITY");
             row.setParameterValue(sbe.calculatedSalinityValue);
+            row.setQualityCode("DERIVED");
 
             ok = row.insert();
 

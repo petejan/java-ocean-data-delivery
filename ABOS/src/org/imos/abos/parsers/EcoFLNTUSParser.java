@@ -39,7 +39,7 @@ public class EcoFLNTUSParser extends AbstractDataParser
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
-    protected boolean insertData(Timestamp dataTimestamp, Double dPhaseVal, Double tempVal)
+    protected boolean insertData(Timestamp dataTimestamp, Double chlVal, Double turbVal)
     {
         RawInstrumentData row = new RawInstrumentData();
 
@@ -49,15 +49,15 @@ public class EcoFLNTUSParser extends AbstractDataParser
         row.setLatitude(currentMooring.getLatitudeIn());
         row.setLongitude(currentMooring.getLongitudeIn());
         row.setMooringID(currentMooring.getMooringID());
-        row.setParameterCode("ECO_FLNTUS_CHL");
-        row.setParameterValue(dPhaseVal);
+        row.setParameterCode("ECO_FLNTUS_CHL_VOLT");
+        row.setParameterValue(chlVal);
         row.setSourceFileID(currentFile.getDataFilePrimaryKey());
         row.setQualityCode("RAW");
 
         boolean ok = row.insert();
 
-        row.setParameterCode("ECO_FLNTUS_TURB");
-        row.setParameterValue(tempVal);
+        row.setParameterCode("ECO_FLNTUS_TURB_VOLT");
+        row.setParameterValue(turbVal);
         row.setSourceFileID(currentFile.getDataFilePrimaryKey());
         row.setQualityCode("RAW");
 
