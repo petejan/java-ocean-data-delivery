@@ -2,4 +2,4 @@
 
 = Details =
 
-http://java-ocean-data-delivery.googlecode.com/svn/wiki/ABOS-db.png
+http://java-ocean-data-delivery.googlecode.com/svn/wiki/ABOS-DB.png
