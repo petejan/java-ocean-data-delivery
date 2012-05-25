@@ -56,7 +56,7 @@ public class AanderraOptodeParser extends AbstractDataParser
 
         boolean ok = row.insert();
 
-        row.setParameterCode("OPTODE_TEMP");
+        row.setParameterCode("OPTODE_TEMP_VOLT");
         row.setParameterValue(tempVal);
         row.setSourceFileID(currentFile.getDataFilePrimaryKey());
         row.setQualityCode("RAW");

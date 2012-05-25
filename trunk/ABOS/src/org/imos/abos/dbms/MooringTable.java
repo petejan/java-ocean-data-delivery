@@ -397,7 +397,7 @@ public class MooringTable extends EditableBaseTable
             return;
         }
 
-        String SQL = "select instrument_id, depth, parameter_code, count(*)"
+        String SQL = "select instrument_id, depth, parameter_code, avg(parameter_value), max(parameter_value), min(parameter_value), count(*)"
                     + " from raw_instrument_data"
                     + " where mooring_id = "
                     + StringUtilities.quoteString(selectedRow.getMooringID())
@@ -433,7 +433,7 @@ public class MooringTable extends EditableBaseTable
             return;
         }
 
-        String SQL = "select instrument_id, depth, parameter_code, count(*)"
+        String SQL = "select instrument_id, depth, parameter_code, avg(parameter_value), max(parameter_value), min(parameter_value), count(*)"
                     + " from processed_instrument_data"
                     + " where mooring_id = "
                     + StringUtilities.quoteString(selectedRow.getMooringID())

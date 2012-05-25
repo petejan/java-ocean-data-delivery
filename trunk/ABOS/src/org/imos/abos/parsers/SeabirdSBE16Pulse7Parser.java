@@ -341,7 +341,7 @@ public class SeabirdSBE16Pulse7Parser extends AbstractDataParser
 
             ok = row.insert();
 
-            row.setParameterCode("PAR");
+            row.setParameterCode("PAR_VOLT");
             row.setParameterValue(PARVal);
             row.setSourceFileID(currentFile.getDataFilePrimaryKey());
             row.setQualityCode("RAW");

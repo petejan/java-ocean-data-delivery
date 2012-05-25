@@ -283,7 +283,7 @@ public class WETLabsPARCalculationForm extends MemoryWindow
                     + sourceInstrument.getInstrumentID()
                     + " and mooring_id = "
                     + StringUtilities.quoteString(selectedMooring.getMooringID())
-                    + " and parameter_code = 'PAR'"
+                    + " and parameter_code = 'PAR_VOLT'"
                     ;
 
         WETLabsPARConstants constants = new WETLabsPARConstants();
