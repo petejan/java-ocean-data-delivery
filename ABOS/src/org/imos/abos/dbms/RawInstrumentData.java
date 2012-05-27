@@ -101,7 +101,7 @@ public class RawInstrumentData  implements Cloneable
         "Longitude",
         "Depth",
         "Param Code",
-        "alue",
+        "Value",
         "Qual Code"
     };
 

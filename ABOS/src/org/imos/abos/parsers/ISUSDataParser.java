@@ -9,6 +9,7 @@
 
 package org.imos.abos.parsers;
 
+import java.math.BigDecimal;
 import java.sql.Timestamp;
 import java.text.DecimalFormat;
 import java.text.ParseException;
@@ -18,6 +19,7 @@ import java.util.GregorianCalendar;
 import java.util.NoSuchElementException;
 import java.util.StringTokenizer;
 import java.util.TimeZone;
+import org.imos.abos.dbms.ArrayInstrumentData;
 import org.imos.abos.dbms.RawInstrumentData;
 import org.wiley.util.DateUtilities;
 
@@ -155,8 +157,31 @@ public class ISUSDataParser extends AbstractDataParser
         row.setParameterValue(NTR_CONC);
         row.setSourceFileID(currentFile.getDataFilePrimaryKey());
         row.setQualityCode("RAW");
-
+        
         boolean ok = row.insert();
+                
+        BigDecimal spec[] = new BigDecimal[256];
+        
+        for(int i=0;i<256;i++)
+        {
+            spec[i] = new BigDecimal(CHANNELString[i]);
+        }
+        
+        ArrayInstrumentData array = new ArrayInstrumentData();
+        array.setDataTimestamp(dataTimestamp);
+        array.setDepth(instrumentDepth);
+        array.setInstrumentID(currentInstrument.getInstrumentID());
+        array.setLatitude(currentMooring.getLatitudeIn());
+        array.setLongitude(currentMooring.getLongitudeIn());
+        array.setMooringID(currentMooring.getMooringID());
+        array.setParameterCode("NTR_SPEC");
+        array.setParameterValue(spec);
+        array.setSourceFileID(currentFile.getDataFilePrimaryKey());
+        array.setQualityCode("RAW");
+
+        ok |= array.insert();
+        
+        logger.debug(row.getDataTimestamp() + " " + array.getDataTimestamp());
     }
 
 }
