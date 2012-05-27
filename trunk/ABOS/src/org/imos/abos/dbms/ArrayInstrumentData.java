@@ -13,35 +13,30 @@ package org.imos.abos.dbms;
  *
  * @author peter
  */
-import java.sql.Date;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
-import java.sql.Timestamp;
+import java.math.BigDecimal;
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.TimeZone;
 import java.util.Vector;
+import java.util.logging.Level;
 import org.apache.log4j.Logger;
+import org.apache.log4j.PropertyConfigurator;
 import org.wiley.LabMaster.Common;
 import org.wiley.util.SQLWrapper;
 import org.wiley.util.StringUtilities;
 
-public class ProcessedInstrumentData  implements Cloneable
+public class ArrayInstrumentData  implements Cloneable
 {
 
-    public ProcessedInstrumentData()
+    public ArrayInstrumentData()
     {
         TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
     }
 
-    /**
-     * delete all data that was derived from the specified file ID
-     * @param instrumentDataFileID
-     * @return
-     */
     public static boolean deleteDataForFile(Integer instrumentDataFileID)
     {
-        String deleteSQL = "delete from processed_instrument_data"
-                + " where source_file_id = "
+        String deleteSQL = "delete from array_instrument_data"
+                + " where instrument_id = "
                 + instrumentDataFileID
                 ;
 
@@ -49,48 +44,8 @@ public class ProcessedInstrumentData  implements Cloneable
         return success;
     }
 
-    /**
-     * delete all data for the specified instrument and mooring
-     * @param mooring
-     * @param instrument
-     * @return
-     */
-    public static boolean deleteDataForMooringAndInstrument(String mooring, Integer instrument)
-    {
-        String deleteSQL = "delete from processed_instrument_data"
-                + " where instrument_id = "
-                + instrument
-                + " and mooring_id = "
-                + StringUtilities.quoteString(mooring)
-                ;
-
-        boolean success = Common.executeSQL(deleteSQL);
-        return success;
-    }
-
-    /**
-     * delete all data for the specified instrument and mooring and parameter
-     * @param mooring
-     * @param instrument
-     * @return
-     */
-    public static boolean deleteDataForMooringAndInstrumentAndParameter(String mooring, Integer instrument, String param)
-    {
-        String deleteSQL = "delete from processed_instrument_data"
-                + " where instrument_id = "
-                + instrument
-                + " and mooring_id = "
-                + StringUtilities.quoteString(mooring)
-                + " and parameter_code = "
-                + StringUtilities.quoteString(param)
-                ;
-
-        boolean success = Common.executeSQL(deleteSQL);
-        return success;
-    }
-
     private boolean isNew = false;
-    private static Logger logger = Logger.getLogger(ProcessedInstrumentData.class.getName());
+    private static Logger logger = Logger.getLogger(ArrayInstrumentData.class.getName());
 
     private String message = "";
 
@@ -133,7 +88,7 @@ public class ProcessedInstrumentData  implements Cloneable
     private Double longitude;
     private Double depth;
     private String parameterCode;
-    private Double parameterValue;
+    private BigDecimal[] parameterValue;
     private String qualityCode;
 
     private static String[] columnNames = new String[]
@@ -160,7 +115,7 @@ public class ProcessedInstrumentData  implements Cloneable
         Double.class,
         Double.class,
         String.class,
-        Double.class,
+        BigDecimal[].class,
         String.class
     };
 
@@ -175,12 +130,12 @@ public class ProcessedInstrumentData  implements Cloneable
                 + " parameter_code,"
                 + " parameter_value,"
                 + " quality_code"
-                + " from processed_instrument_data"
+                + " from array_instrument_data"
                 ;
 
 
 
-    private static String insertSQL  = "insert into processed_instrument_data"
+    private static String insertSQL  = "insert into array_instrument_data"
             + "("
             + " source_file_id,"
             + " instrument_id,"
@@ -206,7 +161,7 @@ public class ProcessedInstrumentData  implements Cloneable
 
     public static String getUpdateSQL()
     {
-        return "update processed_instrument_data set "
+        return "update array_instrument_data set "
                 + " source_file_id = ?,"
                 //+ " instrument_id = ?,"
                 + " mooring_id = ?,"
@@ -225,7 +180,7 @@ public class ProcessedInstrumentData  implements Cloneable
 
     public static String getDeleteSQL()
     {
-        return "delete from processed_instrument_data"
+        return "delete from array_instrument_data"
                 + " where instrument_id = ?"
                 + " and data_timestamp = ?"
                 + " and parameter_code = ?"
@@ -239,7 +194,7 @@ public class ProcessedInstrumentData  implements Cloneable
 
     public static String getTableName()
     {
-        return "processed_instrument_data";
+        return "array_instrument_data";
     }
 
     public String getLastErrorMessage()
@@ -280,7 +235,7 @@ public class ProcessedInstrumentData  implements Cloneable
         try
         {
             int i = 1;
-
+            
             psql.setInt(i++, instrumentID);
             psql.setTimestamp(i++, dataTimestamp);
             psql.setString(i++, parameterCode);
@@ -338,7 +293,7 @@ public class ProcessedInstrumentData  implements Cloneable
 
     protected boolean setColumn(int aColumn, Object value)
     {
-
+        
         if(aColumn == 0)
             return setSourceFileID(value);
         else if(aColumn == 1)
@@ -356,7 +311,7 @@ public class ProcessedInstrumentData  implements Cloneable
         else if(aColumn == 7)
             return setParameterCode((String)value);
         else if(aColumn == 8)
-            return setParameterValue(value);
+            return false;//setParameterValue(value);
         else if(aColumn == 9)
             return setQualityCode(value);
         else
@@ -382,7 +337,7 @@ public class ProcessedInstrumentData  implements Cloneable
             isEdited = true;
             return true;
         }
-
+        
         return false;
     }
 
@@ -465,14 +420,16 @@ public class ProcessedInstrumentData  implements Cloneable
             int i = 1;
 
             psql.setInt(i++, sourceFileID);
-
+            
             psql.setString(i++, mooringID);
-
+            
             psql.setDouble(i++, latitude);
             psql.setDouble(i++, longitude);
             psql.setDouble(i++, depth);
-
-            psql.setDouble(i++, parameterValue);
+            
+            Array array = Common.getConnection().createArrayOf("Numeric", parameterValue);
+            psql.setArray(i++, array);
+            
             psql.setString(i++, qualityCode);
 
             psql.setInt(i++, instrumentID);
@@ -512,7 +469,16 @@ public class ProcessedInstrumentData  implements Cloneable
         setLongitude( (Number) currentRow.elementAt(i++) );
         setDepth( (Number) currentRow.elementAt(i++) );
         setParameterCode((String) currentRow.elementAt(i++));
-        setParameterValue( (Number) currentRow.elementAt(i++) );
+        Array a = (Array)currentRow.elementAt(i++);
+        try
+        {
+            logger.debug("returned " + a.getBaseTypeName() + " " + a);
+            setParameterValue( (BigDecimal[])a.getArray() );
+        }
+        catch (SQLException ex)
+        {
+            logger.error(ex);
+        }
         setQualityCode((String) currentRow.elementAt(i++));
 
         isNew = false;
@@ -576,7 +542,7 @@ public class ProcessedInstrumentData  implements Cloneable
         else
             return false;
     }
-
+    
     public String getMooringID()
     {
         return mooringID;
@@ -704,7 +670,7 @@ public class ProcessedInstrumentData  implements Cloneable
             return parameterCode.trim();
     }
 
-    public boolean setParameterValue(Object value)
+    public boolean setParameterValue(Object[] value)
     {
         if(value == null)
         {
@@ -712,9 +678,9 @@ public class ProcessedInstrumentData  implements Cloneable
             isEdited = true;
             return true;
         }
-        if(value instanceof Number)
+        if(value instanceof BigDecimal[])
         {
-            parameterValue = ((Number) value).doubleValue();
+            parameterValue = ((BigDecimal[]) value);
             isEdited = true;
             return true;
         }
@@ -722,27 +688,30 @@ public class ProcessedInstrumentData  implements Cloneable
         return false;
     }
 
-    public Double getParameterValue()
+    public BigDecimal[] getParameterValue()
     {
         return parameterValue;
     }
 
-
-    private static ArrayList<ProcessedInstrumentData> doSelect(String sql)
+    
+    private static ArrayList<ArrayInstrumentData> doSelect(String sql)
     {
-        ArrayList<ProcessedInstrumentData> items = new ArrayList();
+        ArrayList<ArrayInstrumentData> items = new ArrayList();
 
         query.setConnection( Common.getConnection() );
         query.executeQuery( sql);
 
             Vector dataSet = query.getData();
+            
+            System.out.println("ArrayInstrumentData::doSelect " + sql + " " + dataSet.size());
+            
             if ( ! ( dataSet == null ) )
             {
                 for( int i = 0; i < dataSet.size(); i++ )
                 {
                     Vector currentRow = (Vector) dataSet.elementAt( i );
 
-                    ProcessedInstrumentData row = new ProcessedInstrumentData();
+                    ArrayInstrumentData row = new ArrayInstrumentData();
                     row.create( currentRow );
 
                     items.add(row);
@@ -756,13 +725,13 @@ public class ProcessedInstrumentData  implements Cloneable
      * NB: This is HIGHLY undesirable for this table
      * @return
      */
-    public static ArrayList<ProcessedInstrumentData> selectAll()
+    public static ArrayList<ArrayInstrumentData> selectAll()
     {
         return doSelect( selectSQL
                         + getDefaultSortOrder());
     }
 
-    public static ArrayList<ProcessedInstrumentData> selectByInstrument(Integer ID)
+    public static ArrayList<ArrayInstrumentData> selectByInstrument(Integer ID)
     {
         return doSelect( selectSQL
                         + " where instrument_id = "
@@ -770,7 +739,7 @@ public class ProcessedInstrumentData  implements Cloneable
                         + getDefaultSortOrder());
     }
 
-    public static ArrayList<ProcessedInstrumentData> selectBySourceFile(Integer ID)
+    public static ArrayList<ArrayInstrumentData> selectBySourceFile(Integer ID)
     {
         return doSelect( selectSQL
                         + " where source_file_id = "
@@ -778,7 +747,7 @@ public class ProcessedInstrumentData  implements Cloneable
                         + getDefaultSortOrder());
     }
 
-    public static ArrayList<ProcessedInstrumentData> selectByMooring(String ID)
+    public static ArrayList<ArrayInstrumentData> selectByMooring(String ID)
     {
         return doSelect( selectSQL
                         + " where mooring_id = "
@@ -786,7 +755,7 @@ public class ProcessedInstrumentData  implements Cloneable
                         + getDefaultSortOrder());
     }
 
-    public static ArrayList<ProcessedInstrumentData> selectByParameterCode(String ID)
+    public static ArrayList<ArrayInstrumentData> selectByParameterCode(String ID)
     {
         return doSelect( selectSQL
                         + " where parameter_code = "
@@ -794,13 +763,47 @@ public class ProcessedInstrumentData  implements Cloneable
                         + getDefaultSortOrder());
     }
 
-    public static ArrayList<ProcessedInstrumentData> selectByParameterCodeAndMooring(String param, String mooring)
+    public static ArrayList<ArrayInstrumentData> selectByParameterCodeAndMooring(String param, String mooring)
     {
         return doSelect( selectSQL
                         + " where mooring_id = "
                         + StringUtilities.quoteString(mooring)
                         + " and parameter_code = "
                         + StringUtilities.quoteString(param)
+                        + getDefaultSortOrder());
+    }
+
+    /**
+     * select data at 1 hour intervals for the specified instrument, mooring and parameter code
+     *
+     * @param insID
+     * @param moorID
+     * @param paramCode
+     * @return an ArrayList of RawInstrumentData
+     */
+    public static ArrayList<ArrayInstrumentData> selectHourDataForInstrumentAndMooringAndParameter(Integer insID, String moorID, String paramCode)
+    {
+        String sql = "select distinct on (date_trunc('hour',data_timestamp) )"
+                    + " source_file_id,"
+                    + " instrument_id,"
+                    + " mooring_id,"
+                    + " date_trunc('hour',data_timestamp) as data_timestamp,"
+                    + " latitude,"
+                    + " longitude,"
+                    + " depth,"
+                    + " parameter_code,"
+                    + " parameter_value,"
+                    + " quality_code"
+                    + " from array_instrument_data"
+                    ;
+
+        return doSelect( sql
+                        + " where instrument_id = "
+                        + insID
+                        + " and mooring_id = "
+                        + StringUtilities.quoteString(moorID)
+                        + " and parameter_code = "
+                        + StringUtilities.quoteString(paramCode)
                         + getDefaultSortOrder());
     }
 
@@ -875,7 +878,10 @@ public class ProcessedInstrumentData  implements Cloneable
             psql.setDouble(i++, longitude);
             psql.setDouble(i++, depth);
             psql.setString(i++, parameterCode);
-            psql.setDouble(i++, parameterValue);
+ 
+            Array array = Common.getConnection().createArrayOf("numeric", parameterValue);
+            psql.setArray(i++, array);
+
             psql.setString(i++, qualityCode);
 
             int affectedRows = psql.executeUpdate();
@@ -899,6 +905,32 @@ public class ProcessedInstrumentData  implements Cloneable
             return false;
         }
     }
-}
+    
+    public static void main(String[] args)
+    {
+        String $HOME = System.getProperty("user.home");
 
+        if(args.length == 0)
+        {
+            PropertyConfigurator.configure($HOME + "/ABOS/log4j.properties");
+            org.wiley.core.Common.build($HOME + "/ABOS/ABOS.conf");
+        }
+        
+        ArrayInstrumentData d = new ArrayInstrumentData();
+        
+        ArrayList<ArrayInstrumentData> al =d.selectAll();
+        
+        System.out.println("selected " + al.size());
+        
+        for(ArrayInstrumentData s : al)
+        {
+            System.out.print(s.getDataTimestamp() + " data (");
+            for(BigDecimal sd : s.getParameterValue())
+            {
+                System.out.print(" " + sd);
+            }
+            System.out.println(")");
+        }
+    }
+}
 
