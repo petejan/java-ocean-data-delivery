@@ -47,13 +47,12 @@ import org.wiley.util.TextFileLogger;
  *
  * @author peter
  */
-public class SeabirdSBE37CalculationForm extends MemoryWindow
+public class SeabirdSBE37CalculationForm  extends MemoryWindow implements DataProcessor
 {
 
     private static Logger logger = Logger.getLogger(SeabirdSBE37CalculationForm.class.getName());
 
     private Mooring selectedMooring =null;
-    private InstrumentCalibrationFile selectedFile = null;
     private Instrument sourceInstrument = null;
     private Instrument targetInstrument = null;
 
@@ -231,6 +230,8 @@ public class SeabirdSBE37CalculationForm extends MemoryWindow
                                                                       ;
         }
 
+        logger.debug(paramToString());
+        
         final Color bg = runButton.getBackground();
         runButton.setText("Running...");
         runButton.setBackground(Color.RED);
@@ -241,6 +242,8 @@ public class SeabirdSBE37CalculationForm extends MemoryWindow
             public void run()
             {
                 calculateDataValues();
+                displayData();
+
                 SwingUtilities.invokeLater(new Runnable()
                 {
                     @Override
@@ -258,7 +261,7 @@ public class SeabirdSBE37CalculationForm extends MemoryWindow
         worker.start();
 }//GEN-LAST:event_runButtonActionPerformed
 
-    private void calculateDataValues()
+    public void calculateDataValues()
     {
 
         Connection conn = null;
@@ -338,7 +341,6 @@ public class SeabirdSBE37CalculationForm extends MemoryWindow
         }
 
         insertData();
-        displayData();
     }
 
     private void insertData()
@@ -494,6 +496,29 @@ public class SeabirdSBE37CalculationForm extends MemoryWindow
 
         SeabirdSBE37CalculationForm form = new SeabirdSBE37CalculationForm();
         form.initialise();
+    }
+
+    @Override
+    public String paramToString()
+    {
+        return "MOORING=" + selectedMooring.getMooringID() + ",SRC="+sourceInstrument.getInstrumentID() + ",TARGET="+targetInstrument.getInstrumentID();
+    }
+
+    @Override
+    public boolean setupFromString(String s)
+    {
+        Mooring m = new Mooring();
+        String mooringId = "PULSE_7";
+        int srcInstrumentId = 4;
+        int tgtInstrumentId = 4;
+        
+        selectedMooring = m.selectByMooringID(mooringId);
+        Instrument i = new Instrument();
+        
+        sourceInstrument = i.selectByInstrumentID(srcInstrumentId);
+        targetInstrument = i.selectByInstrumentID(srcInstrumentId);
+        
+        return true;
     }
 
     private class SBE37Data
