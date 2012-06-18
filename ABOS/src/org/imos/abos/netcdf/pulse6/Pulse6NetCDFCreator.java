@@ -35,8 +35,8 @@ public class Pulse6NetCDFCreator extends BaseNetCDFCreator
 
         if(args.length == 0)
         {
-            PropertyConfigurator.configure($HOME + "/ABOS/log4j.properties");
-            Common.build($HOME + "/ABOS/ABOS.conf");
+            PropertyConfigurator.configure("log4j.properties");
+            Common.build("ABOS.conf");
         }
 
         Pulse6NetCDFCreator cdf = new Pulse6NetCDFCreator();
@@ -103,6 +103,7 @@ public class Pulse6NetCDFCreator extends BaseNetCDFCreator
 
         dataFile.addGlobalAttribute("site_code", Pulse6Constants.site_code);
         dataFile.addGlobalAttribute("platform_code", Pulse6Constants.platform_code);
+        dataFile.addGlobalAttribute("deployment_code", Pulse6Constants.deployment_code);
 
         dataFile.addGlobalAttribute("title", Pulse6Constants.title);
         dataFile.addGlobalAttribute("abstract", Pulse6Constants.Abstract);

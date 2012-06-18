@@ -1037,7 +1037,8 @@ public class InstrumentCalibrationFile  implements Cloneable
             if(sp != null)
             {
                 String tempPath = sp.getParameterValue();
-                tempFileName = tempPath + File.separator + fileName;
+                // tempFileName = tempPath + File.separator + fileName;
+                tempFileName = fileName;
             }
 
             try

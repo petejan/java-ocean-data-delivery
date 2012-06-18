@@ -13,12 +13,7 @@ import java.io.IOException;
 import java.sql.Timestamp;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.GregorianCalendar;
-import java.util.TimeZone;
-import java.util.Vector;
+import java.util.*;
 import org.apache.log4j.Logger;
 import org.imos.abos.dbms.Instrument;
 import org.imos.abos.dbms.Mooring;
@@ -27,10 +22,7 @@ import org.imos.abos.netcdf.pulse7.Pulse7NetCDFCreator;
 import org.wiley.core.Common;
 import org.wiley.util.SQLWrapper;
 import org.wiley.util.StringUtilities;
-import ucar.ma2.ArrayFloat;
-import ucar.ma2.ArrayInt;
-import ucar.ma2.DataType;
-import ucar.ma2.InvalidRangeException;
+import ucar.ma2.*;
 import ucar.nc2.Dimension;
 import ucar.nc2.NetcdfFileWriteable;
 
@@ -159,14 +151,14 @@ public abstract class BaseNetCDFCreator
 
     protected void writeBaseVariableAttributes()
     {
-        dataFile.addVariableAttribute("time", "name", "TIME");
-        dataFile.addVariableAttribute("time", "standard_name", "time");
-        dataFile.addVariableAttribute("time", "units", "hours since 1950-01-01T00:00:00Z");
-        dataFile.addVariableAttribute("time", "axis", "T");
-        dataFile.addVariableAttribute("time", "valid_min", 0.0);
-        dataFile.addVariableAttribute("time", "valid_max", 999999999);
-        dataFile.addVariableAttribute("time", "calendar", "gregorian");
-        dataFile.addVariableAttribute("time", "quality_control_set", 1.0);
+        dataFile.addVariableAttribute("TIME", "name", "TIME");
+        dataFile.addVariableAttribute("TIME", "standard_name", "TIME");
+        dataFile.addVariableAttribute("TIME", "units", "days since 1950-01-01T00:00:00Z");
+        dataFile.addVariableAttribute("TIME", "axis", "T");
+        dataFile.addVariableAttribute("TIME", "valid_min", 0.0);
+        dataFile.addVariableAttribute("TIME", "valid_max", 999999999);
+        dataFile.addVariableAttribute("TIME", "calendar", "gregorian");
+        dataFile.addVariableAttribute("TIME", "quality_control_set", 1.0);
     }
 
     protected void writeGlobalAttributes()
@@ -212,16 +204,17 @@ public abstract class BaseNetCDFCreator
         ParameterCodes param = ParameterCodes.selectByID(paramCode);
         if (ins != null)
         {
-            dataFile.addVariableAttribute(variable, "Make", ins.getMake());
-            dataFile.addVariableAttribute(variable, "Model", ins.getModel());
-            dataFile.addVariableAttribute(variable, "Serial_No", ins.getSerialNumber());
+            dataFile.addVariableAttribute(variable, "sensor", ins.getMake() + "-" + ins.getModel());
+            dataFile.addVariableAttribute(variable, "sensor_serial_number", ins.getSerialNumber());
         }
         dataFile.addVariableAttribute(variable, "name", param.getDescription());
         dataFile.addVariableAttribute(variable, "units", param.getUnits());
         dataFile.addVariableAttribute(variable, "standard_name", param.getNetCDFName());
         dataFile.addVariableAttribute(variable, "valid_min", -999999);
         dataFile.addVariableAttribute(variable, "valid_max", 999999);
+        dataFile.addVariableAttribute(variable, "_FillValue", Double.NaN);
         dataFile.addVariableAttribute(variable, "quality_control_set", 1.0);
+        dataFile.addVariableAttribute(variable, "csiro_instrument_id", instrumentID);
     }
 
     protected void createCDFFile()
@@ -248,11 +241,11 @@ public abstract class BaseNetCDFCreator
             writeMooringSpecificAttributes();
             //add dimensions
             Dimension lvlDim = dataFile.addDimension("level", depthArray.size());
-            Dimension timeDim = dataFile.addDimension("time", RECORD_COUNT);
+            Dimension timeDim = dataFile.addDimension("TIME", RECORD_COUNT);
             ArrayList dims = null;
             // Define the coordinate variables.
             dataFile.addVariable("level", DataType.FLOAT, new Dimension[]{lvlDim});
-            dataFile.addVariable("time", DataType.INT, new Dimension[]{timeDim});
+            dataFile.addVariable("TIME", DataType.DOUBLE, new Dimension[]{timeDim});
             // Define the netCDF variables for the pressure and temperature
             // data.
             dims = new ArrayList();
@@ -263,7 +256,7 @@ public abstract class BaseNetCDFCreator
             //
             writeBaseVariableAttributes();
             ArrayFloat.D1 depths = new ArrayFloat.D1(lvlDim.getLength());
-            ArrayInt.D1 times = new ArrayInt.D1(timeDim.getLength());
+            ArrayDouble.D1 times = new ArrayDouble.D1(timeDim.getLength());
             for (int j = 0; j < lvlDim.getLength(); j++)
             {
                 Double currentDepth = depthArray.get(j);
@@ -275,12 +268,14 @@ public abstract class BaseNetCDFCreator
             {
                 Timestamp ts = timeArray.get(i);
                 long offsetTime = (ts.getTime() - anchorTime) / 1000;
-                int elapsedHours = (int) offsetTime / 3600;
-                times.set(i, elapsedHours);
+                double elapsedDays = (double) offsetTime / 3600 / 24;
+                times.set(i, elapsedDays);
             }
             // Create the data.
             ArrayList<String> varNames = new ArrayList();
             ArrayList<ArrayFloat.D1> stuff = new ArrayList();
+            HashSet varNameList = new HashSet();
+            
             for (int lvl = 0; lvl < depthArray.size(); lvl++)
             {
                 ArrayList<ArrayList> masterSet = getDataForDepth(depthArray.get(lvl));
@@ -293,11 +288,20 @@ public abstract class BaseNetCDFCreator
                         ArrayFloat.D1 dataTemp = new ArrayFloat.D1(RECORD_COUNT);
                         ArrayList<ParamDatum> dataSet = masterSet.get(setSize);
                         ParamDatum d = dataSet.get(0);
-                        String varName = d.paramCode + "_DEPTH_" + depthArray.get(lvl).intValue() + "_" + d.instrumentID;
+                        String varName = d.paramCode + "_" + depthArray.get(lvl).intValue();
+                        int varSeqNo = 1;
+                        while (!varNameList.add(varName + "_" + varSeqNo))
+                        {
+                            varSeqNo++;
+                        }
+                        varName += "_" + varSeqNo;
+                        
                         logger.debug("Processing instrument/parameter " + varName);
                         varNames.add(varName);
                         dataFile.addVariable(varName, DataType.FLOAT, dims);
                         addVariableAttributes(d.instrumentID, d.paramCode, varName);
+                        dataFile.addVariableAttribute(varName, "sensor_depth", depthArray.get(lvl).intValue());
+
                         for (int record = 0; record < RECORD_COUNT; record++)
                         {
                             Timestamp currentTime = timeArray.get(record);
@@ -333,7 +337,7 @@ public abstract class BaseNetCDFCreator
             // A newly created Java integer array to be initialized to zeros.
             int[] origin = new int[varNames.size() + 2];
             dataFile.write("level", depths);
-            dataFile.write("time", times);
+            dataFile.write("TIME", times);
             for (int i = 0; i < varNames.size(); i++)
             {
                 dataFile.write(varNames.get(i), origin, stuff.get(i));

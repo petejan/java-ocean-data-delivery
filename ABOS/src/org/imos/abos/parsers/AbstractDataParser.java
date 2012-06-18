@@ -125,7 +125,8 @@ public abstract class AbstractDataParser
         int rowCount = 0;
         int parseFailures = 0;
         String $HOME = System.getProperty("user.home");
-        TextFileLogger errorlogger = new TextFileLogger($HOME + "/" + fileName.trim() + "_errors", "csv");
+        //TextFileLogger errorlogger = new TextFileLogger($HOME + "/" + fileName.trim() + "_errors", "csv");
+        TextFileLogger errorlogger = new TextFileLogger(fileName.trim() + "_errors", "csv");
         try
         {
             errorlogger.open();

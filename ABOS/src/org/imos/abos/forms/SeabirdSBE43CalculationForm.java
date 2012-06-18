@@ -396,7 +396,7 @@ public class SeabirdSBE43CalculationForm extends MemoryWindow
             row.setLatitude(selectedMooring.getLatitudeIn());
             row.setLongitude(selectedMooring.getLongitudeIn());
             row.setMooringID(selectedMooring.getMooringID());
-            row.setParameterCode("DO2_UMOLES_PER_KG");
+            row.setParameterCode("DOX2");
             row.setParameterValue(sbe.calculatedDissolvedOxygenMicroMolesPerKg);
             row.setSourceFileID(sbe.sourceFileID);
             row.setQualityCode("RAW");
@@ -404,7 +404,7 @@ public class SeabirdSBE43CalculationForm extends MemoryWindow
             ok = row.insert();
 
             row.setInstrumentID(sourceInstrument.getInstrumentID());
-            row.setParameterCode("SALINITY");
+            row.setParameterCode("PSAL");
             row.setParameterValue(sbe.calculatedSalinityValue);
             row.setQualityCode("DERIVED");
 
@@ -426,7 +426,8 @@ public class SeabirdSBE43CalculationForm extends MemoryWindow
         SimpleDateFormat df = new SimpleDateFormat("yyyyMMddHHmmss");
         String $HOME = System.getProperty("user.home");
 
-        String filename = $HOME + "/sbe43_data_" + df.format(Common.current());
+        //String filename = $HOME + "/sbe43_data_" + df.format(Common.current());
+        String filename = "sbe43_data_" + df.format(Common.current());
         TextFileLogger file = new TextFileLogger(filename,"csv");
 
         try
@@ -567,8 +568,8 @@ public class SeabirdSBE43CalculationForm extends MemoryWindow
 
         if(args.length == 0)
         {
-            PropertyConfigurator.configure($HOME + "/ABOS/log4j.properties");
-            Common.build($HOME + "/ABOS/ABOS.conf");
+            PropertyConfigurator.configure("log4j.properties");
+            Common.build("ABOS.conf");
         }
 
         SeabirdSBE43CalculationForm form = new SeabirdSBE43CalculationForm();

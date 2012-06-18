@@ -59,8 +59,8 @@ public class Pulse7TemperatureProcessor
 
         if(args.length == 0)
         {
-            PropertyConfigurator.configure($HOME + "/ABOS/log4j.properties");
-            Common.build($HOME + "/ABOS/ABOS.conf");
+            PropertyConfigurator.configure("log4j.properties");
+            Common.build("ABOS.conf");
         }
 
         Pulse7TemperatureProcessor cdf = new Pulse7TemperatureProcessor();
@@ -179,7 +179,7 @@ public class Pulse7TemperatureProcessor
            
             //add dimensions
             Dimension lvlDim = dataFile.addDimension("level", depthArray.size());
-            Dimension timeDim = dataFile.addDimension("time",RECORD_COUNT);
+            Dimension timeDim = dataFile.addDimension("TIME",RECORD_COUNT);
 
             ArrayList dims = null;
 
@@ -189,7 +189,7 @@ public class Pulse7TemperatureProcessor
                     {
                         lvlDim
                     });
-            dataFile.addVariable("time", DataType.INT, new Dimension[]
+            dataFile.addVariable("TIME", DataType.INT, new Dimension[]
                     {
                         timeDim
                     });
@@ -323,7 +323,7 @@ public class Pulse7TemperatureProcessor
             int[] origin = new int[4];
 
             dataFile.write("level", depths);
-            dataFile.write("time", times);
+            dataFile.write("TIME", times);
             dataFile.write("pressure", origin, dataPres);
             dataFile.write("temperature", origin, dataTemp);
 
@@ -512,14 +512,14 @@ public class Pulse7TemperatureProcessor
 
 
 
-        dataFile.addVariableAttribute("time", "name","TIME");
-        dataFile.addVariableAttribute("time", "standard_name","time");
-        dataFile.addVariableAttribute("time", "units","hours since 1950-01-01T00:00:00Z");
-        dataFile.addVariableAttribute("time", "axis","T");
-        dataFile.addVariableAttribute("time", "valid_min",0.0);
-        dataFile.addVariableAttribute("time", "valid_max",999999999);
-        dataFile.addVariableAttribute("time", "calendar","gregorian");
-        dataFile.addVariableAttribute("time", "quality_control_set",1.0);
+        dataFile.addVariableAttribute("TIME", "name","TIME");
+        dataFile.addVariableAttribute("TIME", "standard_name","TIME");
+        dataFile.addVariableAttribute("TIME", "units","hours since 1950-01-01T00:00:00Z");
+        dataFile.addVariableAttribute("TIME", "axis","T");
+        dataFile.addVariableAttribute("TIME", "valid_min",0.0);
+        dataFile.addVariableAttribute("TIME", "valid_max",999999999);
+        dataFile.addVariableAttribute("TIME", "calendar","gregorian");
+        dataFile.addVariableAttribute("TIME", "quality_control_set",1.0);
 
         dataFile.addVariableAttribute("level", "units", "metres below surface (nominal)");
 

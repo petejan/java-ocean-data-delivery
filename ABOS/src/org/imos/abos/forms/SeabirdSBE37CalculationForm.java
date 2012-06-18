@@ -356,24 +356,24 @@ public class SeabirdSBE37CalculationForm extends MemoryWindow
             row.setLatitude(selectedMooring.getLatitudeIn());
             row.setLongitude(selectedMooring.getLongitudeIn());
             row.setMooringID(selectedMooring.getMooringID());
-            row.setParameterCode("WATER_TEMP");
+            row.setParameterCode("TEMP");
             row.setParameterValue(sbe.temperatureValue);
             row.setSourceFileID(sbe.sourceFileID);
             row.setQualityCode("RAW");
 
             ok = row.insert();
 
-            row.setParameterCode("WATER_PRESSURE");
+            row.setParameterCode("PRES");
             row.setParameterValue(sbe.pressureValue);
 
             ok = row.insert();
 
-            row.setParameterCode("CONDUCTIVITY");
+            row.setParameterCode("CNDC");
             row.setParameterValue(sbe.conductivityValue);
 
             ok = row.insert();
             
-            row.setParameterCode("SALINITY");
+            row.setParameterCode("PSAL");
             row.setParameterValue(sbe.calculatedSalinityValue);
             row.setQualityCode("DERIVED");
 
@@ -387,21 +387,17 @@ public class SeabirdSBE37CalculationForm extends MemoryWindow
         SimpleDateFormat df = new SimpleDateFormat("yyyyMMddHHmmss");
         String $HOME = System.getProperty("user.home");
 
-        String filename = $HOME + "/sbe37_data_" + df.format(Common.current());
+        //String filename = $HOME + "/sbe37_data_" + df.format(Common.current());
+        String filename = "sbe37_data_" + df.format(Common.current());
         TextFileLogger file = new TextFileLogger(filename,"csv");
 
         try
         {
             String header = "Timestamp,"
-                            + "SBE43 Volts,"
-                            + " Salinity Temp,"
-                            + " Salinity Conduct,"
-                            + " Salinity Press,"
+                            + " Temp,"
+                            + " Conduct,"
+                            + " Press,"
                             + " Calc Salinity,"
-                            + " Calc Oxygen (ml/l),"
-                            + " Calc Oxygen (uM/kg),"
-                            + " Calc Oxy Sol (ml/l),"
-                            + " Calc density"
                             ;
 
             file.open();
@@ -492,8 +488,8 @@ public class SeabirdSBE37CalculationForm extends MemoryWindow
 
         if(args.length == 0)
         {
-            PropertyConfigurator.configure($HOME + "/ABOS/log4j.properties");
-            Common.build($HOME + "/ABOS/ABOS.conf");
+            PropertyConfigurator.configure("log4j.properties");
+            Common.build("ABOS.conf");
         }
 
         SeabirdSBE37CalculationForm form = new SeabirdSBE37CalculationForm();

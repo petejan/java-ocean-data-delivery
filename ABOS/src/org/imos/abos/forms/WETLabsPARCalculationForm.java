@@ -344,7 +344,8 @@ public class WETLabsPARCalculationForm extends MemoryWindow
     {
         String $HOME = System.getProperty("user.home");
 
-        String filename = $HOME + "/WETLabsPAR_data";
+        //String filename = $HOME + "/WETLabsPAR_data";
+        String filename = "WETLabsPAR_data";
         TextFileLogger file = new TextFileLogger(filename,"csv");
 
         try
@@ -429,8 +430,8 @@ public class WETLabsPARCalculationForm extends MemoryWindow
 
         if(args.length == 0)
         {
-            PropertyConfigurator.configure($HOME + "/ABOS/log4j.properties");
-            Common.build($HOME + "/ABOS/ABOS.conf");
+            PropertyConfigurator.configure("log4j.properties");
+            Common.build("ABOS.conf");
         }
 
         WETLabsPARCalculationForm form = new WETLabsPARCalculationForm();
