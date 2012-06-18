@@ -973,7 +973,6 @@ public class InstrumentDataFile  implements Cloneable
     public boolean setFileData(Object value)
     {
         SystemParameters sp = SystemParameters.selectByPrimaryKey("TEMP_DIR");
-        System.out.println("setFileData " + sp.getParameterValue() + " " + value);
         if(value == null)
         {
             dataFile = null;
@@ -990,7 +989,8 @@ public class InstrumentDataFile  implements Cloneable
             if(sp != null)
             {
                 String tempPath = sp.getParameterValue();
-                tempFileName = tempPath + File.separator + fileName;
+                // tempFileName = tempPath + File.separator + fileName;
+                tempFileName = fileName;
             }
             
             try

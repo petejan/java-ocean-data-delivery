@@ -53,8 +53,8 @@ public class TestCDF3
 
         if(args.length == 0)
         {
-            PropertyConfigurator.configure($HOME + "/ABOS/log4j.properties");
-            Common.build($HOME + "/ABOS/ABOS.conf");
+            PropertyConfigurator.configure("log4j.properties");
+            Common.build("ABOS.conf");
         }
 
         TestCDF3 cdf = new TestCDF3();
@@ -163,8 +163,8 @@ public class TestCDF3
             Dimension lvlDim = dataFile.addDimension("level", NLVL);
             Dimension latDim = dataFile.addDimension("latitude", NLAT);
             Dimension lonDim = dataFile.addDimension("longitude", NLON);
-            //Dimension timeDim = dataFile.addUnlimitedDimension("time");
-            Dimension timeDim = dataFile.addDimension("time",RECORD_COUNT);
+            //Dimension timeDim = dataFile.addUnlimitedDimension("TIME");
+            Dimension timeDim = dataFile.addDimension("TIME",RECORD_COUNT);
 
             ArrayList dims = null;
 
@@ -181,7 +181,7 @@ public class TestCDF3
                     {
                         lvlDim
                     });
-            dataFile.addVariable("time", DataType.INT, new Dimension[]
+            dataFile.addVariable("TIME", DataType.INT, new Dimension[]
                     {
                         timeDim
                     });
@@ -191,7 +191,7 @@ public class TestCDF3
             dataFile.addVariableAttribute("latitude", "units", "degrees_south");
             dataFile.addVariableAttribute("longitude", "units", "degrees_east");
             dataFile.addVariableAttribute("level", "units", "metres below surface (nominal)");
-            dataFile.addVariableAttribute("time", "units","hours since 1950-01-01T00:00:00Z");
+            dataFile.addVariableAttribute("TIME", "units","hours since 1950-01-01T00:00:00Z");
 
             // Define the netCDF variables for the pressure and temperature
             // data.
@@ -301,7 +301,7 @@ public class TestCDF3
             dataFile.write("latitude", lats);
             dataFile.write("longitude", lons);
             dataFile.write("level", depths);
-            dataFile.write("time", times);
+            dataFile.write("TIME", times);
             dataFile.write("pressure", origin, dataPres);
             dataFile.write("temperature", origin, dataTemp);
 

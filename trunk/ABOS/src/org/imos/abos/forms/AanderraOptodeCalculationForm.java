@@ -428,7 +428,7 @@ public class AanderraOptodeCalculationForm extends MemoryWindow
             pid.setLatitude(selectedMooring.getLatitudeIn());
             pid.setLongitude(selectedMooring.getLongitudeIn());
             pid.setMooringID(selectedMooring.getMooringID());
-            pid.setParameterCode("DO2_UMOLES_PER_KG");
+            pid.setParameterCode("DOX2");
             pid.setParameterValue(row.calculatedDissolvedOxygenPerKg);
             pid.setSourceFileID(row.sourceFileID);
             pid.setQualityCode("RAW");
@@ -436,7 +436,7 @@ public class AanderraOptodeCalculationForm extends MemoryWindow
             ok = pid.insert();
 
             pid.setInstrumentID(sourceInstrument.getInstrumentID());
-            pid.setParameterCode("SALINITY");
+            pid.setParameterCode("PSAL");
             pid.setParameterValue(row.calculatedSalinityValue);
 
             ok = pid.insert();
@@ -449,7 +449,8 @@ public class AanderraOptodeCalculationForm extends MemoryWindow
         SimpleDateFormat df = new SimpleDateFormat("yyyyMMddHHmmss");
         String $HOME = System.getProperty("user.home");
 
-        String filename = $HOME + "/OptodeData_" + df.format(Common.current());
+        //String filename = $HOME + "/OptodeData_" + df.format(Common.current());
+        String filename = "OptodeData_" + df.format(Common.current());
         TextFileLogger file = new TextFileLogger(filename,"csv");
 
         try
@@ -554,8 +555,8 @@ public class AanderraOptodeCalculationForm extends MemoryWindow
 
         if(args.length == 0)
         {
-            PropertyConfigurator.configure($HOME + "/ABOS/log4j.properties");
-            Common.build($HOME + "/ABOS/ABOS.conf");
+            PropertyConfigurator.configure("log4j.properties");
+            Common.build("ABOS.conf");
         }
 
         AanderraOptodeCalculationForm form = new AanderraOptodeCalculationForm();

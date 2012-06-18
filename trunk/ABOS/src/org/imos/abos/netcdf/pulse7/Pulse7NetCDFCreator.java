@@ -36,8 +36,8 @@ public class Pulse7NetCDFCreator extends BaseNetCDFCreator
 
         if(args.length == 0)
         {
-            PropertyConfigurator.configure($HOME + "/ABOS/log4j.properties");
-            Common.build($HOME + "/ABOS/ABOS.conf");
+            PropertyConfigurator.configure("log4j.properties");
+            Common.build("ABOS.conf");
         }
 
         Pulse7NetCDFCreator cdf = new Pulse7NetCDFCreator();
@@ -53,9 +53,9 @@ public class Pulse7NetCDFCreator extends BaseNetCDFCreator
         SimpleDateFormat nameFormatter = new SimpleDateFormat("yyyyMMdd'T'HHmmss'Z'");
         nameFormatter.setTimeZone(tz);
 
-        String filename = System.getProperty("user.home")
-                        + "/"
-                        + Pulse7Constants.PREFIX
+        String filename = //System.getProperty("user.home")
+                        //+ "/"
+                        Pulse7Constants.PREFIX
                         + Pulse7Constants.FACILITY_CODE
                         + Pulse7Constants.DATA_CODE
                         + Pulse7Constants.START_DATE
@@ -104,6 +104,7 @@ public class Pulse7NetCDFCreator extends BaseNetCDFCreator
         
         dataFile.addGlobalAttribute("site_code", Pulse7Constants.site_code);
         dataFile.addGlobalAttribute("platform_code", Pulse7Constants.platform_code);
+        dataFile.addGlobalAttribute("deployment_code", Pulse7Constants.deployment_code);
 
         dataFile.addGlobalAttribute("title", Pulse7Constants.title);
         dataFile.addGlobalAttribute("abstract", Pulse7Constants.Abstract);

@@ -51,7 +51,7 @@ public class TestCDF2
             Dimension lvlDim = dataFile.addDimension("level", NLVL);
             Dimension latDim = dataFile.addDimension("latitude", NLAT);
             Dimension lonDim = dataFile.addDimension("longitude", NLON);
-            Dimension timeDim = dataFile.addUnlimitedDimension("time"); // should not be need second argument
+            Dimension timeDim = dataFile.addUnlimitedDimension("TIME"); // should not be need second argument
 
             ArrayList dims = null;
 

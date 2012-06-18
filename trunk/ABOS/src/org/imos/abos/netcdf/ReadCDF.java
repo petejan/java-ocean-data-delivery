@@ -43,7 +43,7 @@ public class ReadCDF
         Variable varT = ncd.findVariable("TIME");
         if (varT == null)
         {
-            varT = ncd.findVariable("time");
+            varT = ncd.findVariable("TIME");
         }
         if (varT == null)
         {

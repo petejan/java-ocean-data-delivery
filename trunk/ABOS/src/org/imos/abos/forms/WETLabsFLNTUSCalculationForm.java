@@ -409,7 +409,8 @@ public class WETLabsFLNTUSCalculationForm extends MemoryWindow
     {
         String $HOME = System.getProperty("user.home");
 
-        String filename = $HOME + "/WETLabsFLNTUS_data";
+        //String filename = $HOME + "/WETLabsFLNTUS_data";
+        String filename = "WETLabsFLNTUS_data";
         TextFileLogger file = new TextFileLogger(filename,"csv");
 
         try
@@ -504,8 +505,8 @@ public class WETLabsFLNTUSCalculationForm extends MemoryWindow
 
         if(args.length == 0)
         {
-            PropertyConfigurator.configure($HOME + "/ABOS/log4j.properties");
-            Common.build($HOME + "/ABOS/ABOS.conf");
+            PropertyConfigurator.configure("log4j.properties");
+            Common.build("ABOS.conf");
         }
 
         WETLabsFLNTUSCalculationForm form = new WETLabsFLNTUSCalculationForm();

@@ -63,8 +63,8 @@ public class ParameterCodesTable extends EditableBaseTable
 
         if(args.length == 0)
         {
-            PropertyConfigurator.configure($HOME + "/ABOS/log4j.properties");
-            Common.build($HOME + "/ABOS/ABOS.conf");
+            PropertyConfigurator.configure("log4j.properties");
+            Common.build("ABOS.conf");
         }
 
         ParameterCodesTable table = new ParameterCodesTable();
