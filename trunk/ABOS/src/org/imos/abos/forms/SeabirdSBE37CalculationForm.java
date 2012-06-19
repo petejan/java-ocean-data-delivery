@@ -28,6 +28,8 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.TimeZone;
 import java.util.Vector;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
@@ -263,7 +265,7 @@ public class SeabirdSBE37CalculationForm  extends MemoryWindow implements DataPr
 
     public void calculateDataValues()
     {
-
+        logger.info("Calculate " + selectedMooring.getMooringID() + " " + sourceInstrument.toString() + " " + targetInstrument.toString());
         Connection conn = null;
         CallableStatement proc = null;
         ResultSet results = null;
@@ -313,15 +315,20 @@ public class SeabirdSBE37CalculationForm  extends MemoryWindow implements DataPr
 
             results.close();
             proc.close();
+            
+            logger.info("source rows " + dataSet.size());
+        
+            insertData();
+                        
             conn.setAutoCommit(true);
-
         }
         catch(SQLException sex)
         {
             logger.error(sex);
         }
-        finally
+        catch (Exception e)
         {
+            logger.error(e);
             try
             {
                 if(results != null)
@@ -336,11 +343,11 @@ public class SeabirdSBE37CalculationForm  extends MemoryWindow implements DataPr
             }
             catch(SQLException sex)
             {
+                sex.printStackTrace();
                 logger.error(sex);
             }
         }
 
-        insertData();
     }
 
     private void insertData()
@@ -488,14 +495,20 @@ public class SeabirdSBE37CalculationForm  extends MemoryWindow implements DataPr
 
         String $HOME = System.getProperty("user.home");
 
-        if(args.length == 0)
-        {
-            PropertyConfigurator.configure("log4j.properties");
-            Common.build("ABOS.conf");
-        }
+        PropertyConfigurator.configure("log4j.properties");
+        Common.build("ABOS.conf");
 
         SeabirdSBE37CalculationForm form = new SeabirdSBE37CalculationForm();
-        form.initialise();
+
+        if (args.length > 0)
+        {
+            form.setupFromString(args[0]);
+            form.calculateDataValues();
+        }
+        else
+        {       
+            form.initialise();
+        }
     }
 
     @Override
@@ -508,15 +521,27 @@ public class SeabirdSBE37CalculationForm  extends MemoryWindow implements DataPr
     public boolean setupFromString(String s)
     {
         Mooring m = new Mooring();
-        String mooringId = "PULSE_7";
-        int srcInstrumentId = 4;
-        int tgtInstrumentId = 4;
+
+        Matcher mat = Pattern.compile("(?:MOORING= *)(([^,]*))").matcher(s);
+        mat.find();
+        
+        String mooringId = mat.group(2);
+        
+        mat = Pattern.compile("(?:SRC= *)(([^,]*))").matcher(s);
+        mat.find();
+        
+        int srcInstrumentId = Integer.parseInt(mat.group(2));
+        
+        mat = Pattern.compile("(?:TARGET= *)(([^,]*))").matcher(s);
+        mat.find();
+                
+        int tgtInstrumentId = Integer.parseInt(mat.group(2));
         
         selectedMooring = m.selectByMooringID(mooringId);
         Instrument i = new Instrument();
         
         sourceInstrument = i.selectByInstrumentID(srcInstrumentId);
-        targetInstrument = i.selectByInstrumentID(srcInstrumentId);
+        targetInstrument = i.selectByInstrumentID(tgtInstrumentId);
         
         return true;
     }

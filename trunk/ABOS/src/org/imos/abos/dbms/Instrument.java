@@ -125,6 +125,11 @@ public class Instrument  implements Cloneable
         "Status"
     };
 
+    public String toString()
+    {
+        return make + "-" + model + "-" + serialNumber;
+    }
+    
     private static String[] lookupColumnNames = new String[]
     {
         "Instrument ID",
