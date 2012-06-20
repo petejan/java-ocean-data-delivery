@@ -63,7 +63,7 @@ public class AanderraOptodeOxygenCalculator
      */
     public static Double calculateDissolvedOxygenInUMolesPerKg(Double optodeTemperature, Double optodeDPhaseValue, Double salinity, Double pressure)
     {
-        logger.debug("optodeTemp " + optodeTemperature + " optodeDPhase " + optodeDPhaseValue + " Salinity " + salinity + " pressure " + pressure);
+        //logger.debug("optodeTemp " + optodeTemperature + " optodeDPhase " + optodeDPhaseValue + " Salinity " + salinity + " pressure " + pressure);
         
         if(constants == null)
         {
@@ -88,12 +88,12 @@ public class AanderraOptodeOxygenCalculator
         };
 
         
-        logger.debug("ta[0] = " + tarray[0] + " ta[1] = " + tarray[1] + " ta[2] = " + tarray[2] + " ta[3] = " + tarray[3]);
-        logger.debug("CoCoeffs " + constants.C0Coeffs[0] + " " + constants.C0Coeffs[1] + " " + constants.C0Coeffs[2] + " " + constants.C0Coeffs[3]);
-        logger.debug("CoCoeffs " + constants.C1Coeffs[0] + " " + constants.C1Coeffs[1] + " " + constants.C1Coeffs[2] + " " + constants.C1Coeffs[3]);
-        logger.debug("CoCoeffs " + constants.C2Coeffs[0] + " " + constants.C2Coeffs[1] + " " + constants.C2Coeffs[2] + " " + constants.C2Coeffs[3]);
-        logger.debug("CoCoeffs " + constants.C3Coeffs[0] + " " + constants.C3Coeffs[1] + " " + constants.C3Coeffs[2] + " " + constants.C3Coeffs[3]);
-        logger.debug("CoCoeffs " + constants.C4Coeffs[0] + " " + constants.C4Coeffs[1] + " " + constants.C4Coeffs[2] + " " + constants.C4Coeffs[3]);
+        //logger.debug("ta[0] = " + tarray[0] + " ta[1] = " + tarray[1] + " ta[2] = " + tarray[2] + " ta[3] = " + tarray[3]);
+        //logger.debug("CoCoeffs " + constants.C0Coeffs[0] + " " + constants.C0Coeffs[1] + " " + constants.C0Coeffs[2] + " " + constants.C0Coeffs[3]);
+        //logger.debug("CoCoeffs " + constants.C1Coeffs[0] + " " + constants.C1Coeffs[1] + " " + constants.C1Coeffs[2] + " " + constants.C1Coeffs[3]);
+        //logger.debug("CoCoeffs " + constants.C2Coeffs[0] + " " + constants.C2Coeffs[1] + " " + constants.C2Coeffs[2] + " " + constants.C2Coeffs[3]);
+        //logger.debug("CoCoeffs " + constants.C3Coeffs[0] + " " + constants.C3Coeffs[1] + " " + constants.C3Coeffs[2] + " " + constants.C3Coeffs[3]);
+        //logger.debug("CoCoeffs " + constants.C4Coeffs[0] + " " + constants.C4Coeffs[1] + " " + constants.C4Coeffs[2] + " " + constants.C4Coeffs[3]);
         
         //;
         //; multiply elements of tarray by elements of C and add to
@@ -115,7 +115,7 @@ public class AanderraOptodeOxygenCalculator
         double az = constants.C4Coeffs[0] * tarray[0] + constants.C4Coeffs[1] * tarray[1] + constants.C4Coeffs[2] * tarray[2]
                 + constants.C4Coeffs[3] * tarray[3];
 
-        logger.debug("av = " + av + " aw = " + aw + " ax = " + ax + " ay = " + ay + " az = " + az);
+        //logger.debug("av = " + av + " aw = " + aw + " ax = " + ax + " ay = " + ay + " az = " + az);
 
         double o2 = av
                 + (aw * optodeDPhaseValue)
@@ -123,7 +123,7 @@ public class AanderraOptodeOxygenCalculator
                 + (ay * (Math.pow(optodeDPhaseValue, 3)))
                 + (az * (Math.pow(optodeDPhaseValue, 4)));
 
-        logger.debug("Oxygen before salinity adjustment: " + o2);
+        //logger.debug("Oxygen before salinity adjustment: " + o2);
 
         //;
         //; scale Temperature
@@ -132,7 +132,7 @@ public class AanderraOptodeOxygenCalculator
         o2 = o2 * Math.exp(salinity.doubleValue() * (b0 + b1 * ts + (b2 * Math.pow(ts, 2)) + (b3 * Math.pow(ts, 3)))
                 + c0 * Math.pow(salinity.doubleValue(), 2));
 
-        logger.debug("salinity adjusted oxygen before density adjustment: " + o2);
+        //logger.debug("salinity adjusted oxygen before density adjustment: " + o2);
 
         //;
         //;convert to umol/kg

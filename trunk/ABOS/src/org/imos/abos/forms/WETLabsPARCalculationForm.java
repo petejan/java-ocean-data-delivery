@@ -17,6 +17,9 @@ package org.imos.abos.forms;
 
 import java.awt.Color;
 import java.io.IOException;
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.TimeZone;
@@ -42,7 +45,7 @@ import org.wiley.util.TextFileLogger;
  *
  * @author peter
  */
-public class WETLabsPARCalculationForm extends MemoryWindow
+public class WETLabsPARCalculationForm extends MemoryWindow implements DataProcessor
 {
     private static Logger logger = Logger.getLogger(WETLabsPARCalculationForm.class.getName());
 
@@ -250,6 +253,28 @@ public class WETLabsPARCalculationForm extends MemoryWindow
                                                                       targetInstrument.getInstrumentID())
                                                                       ;
         }
+        String insProc = new String("INSERT INTO instrument_data_processors (processors_pk, mooring_id, class_name, parameters, processing_date, display_code) VALUES ("
+                + "nextval('instrument_data_processor_sequence'),"
+                + "'" + selectedMooring.getMooringID() + "',"
+                + "'" + this.getClass().getName() + "',"
+                + "'" + paramToString() + "',"
+                + "'" + Common.current() + "',"
+                + "'Y'"
+                + ")");
+
+        Connection conn = Common.getConnection();
+
+        Statement stmt;
+        try
+        {
+           stmt = conn.createStatement();
+           stmt.executeUpdate(insProc);            
+        }
+        catch (SQLException ex)
+        {
+            logger.error(ex);
+        }                                         
+        
         
         final Color bg = runButton.getBackground();
         runButton.setText("Running...");
@@ -274,7 +299,7 @@ public class WETLabsPARCalculationForm extends MemoryWindow
         worker.start();
 }//GEN-LAST:event_runButtonActionPerformed
 
-    private void calculateDataValues()
+    public void calculateDataValues()
     {
         String sql = "select distinct on (date_trunc('hour',data_timestamp) )"
                     + " date_trunc('hour',data_timestamp)as obs_time, source_file_id, depth, parameter_value "
@@ -397,6 +422,18 @@ public class WETLabsPARCalculationForm extends MemoryWindow
     private void deleteDataBoxActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_deleteDataBoxActionPerformed
         // TODO add your handling code here:
 }//GEN-LAST:event_deleteDataBoxActionPerformed
+    public String paramToString()
+    {
+        return "MOORING="+selectedMooring.getMooringID() + 
+                ",SRC_INST="+sourceInstrument.getInstrumentID()+
+                ",TGT_INST="+targetInstrument.getInstrumentID()+",FILE="+selectedFile.getDataFilePrimaryKey();
+    }
+
+    public boolean setupFromString(String s)
+    {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+    
 
     /**
     * @param args the command line arguments
