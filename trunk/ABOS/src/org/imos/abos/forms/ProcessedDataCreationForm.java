@@ -241,6 +241,7 @@ public class ProcessedDataCreationForm extends MemoryWindow implements DataProce
         runButton.setBackground(Color.RED);
         runButton.setForeground(Color.WHITE);
         
+        // TODO: should only form ones do this, or should all create a record in the table?
         String insProc = new String("INSERT INTO instrument_data_processors (processors_pk, mooring_id, class_name, parameters, processing_date, display_code) VALUES ("
                 + "nextval('instrument_data_processor_sequence'),"
                 + "'" + selectedMooring.getMooringID() + "',"
@@ -289,14 +290,13 @@ public class ProcessedDataCreationForm extends MemoryWindow implements DataProce
 
     public void calculateDataValues()
     {
-        
-
         ArrayList<RawInstrumentData> selectionSet = RawInstrumentData.selectHourDataForInstrumentAndMooringAndParameter
                                                     (
                                                     sourceInstrument.getInstrumentID(),
                                                     selectedMooring.getMooringID(),
                                                     sourceParameter.getParameterCode()
                                                     );
+        
         if(selectionSet != null && selectionSet.size() > 0)
         {
             for(int i = 0; i < selectionSet.size(); i++)
@@ -342,6 +342,7 @@ public class ProcessedDataCreationForm extends MemoryWindow implements DataProce
         {
             stmt = conn.createStatement();
             stmt.executeUpdate(update);
+            logger.debug("Update processed table " + selectionSet.size() + " " + update);
         }
         catch (SQLException ex)
         {
@@ -414,6 +415,7 @@ public class ProcessedDataCreationForm extends MemoryWindow implements DataProce
         {
             form.setupFromString(args[0]);
             form.calculateDataValues();
+            form.dispose();
         }
         else
         {       
@@ -478,7 +480,7 @@ public class ProcessedDataCreationForm extends MemoryWindow implements DataProce
         
         String tgtParam = mat.group(2);
         
-        targetParameter = ParameterCodes.selectByID(srcParam);
+        targetParameter = ParameterCodes.selectByID(tgtParam);
         
         return true;
     }
