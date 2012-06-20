@@ -16,6 +16,9 @@
 package org.imos.abos.forms;
 
 import java.awt.Color;
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.TimeZone;
 import javax.swing.SwingUtilities;
@@ -235,6 +238,30 @@ public class ProcessedDataCreationForm extends MemoryWindow implements DataProce
         runButton.setText("Running...");
         runButton.setBackground(Color.RED);
         runButton.setForeground(Color.WHITE);
+        
+        String insProc = new String("INSERT INTO instrument_data_processors (processors_pk, mooring_id, class_name, parameters, processing_date, display_code) VALUES ("
+                + "nextval('instrument_data_processor_sequence'),"
+                + "'" + selectedMooring.getMooringID() + "',"
+                + "'" + this.getClass().getName() + "',"
+                + "'" + paramToString() + "',"
+                + "'" + Common.current() + "',"
+                + "'Y'"
+                + ")");
+
+        Connection conn = Common.getConnection();
+
+        Statement stmt;
+        try
+        {
+           stmt = conn.createStatement();
+           stmt.executeUpdate(insProc);            
+        }
+        catch (SQLException ex)
+        {
+            logger.error(ex);
+        }
+                            
+        
         Thread worker = new Thread()
         {
             @Override
@@ -379,7 +406,6 @@ public class ProcessedDataCreationForm extends MemoryWindow implements DataProce
     @Override
     public String paramToString()
     {
-    
         return "MOORING="+selectedMooring.getMooringID() + 
                 ",SRC_INST="+sourceInstrument.getInstrumentID()+",SRC_PARAM="+sourceParameter.getParameterCode() +
                 ",TGT_INST="+targetInstrument.getInstrumentID()+",TGT_PARAM="+targetParameter.getParameterCode();

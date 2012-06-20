@@ -318,7 +318,7 @@ public class InstrumentDataProcessors  implements Cloneable
             return false;
     }
     
-    protected boolean setProcessorPrimaryKey(Integer value)
+    protected boolean setProcessorPrimaryKey(Object value)
     {
         return false;
     }
@@ -326,7 +326,7 @@ public class InstrumentDataProcessors  implements Cloneable
     {
         return false;
     }
-    protected boolean setProcessingDate(Timestamp value)
+    protected boolean setProcessingDate(Object value)
     {
         return false;
     }

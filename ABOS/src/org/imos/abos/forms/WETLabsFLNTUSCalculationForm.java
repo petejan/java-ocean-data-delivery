@@ -17,13 +17,7 @@ package org.imos.abos.forms;
 
 import java.awt.Color;
 import java.io.IOException;
-import java.sql.CallableStatement;
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
-import java.sql.SQLException;
-import java.sql.Timestamp;
-import java.sql.Types;
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.TimeZone;
 import java.util.Vector;
@@ -48,7 +42,7 @@ import org.wiley.util.TextFileLogger;
  * @author peter
  * xtract_wetlabs_flntus_selector
  */
-public class WETLabsFLNTUSCalculationForm extends MemoryWindow
+public class WETLabsFLNTUSCalculationForm extends MemoryWindow implements DataProcessor
 {
 
     private static Logger logger = Logger.getLogger(WETLabsFLNTUSCalculationForm.class.getName());
@@ -260,6 +254,29 @@ public class WETLabsFLNTUSCalculationForm extends MemoryWindow
                                                                       targetInstrument.getInstrumentID())
                                                                       ;
         }
+        
+        String insProc = new String("INSERT INTO instrument_data_processors (processors_pk, mooring_id, class_name, parameters, processing_date, display_code) VALUES ("
+                + "nextval('instrument_data_processor_sequence'),"
+                + "'" + selectedMooring.getMooringID() + "',"
+                + "'" + this.getClass().getName() + "',"
+                + "'" + paramToString() + "',"
+                + "'" + Common.current() + "',"
+                + "'Y'"
+                + ")");
+
+        Connection conn = Common.getConnection();
+
+        Statement stmt;
+        try
+        {
+           stmt = conn.createStatement();
+           stmt.executeUpdate(insProc);            
+        }
+        catch (SQLException ex)
+        {
+            logger.error(ex);
+        }                                         
+        
 
         final Color bg = runButton.getBackground();
         runButton.setText("Running...");
@@ -269,6 +286,8 @@ public class WETLabsFLNTUSCalculationForm extends MemoryWindow
             @Override
             public void run() {
                 calculateDataValues();
+                displayData();
+                
                 SwingUtilities.invokeLater(new Runnable() {
                     @Override
                     public void run() {
@@ -284,7 +303,7 @@ public class WETLabsFLNTUSCalculationForm extends MemoryWindow
         worker.start();
 }//GEN-LAST:event_runButtonActionPerformed
 
-    private void calculateDataValues()
+    public void calculateDataValues()
     {
         Connection conn = null;
         CallableStatement proc = null;
@@ -370,7 +389,6 @@ public class WETLabsFLNTUSCalculationForm extends MemoryWindow
             }
         }
 
-        displayData();
         insertData();
     }
 
@@ -473,6 +491,18 @@ public class WETLabsFLNTUSCalculationForm extends MemoryWindow
         // TODO add your handling code here:
 }//GEN-LAST:event_deleteDataBoxActionPerformed
 
+    public String paramToString()
+    {
+        return "MOORING="+selectedMooring.getMooringID() + 
+                ",SRC_INST="+sourceInstrument.getInstrumentID()+
+                ",TGT_INST="+targetInstrument.getInstrumentID()+",FILE="+selectedFile.getDataFilePrimaryKey();
+    }
+
+    public boolean setupFromString(String s)
+    {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+    
     /**
     * @param args the command line arguments
     */

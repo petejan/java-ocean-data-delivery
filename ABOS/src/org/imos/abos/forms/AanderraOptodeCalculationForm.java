@@ -17,13 +17,7 @@ package org.imos.abos.forms;
 
 import java.awt.Color;
 import java.io.IOException;
-import java.sql.CallableStatement;
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
-import java.sql.SQLException;
-import java.sql.Timestamp;
-import java.sql.Types;
+import java.sql.*;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.TimeZone;
@@ -49,7 +43,7 @@ import org.wiley.util.TextFileLogger;
  *
  * @author peter
  */
-public class AanderraOptodeCalculationForm extends MemoryWindow
+public class AanderraOptodeCalculationForm extends MemoryWindow implements DataProcessor
 {
 
     private static Logger logger = Logger.getLogger(AanderraOptodeCalculationForm.class.getName());
@@ -250,12 +244,37 @@ public class AanderraOptodeCalculationForm extends MemoryWindow
         runButton.setText("Running...");
         runButton.setBackground(Color.RED);
         runButton.setForeground(Color.WHITE);
+
+        String insProc = new String("INSERT INTO instrument_data_processors (processors_pk, mooring_id, class_name, parameters, processing_date, display_code) VALUES ("
+                + "nextval('instrument_data_processor_sequence'),"
+                + "'" + selectedMooring.getMooringID() + "',"
+                + "'" + this.getClass().getName() + "',"
+                + "'" + paramToString() + "',"
+                + "'" + Common.current() + "',"
+                + "'Y'"
+                + ")");
+
+        Connection conn = Common.getConnection();
+
+        Statement stmt;
+        try
+        {
+           stmt = conn.createStatement();
+           stmt.executeUpdate(insProc);            
+        }
+        catch (SQLException ex)
+        {
+            logger.error(ex);
+        }                                         
+                
         Thread worker = new Thread()
         {
             @Override
             public void run()
             {
-                processData();
+                calculateDataValues();
+                displayData();
+
                 SwingUtilities.invokeLater(new Runnable()
                 {
                 @Override
@@ -289,7 +308,7 @@ public class AanderraOptodeCalculationForm extends MemoryWindow
         // TODO add your handling code here:
 }//GEN-LAST:event_deleteDataBoxActionPerformed
 
-    private void processData()
+    public void calculateDataValues()
     {
         Connection conn = null;
         CallableStatement proc = null;
@@ -369,7 +388,6 @@ public class AanderraOptodeCalculationForm extends MemoryWindow
         calculateOxygenValues();
 
         insertData();
-        displayData();
     }
 
     private void calculateOxygenValues()
@@ -561,6 +579,18 @@ public class AanderraOptodeCalculationForm extends MemoryWindow
 
         AanderraOptodeCalculationForm form = new AanderraOptodeCalculationForm();
         form.initialise();
+    }
+
+    public String paramToString()
+    {
+        return "MOORING="+selectedMooring.getMooringID() + 
+                ",SRC_INST="+sourceInstrument.getInstrumentID()+
+                ",TGT_INST="+targetInstrument.getInstrumentID()+",FILE="+selectedFile.getDataFilePrimaryKey();
+    }
+
+    public boolean setupFromString(String s)
+    {
+        throw new UnsupportedOperationException("Not supported yet.");
     }
 
     private class optodeData

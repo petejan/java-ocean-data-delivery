@@ -17,17 +17,12 @@ package org.imos.abos.forms;
 
 import java.awt.Color;
 import java.io.IOException;
-import java.sql.CallableStatement;
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
-import java.sql.SQLException;
-import java.sql.Timestamp;
-import java.sql.Types;
+import java.sql.*;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.TimeZone;
 import java.util.Vector;
+import java.util.logging.Level;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.swing.SwingUtilities;
@@ -238,6 +233,29 @@ public class SeabirdSBE37CalculationForm  extends MemoryWindow implements DataPr
         runButton.setText("Running...");
         runButton.setBackground(Color.RED);
         runButton.setForeground(Color.WHITE);
+
+        String insProc = new String("INSERT INTO instrument_data_processors (processors_pk, mooring_id, class_name, parameters, processing_date, display_code) VALUES ("
+                + "nextval('instrument_data_processor_sequence'),"
+                + "'" + selectedMooring.getMooringID() + "',"
+                + "'" + this.getClass().getName() + "',"
+                + "'" + paramToString() + "',"
+                + "'" + Common.current() + "',"
+                + "'Y'"
+                + ")");
+
+        Connection conn = Common.getConnection();
+
+        Statement stmt;
+        try
+        {
+           stmt = conn.createStatement();
+           stmt.executeUpdate(insProc);            
+        }
+        catch (SQLException ex)
+        {
+            logger.error(ex);
+        }
+                            
         Thread worker = new Thread()
         {
             @Override
@@ -266,6 +284,7 @@ public class SeabirdSBE37CalculationForm  extends MemoryWindow implements DataPr
     public void calculateDataValues()
     {
         logger.info("Calculate " + selectedMooring.getMooringID() + " " + sourceInstrument.toString() + " " + targetInstrument.toString());
+        
         Connection conn = null;
         CallableStatement proc = null;
         ResultSet results = null;
@@ -281,7 +300,7 @@ public class SeabirdSBE37CalculationForm  extends MemoryWindow implements DataPr
                                             );
             conn = Common.getConnection();
             conn.setAutoCommit(false);
-
+            
             proc = conn.prepareCall(storedProc);
             proc.registerOutParameter(1, Types.OTHER);
             proc.execute();

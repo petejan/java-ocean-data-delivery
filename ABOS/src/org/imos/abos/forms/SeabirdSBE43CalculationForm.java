@@ -17,13 +17,7 @@ package org.imos.abos.forms;
 
 import java.awt.Color;
 import java.io.IOException;
-import java.sql.CallableStatement;
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
-import java.sql.SQLException;
-import java.sql.Timestamp;
-import java.sql.Types;
+import java.sql.*;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.TimeZone;
@@ -51,7 +45,7 @@ import org.wiley.util.TextFileLogger;
  *
  * @author peter
  */
-public class SeabirdSBE43CalculationForm extends MemoryWindow
+public class SeabirdSBE43CalculationForm extends MemoryWindow implements DataProcessor
 {
     private static Logger logger = Logger.getLogger(SeabirdSBE43CalculationForm.class.getName());
 
@@ -252,12 +246,37 @@ public class SeabirdSBE43CalculationForm extends MemoryWindow
         runButton.setText("Running...");
         runButton.setBackground(Color.RED);
         runButton.setForeground(Color.WHITE);
+        
+        String insProc = new String("INSERT INTO instrument_data_processors (processors_pk, mooring_id, class_name, parameters, processing_date, display_code) VALUES ("
+                + "nextval('instrument_data_processor_sequence'),"
+                + "'" + selectedMooring.getMooringID() + "',"
+                + "'" + this.getClass().getName() + "',"
+                + "'" + paramToString() + "',"
+                + "'" + Common.current() + "',"
+                + "'Y'"
+                + ")");
+
+        Connection conn = Common.getConnection();
+
+        Statement stmt;
+        try
+        {
+           stmt = conn.createStatement();
+           stmt.executeUpdate(insProc);            
+        }
+        catch (SQLException ex)
+        {
+            logger.error(ex);
+        }                                         
+        
         Thread worker = new Thread()
         {
             @Override
             public void run()
             {
-                calculateOxygenValues();
+                calculateDataValues();
+                displayData();
+                
                 SwingUtilities.invokeLater(new Runnable()
                 {
                     @Override
@@ -275,7 +294,7 @@ public class SeabirdSBE43CalculationForm extends MemoryWindow
         worker.start();
     }//GEN-LAST:event_runButtonActionPerformed
 
-    private void calculateOxygenValues()
+    public void calculateDataValues()
     {
         Connection conn = null;
         CallableStatement proc = null;
@@ -378,7 +397,6 @@ public class SeabirdSBE43CalculationForm extends MemoryWindow
         }
 
         insertData();
-        displayData();
     }
 
     private void insertData()
@@ -411,14 +429,6 @@ public class SeabirdSBE43CalculationForm extends MemoryWindow
             ok = row.insert();
 
         }
-    }
-
-    private Double sigmaTheta(Double pressure, Double temperature, Double salinity)
-    {
-        //
-        // no idea aas yet....
-        //
-        return 0.0;
     }
 
     public void displayData()
@@ -535,6 +545,17 @@ public class SeabirdSBE43CalculationForm extends MemoryWindow
     private void deleteDataBoxActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_deleteDataBoxActionPerformed
         // TODO add your handling code here:
 }//GEN-LAST:event_deleteDataBoxActionPerformed
+    public String paramToString()
+    {
+        return "MOORING="+selectedMooring.getMooringID() + 
+                ",SRC_INST="+sourceInstrument.getInstrumentID()+
+                ",TGT_INST="+targetInstrument.getInstrumentID()+",FILE="+selectedFile.getDataFilePrimaryKey();
+    }
+
+    public boolean setupFromString(String s)
+    {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
 
     /**
     * @param args the command line arguments
