@@ -322,8 +322,32 @@ public class ProcessedDataCreationForm extends MemoryWindow implements DataProce
                 pid.setQualityCode("RAW");
 
                 boolean ok = pid.insert();
+                
+                
             }
         }
+        
+        String update = new String("UPDATE instrument_data_processors SET " 
+                + "processing_date = '" + Common.current() + "',"
+                + "count = "+ selectionSet.size()
+                + " WHERE "
+                + "mooring_id = '" + selectedMooring.getMooringID() + "'"
+                + " AND class_name = '" + this.getClass().getName() + "'"
+                + " AND parameters = '" + paramToString()  + "'");
+
+        Connection conn = Common.getConnection();
+
+        Statement stmt;
+        try
+        {
+            stmt = conn.createStatement();
+            stmt.executeUpdate(update);
+        }
+        catch (SQLException ex)
+        {
+            logger.error(ex);
+        }
+
     }
 
     private void quitButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_quitButtonActionPerformed
@@ -381,14 +405,20 @@ public class ProcessedDataCreationForm extends MemoryWindow implements DataProce
 
         String $HOME = System.getProperty("user.home");
 
-        if(args.length == 0)
-        {
-            PropertyConfigurator.configure("log4j.properties");
-            Common.build("ABOS.conf");
-        }
+        PropertyConfigurator.configure("log4j.properties");
+        Common.build("ABOS.conf");
 
         ProcessedDataCreationForm form = new ProcessedDataCreationForm();
-        form.initialise();
+        
+        if (args.length > 0)
+        {
+            form.setupFromString(args[0]);
+            form.calculateDataValues();
+        }
+        else
+        {       
+            form.initialise();
+        }
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
@@ -421,12 +451,12 @@ public class ProcessedDataCreationForm extends MemoryWindow implements DataProce
         
         String mooringId = mat.group(2);
         
-        mat = Pattern.compile("(?:SRC= *)(([^,]*))").matcher(s);
+        mat = Pattern.compile("(?:SRC_INST= *)(([^,]*))").matcher(s);
         mat.find();
         
         int srcInstrumentId = Integer.parseInt(mat.group(2));
         
-        mat = Pattern.compile("(?:TGT= *)(([^,]*))").matcher(s);
+        mat = Pattern.compile("(?:TGT_INST= *)(([^,]*))").matcher(s);
         mat.find();
                 
         int tgtInstrumentId = Integer.parseInt(mat.group(2));
