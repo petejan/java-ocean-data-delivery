@@ -22,6 +22,8 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.TimeZone;
 import java.util.Vector;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
@@ -481,7 +483,7 @@ public class AanderraOptodeCalculationForm extends MemoryWindow implements DataP
                     "Salinity Conduct, " +
                     "Salinity Press, " +
                     "Calc Salinity, " +
-                    "Calc Oxygen (uM/kg";
+                    "Calc Oxygen (uM/kg)";
 
             file.open();
 
@@ -590,7 +592,34 @@ public class AanderraOptodeCalculationForm extends MemoryWindow implements DataP
 
     public boolean setupFromString(String s)
     {
-        throw new UnsupportedOperationException("Not supported yet.");
+        Matcher mat = Pattern.compile("(?:MOORING= *)(([^,]*))").matcher(s);
+        mat.find();
+        
+        String mooringId = mat.group(2);
+        
+        mat = Pattern.compile("(?:SRC= *)(([^,]*))").matcher(s);
+        mat.find();
+        
+        int srcInstrumentId = Integer.parseInt(mat.group(2));
+        
+        mat = Pattern.compile("(?:TGT= *)(([^,]*))").matcher(s);
+        mat.find();
+                
+        int tgtInstrumentId = Integer.parseInt(mat.group(2));
+        
+        selectedMooring = Mooring.selectByMooringID(mooringId);
+        
+        sourceInstrument = Instrument.selectByInstrumentID(srcInstrumentId);
+        targetInstrument = Instrument.selectByInstrumentID(tgtInstrumentId);
+        
+        mat = Pattern.compile("(?:FILE= *)(([^,]*))").matcher(s);
+        mat.find();
+        
+        int file = Integer.parseInt(mat.group(2));
+        
+        selectedFile = InstrumentCalibrationFile.selectByDatafilePrimaryKey(file);
+        
+        return true;
     }
 
     private class optodeData

@@ -539,8 +539,6 @@ public class SeabirdSBE37CalculationForm  extends MemoryWindow implements DataPr
     @Override
     public boolean setupFromString(String s)
     {
-        Mooring m = new Mooring();
-
         Matcher mat = Pattern.compile("(?:MOORING= *)(([^,]*))").matcher(s);
         mat.find();
         
@@ -556,11 +554,10 @@ public class SeabirdSBE37CalculationForm  extends MemoryWindow implements DataPr
                 
         int tgtInstrumentId = Integer.parseInt(mat.group(2));
         
-        selectedMooring = m.selectByMooringID(mooringId);
-        Instrument i = new Instrument();
-        
-        sourceInstrument = i.selectByInstrumentID(srcInstrumentId);
-        targetInstrument = i.selectByInstrumentID(tgtInstrumentId);
+        selectedMooring = Mooring.selectByMooringID(mooringId);
+
+        sourceInstrument = Instrument.selectByInstrumentID(srcInstrumentId);
+        targetInstrument = Instrument.selectByInstrumentID(tgtInstrumentId);
         
         return true;
     }

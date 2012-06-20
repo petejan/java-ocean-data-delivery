@@ -21,6 +21,8 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.TimeZone;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
@@ -414,7 +416,41 @@ public class ProcessedDataCreationForm extends MemoryWindow implements DataProce
     @Override
     public boolean setupFromString(String s)
     {
-        throw new UnsupportedOperationException("Not supported yet.");
+        Matcher mat = Pattern.compile("(?:MOORING= *)(([^,]*))").matcher(s);
+        mat.find();
+        
+        String mooringId = mat.group(2);
+        
+        mat = Pattern.compile("(?:SRC= *)(([^,]*))").matcher(s);
+        mat.find();
+        
+        int srcInstrumentId = Integer.parseInt(mat.group(2));
+        
+        mat = Pattern.compile("(?:TGT= *)(([^,]*))").matcher(s);
+        mat.find();
+                
+        int tgtInstrumentId = Integer.parseInt(mat.group(2));
+        
+        selectedMooring = Mooring.selectByMooringID(mooringId);
+        
+        sourceInstrument = Instrument.selectByInstrumentID(srcInstrumentId);
+        targetInstrument = Instrument.selectByInstrumentID(tgtInstrumentId);
+        
+        mat = Pattern.compile("(?:SRC_PARAM= *)(([^,]*))").matcher(s);
+        mat.find();
+        
+        String srcParam = mat.group(2);
+        
+        sourceParameter = ParameterCodes.selectByID(srcParam);
+        
+        mat = Pattern.compile("(?:TGT_PARAM= *)(([^,]*))").matcher(s);
+        mat.find();
+        
+        String tgtParam = mat.group(2);
+        
+        targetParameter = ParameterCodes.selectByID(srcParam);
+        
+        return true;
     }
 
 }
