@@ -8,7 +8,7 @@ package org.imos.abos.forms;
  *
  * @author Peter Jansen <peter.jansen@utas.edu.au>
  */
-interface DataProcessor
+public interface DataProcessor
 {
     public String paramToString();
 

@@ -61,13 +61,14 @@ public class AanderraOptodeCalculationForm extends MemoryWindow implements DataP
     /** Creates new form AanderraOptodeCalculationForm */
     public AanderraOptodeCalculationForm()
     {
-        initComponents();
         TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
     }
 
     @Override
     public void initialise()
     {
+        initialise();
+
         this.setVisible(true);
     }
 
@@ -455,11 +456,11 @@ public class AanderraOptodeCalculationForm extends MemoryWindow implements DataP
 
             ok = pid.insert();
 
-            pid.setInstrumentID(sourceInstrument.getInstrumentID());
-            pid.setParameterCode("PSAL");
-            pid.setParameterValue(row.calculatedSalinityValue);
-
-            ok = pid.insert();
+//            pid.setInstrumentID(sourceInstrument.getInstrumentID());
+//            pid.setParameterCode("PSAL");
+//            pid.setParameterValue(row.calculatedSalinityValue);
+//
+//            ok = pid.insert();
 
         }
     }
@@ -580,7 +581,8 @@ public class AanderraOptodeCalculationForm extends MemoryWindow implements DataP
         }
 
         AanderraOptodeCalculationForm form = new AanderraOptodeCalculationForm();
-        form.initialise();
+        form.initComponents();
+
     }
 
     public String paramToString()
@@ -597,12 +599,12 @@ public class AanderraOptodeCalculationForm extends MemoryWindow implements DataP
         
         String mooringId = mat.group(2);
         
-        mat = Pattern.compile("(?:SRC= *)(([^,]*))").matcher(s);
+        mat = Pattern.compile("(?:SRC_INST= *)(([^,]*))").matcher(s);
         mat.find();
         
         int srcInstrumentId = Integer.parseInt(mat.group(2));
         
-        mat = Pattern.compile("(?:TGT= *)(([^,]*))").matcher(s);
+        mat = Pattern.compile("(?:TGT_INST= *)(([^,]*))").matcher(s);
         mat.find();
                 
         int tgtInstrumentId = Integer.parseInt(mat.group(2));

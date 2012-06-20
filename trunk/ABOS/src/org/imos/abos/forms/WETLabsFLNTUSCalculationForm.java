@@ -59,13 +59,14 @@ public class WETLabsFLNTUSCalculationForm extends MemoryWindow implements DataPr
     /** Creates new form WETLabsFLNTUSCalculationForm */
     public WETLabsFLNTUSCalculationForm()
     {
-        initComponents();
         TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
     }
 
     @Override
     public void initialise()
     {
+        initComponents();
+
         this.setVisible(true);
     }
     
@@ -514,12 +515,12 @@ public class WETLabsFLNTUSCalculationForm extends MemoryWindow implements DataPr
         
         String mooringId = mat.group(2);
         
-        mat = Pattern.compile("(?:SRC= *)(([^,]*))").matcher(s);
+        mat = Pattern.compile("(?:SRC_INST= *)(([^,]*))").matcher(s);
         mat.find();
         
         int srcInstrumentId = Integer.parseInt(mat.group(2));
         
-        mat = Pattern.compile("(?:TGT= *)(([^,]*))").matcher(s);
+        mat = Pattern.compile("(?:TGT_INST= *)(([^,]*))").matcher(s);
         mat.find();
                 
         int tgtInstrumentId = Integer.parseInt(mat.group(2));

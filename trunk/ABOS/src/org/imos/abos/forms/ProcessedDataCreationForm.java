@@ -55,7 +55,6 @@ public class ProcessedDataCreationForm extends MemoryWindow implements DataProce
     /** Creates new form ProcessedDataCreationForm */
     public ProcessedDataCreationForm()
     {
-        initComponents();
         TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
     }
 
@@ -302,11 +301,11 @@ public class ProcessedDataCreationForm extends MemoryWindow implements DataProce
             for(int i = 0; i < selectionSet.size(); i++)
             {
                 RawInstrumentData row = selectionSet.get(i);
-                logger.debug(row.getDataTimestamp() 
-                            + " "
-                            + row.getParameterCode()
-                            + " "
-                            + row.getParameterValue());
+//                logger.debug(row.getDataTimestamp() 
+//                            + " "
+//                            + row.getParameterCode()
+//                            + " "
+//                            + row.getParameterValue());
 
                 ProcessedInstrumentData pid = new ProcessedInstrumentData();
 
@@ -373,6 +372,8 @@ public class ProcessedDataCreationForm extends MemoryWindow implements DataProce
     @Override
     public void initialise()
     {
+        initComponents();
+
         this.setVisible(true);
     }
 

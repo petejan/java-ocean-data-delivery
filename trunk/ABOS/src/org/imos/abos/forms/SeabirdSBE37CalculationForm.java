@@ -58,7 +58,6 @@ public class SeabirdSBE37CalculationForm  extends MemoryWindow implements DataPr
     /** Creates new form SeabirdSBE37CalculationForm */
     public SeabirdSBE37CalculationForm()
     {
-        initComponents();
         TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
     }
 
@@ -189,6 +188,8 @@ public class SeabirdSBE37CalculationForm  extends MemoryWindow implements DataPr
     @Override
     public void initialise()
     {
+        initComponents();
+
         this.setVisible(true);
     }
 
