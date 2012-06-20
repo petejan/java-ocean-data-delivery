@@ -35,7 +35,7 @@ import org.wiley.core.forms.MemoryWindow;
  *
  * @author peter
  */
-public class ProcessedDataCreationForm extends MemoryWindow
+public class ProcessedDataCreationForm extends MemoryWindow implements DataProcessor
 {
 
     private static Logger logger = Logger.getLogger(ProcessedDataCreationForm.class.getName());
@@ -240,7 +240,7 @@ public class ProcessedDataCreationForm extends MemoryWindow
             @Override
             public void run()
             {
-                processData();
+                calculateDataValues();
                 SwingUtilities.invokeLater(new Runnable()
                 {
                     @Override
@@ -258,7 +258,7 @@ public class ProcessedDataCreationForm extends MemoryWindow
         worker.start();
     }//GEN-LAST:event_runButtonActionPerformed
 
-    private void processData()
+    public void calculateDataValues()
     {
         
 
@@ -375,5 +375,20 @@ public class ProcessedDataCreationForm extends MemoryWindow
     private org.imos.abos.dbms.fields.InstrumentSelectorCombo targetInstrumentCombo;
     private org.imos.abos.dbms.fields.ParameterSelectorCombo targetParameterSelector;
     // End of variables declaration//GEN-END:variables
+
+    @Override
+    public String paramToString()
+    {
+    
+        return "MOORING="+selectedMooring.getMooringID() + 
+                ",SRC_INST="+sourceInstrument.getInstrumentID()+",SRC_PARAM="+sourceParameter.getParameterCode() +
+                ",TGT_INST="+targetInstrument.getInstrumentID()+",TGT_PARAM="+targetParameter.getParameterCode();
+    }
+
+    @Override
+    public boolean setupFromString(String s)
+    {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
 
 }
