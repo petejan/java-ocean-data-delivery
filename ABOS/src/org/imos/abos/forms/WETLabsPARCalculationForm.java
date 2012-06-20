@@ -61,13 +61,14 @@ public class WETLabsPARCalculationForm extends MemoryWindow implements DataProce
     /** Creates new form WETLabsPARCalculationForm */
     public WETLabsPARCalculationForm()
     {
-        initComponents();
         TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
     }
 
     @Override
     public void initialise()
     {
+        initComponents();
+
         this.setVisible(true);
     }
 
@@ -447,12 +448,12 @@ public class WETLabsPARCalculationForm extends MemoryWindow implements DataProce
         
         String mooringId = mat.group(2);
         
-        mat = Pattern.compile("(?:SRC= *)(([^,]*))").matcher(s);
+        mat = Pattern.compile("(?:SRC_INST= *)(([^,]*))").matcher(s);
         mat.find();
         
         int srcInstrumentId = Integer.parseInt(mat.group(2));
         
-        mat = Pattern.compile("(?:TGT= *)(([^,]*))").matcher(s);
+        mat = Pattern.compile("(?:TGT_INST= *)(([^,]*))").matcher(s);
         mat.find();
                 
         int tgtInstrumentId = Integer.parseInt(mat.group(2));

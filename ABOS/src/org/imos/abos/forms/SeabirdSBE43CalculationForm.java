@@ -59,7 +59,6 @@ public class SeabirdSBE43CalculationForm extends MemoryWindow implements DataPro
     public SeabirdSBE43CalculationForm()
     {
         TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
-        initComponents();
     }
 
     /** This method is called from within the constructor to
@@ -206,6 +205,8 @@ public class SeabirdSBE43CalculationForm extends MemoryWindow implements DataPro
     @Override
     public void initialise()
     {
+        initComponents();
+
         this.setVisible(true);
     }
 
@@ -420,12 +421,12 @@ public class SeabirdSBE43CalculationForm extends MemoryWindow implements DataPro
 
             ok = row.insert();
 
-            row.setInstrumentID(sourceInstrument.getInstrumentID());
-            row.setParameterCode("PSAL");
-            row.setParameterValue(sbe.calculatedSalinityValue);
-            row.setQualityCode("DERIVED");
-
-            ok = row.insert();
+//            row.setInstrumentID(sourceInstrument.getInstrumentID());
+//            row.setParameterCode("PSAL");
+//            row.setParameterValue(sbe.calculatedSalinityValue);
+//            row.setQualityCode("DERIVED");
+//
+//            ok = row.insert();
 
         }
     }
@@ -558,12 +559,12 @@ public class SeabirdSBE43CalculationForm extends MemoryWindow implements DataPro
         
         String mooringId = mat.group(2);
         
-        mat = Pattern.compile("(?:SRC= *)(([^,]*))").matcher(s);
+        mat = Pattern.compile("(?:SRC_INST= *)(([^,]*))").matcher(s);
         mat.find();
         
         int srcInstrumentId = Integer.parseInt(mat.group(2));
         
-        mat = Pattern.compile("(?:TGT= *)(([^,]*))").matcher(s);
+        mat = Pattern.compile("(?:TGT_INST= *)(([^,]*))").matcher(s);
         mat.find();
                 
         int tgtInstrumentId = Integer.parseInt(mat.group(2));
@@ -620,6 +621,7 @@ public class SeabirdSBE43CalculationForm extends MemoryWindow implements DataPro
         }
 
         SeabirdSBE43CalculationForm form = new SeabirdSBE43CalculationForm();
+ 
         form.initialise();
     }
 
