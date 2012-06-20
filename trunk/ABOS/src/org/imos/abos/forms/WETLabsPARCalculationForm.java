@@ -24,6 +24,8 @@ import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.TimeZone;
 import java.util.Vector;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
@@ -237,12 +239,14 @@ public class WETLabsPARCalculationForm extends MemoryWindow implements DataProce
         selectedMooring = mooringCombo1.getSelectedMooring();
         selectedFile = calibrationFileCombo1.getSelectedFile();
 
-        if(selectedMooring == null) {
+        if(selectedMooring == null) 
+        {
             Common.showMessage(this,"No Mooring Selected","You must select a mooring before running any calculations");
             return;
         }
 
-        if(selectedFile == null) {
+        if(selectedFile == null) 
+        {
             Common.showMessage(this,"No File Selected","You must select a file before running any calculations");
             return;
         }
@@ -280,13 +284,21 @@ public class WETLabsPARCalculationForm extends MemoryWindow implements DataProce
         runButton.setText("Running...");
         runButton.setBackground(Color.RED);
         runButton.setForeground(Color.WHITE);
-        Thread worker = new Thread() {
+        Thread worker = new Thread()
+        {
+
             @Override
-            public void run() {
+            public void run()
+            {
                 calculateDataValues();
-                SwingUtilities.invokeLater(new Runnable() {
+                displayData();
+
+                SwingUtilities.invokeLater(new Runnable()
+                {
+
                     @Override
-                    public void run() {
+                    public void run()
+                    {
                         runButton.setBackground(bg);
                         runButton.setForeground(Color.BLACK);
                         runButton.setText("Run");
@@ -336,7 +348,6 @@ public class WETLabsPARCalculationForm extends MemoryWindow implements DataProce
                 dataSet.add(row);
             }
 
-            displayData();
             insertData();
         }
     }
@@ -431,7 +442,34 @@ public class WETLabsPARCalculationForm extends MemoryWindow implements DataProce
 
     public boolean setupFromString(String s)
     {
-        throw new UnsupportedOperationException("Not supported yet.");
+        Matcher mat = Pattern.compile("(?:MOORING= *)(([^,]*))").matcher(s);
+        mat.find();
+        
+        String mooringId = mat.group(2);
+        
+        mat = Pattern.compile("(?:SRC= *)(([^,]*))").matcher(s);
+        mat.find();
+        
+        int srcInstrumentId = Integer.parseInt(mat.group(2));
+        
+        mat = Pattern.compile("(?:TGT= *)(([^,]*))").matcher(s);
+        mat.find();
+                
+        int tgtInstrumentId = Integer.parseInt(mat.group(2));
+        
+        selectedMooring = Mooring.selectByMooringID(mooringId);
+        
+        sourceInstrument = Instrument.selectByInstrumentID(srcInstrumentId);
+        targetInstrument = Instrument.selectByInstrumentID(tgtInstrumentId);
+        
+        mat = Pattern.compile("(?:FILE= *)(([^,]*))").matcher(s);
+        mat.find();
+        
+        int file = Integer.parseInt(mat.group(2));
+        
+        selectedFile = InstrumentCalibrationFile.selectByDatafilePrimaryKey(file);
+        
+        return true;
     }
     
 
