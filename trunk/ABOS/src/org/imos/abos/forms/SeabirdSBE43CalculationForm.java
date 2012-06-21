@@ -613,16 +613,17 @@ public class SeabirdSBE43CalculationForm extends MemoryWindow implements DataPro
         }
 
         String $HOME = System.getProperty("user.home");
-
-        if(args.length == 0)
-        {
-            PropertyConfigurator.configure("log4j.properties");
-            Common.build("ABOS.conf");
-        }
-
         SeabirdSBE43CalculationForm form = new SeabirdSBE43CalculationForm();
- 
-        form.initialise();
+
+        if (args.length > 0)
+        {
+            form.setupFromString(args[0]);
+            form.calculateDataValues();
+        }
+        else
+        {       
+            form.initialise();
+        }
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables

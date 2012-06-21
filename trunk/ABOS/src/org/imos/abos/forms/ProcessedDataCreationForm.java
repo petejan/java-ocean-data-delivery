@@ -416,7 +416,6 @@ public class ProcessedDataCreationForm extends MemoryWindow implements DataProce
         {
             form.setupFromString(args[0]);
             form.calculateDataValues();
-            form.dispose();
         }
         else
         {       
