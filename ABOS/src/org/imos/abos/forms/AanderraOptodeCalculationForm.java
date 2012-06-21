@@ -574,15 +574,16 @@ public class AanderraOptodeCalculationForm extends MemoryWindow implements DataP
 
         String $HOME = System.getProperty("user.home");
 
-        if(args.length == 0)
-        {
-            PropertyConfigurator.configure("log4j.properties");
-            Common.build("ABOS.conf");
-        }
-
         AanderraOptodeCalculationForm form = new AanderraOptodeCalculationForm();
-        form.initComponents();
-
+        if (args.length > 0)
+        {
+            form.setupFromString(args[0]);
+            form.calculateDataValues();
+        }
+        else
+        {       
+            form.initialise();
+        }
     }
 
     public String paramToString()

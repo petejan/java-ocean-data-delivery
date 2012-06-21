@@ -503,15 +503,17 @@ public class WETLabsPARCalculationForm extends MemoryWindow implements DataProce
         }
 
         String $HOME = System.getProperty("user.home");
-
-        if(args.length == 0)
-        {
-            PropertyConfigurator.configure("log4j.properties");
-            Common.build("ABOS.conf");
-        }
-
         WETLabsPARCalculationForm form = new WETLabsPARCalculationForm();
-        form.initialise();
+
+        if (args.length > 0)
+        {
+            form.setupFromString(args[0]);
+            form.calculateDataValues();
+        }
+        else
+        {       
+            form.initialise();
+        }
     }
 
     private class PARData

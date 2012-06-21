@@ -35,7 +35,7 @@ public class RawToProcessed
     
     public void ProcessMooingId(String mooringId)
     {
-        String sel = new String("SELECT class_name, parameters FROM instrument_data_processors WHERE mooring_id = '" + mooringId + "'");
+        String sel = new String("SELECT class_name, parameters FROM instrument_data_processors WHERE mooring_id = '" + mooringId + "' ORDER BY processing_date");
 
         Connection conn = Common.getConnection();
 
