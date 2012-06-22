@@ -67,8 +67,8 @@ public class AanderraOptodeCalculationForm extends MemoryWindow implements DataP
     @Override
     public void initialise()
     {
-        initialise();
-
+        initComponents();
+        
         this.setVisible(true);
     }
 
@@ -573,6 +573,8 @@ public class AanderraOptodeCalculationForm extends MemoryWindow implements DataP
         }
 
         String $HOME = System.getProperty("user.home");
+        PropertyConfigurator.configure("log4j.properties");
+        Common.build("ABOS.conf");
 
         AanderraOptodeCalculationForm form = new AanderraOptodeCalculationForm();
         if (args.length > 0)

@@ -569,6 +569,8 @@ public class WETLabsFLNTUSCalculationForm extends MemoryWindow implements DataPr
         }
 
         String $HOME = System.getProperty("user.home");
+        PropertyConfigurator.configure("log4j.properties");
+        Common.build("ABOS.conf");
 
         WETLabsFLNTUSCalculationForm form = new WETLabsFLNTUSCalculationForm();
 

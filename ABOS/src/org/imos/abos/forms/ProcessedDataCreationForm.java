@@ -341,7 +341,7 @@ public class ProcessedDataCreationForm extends MemoryWindow implements DataProce
         {
             stmt = conn.createStatement();
             stmt.executeUpdate(update);
-            logger.debug("Update processed table " + selectionSet.size() + " " + update);
+            logger.debug("Update processed table ");
         }
         catch (SQLException ex)
         {
