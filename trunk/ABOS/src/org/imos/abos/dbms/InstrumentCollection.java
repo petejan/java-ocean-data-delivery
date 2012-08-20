@@ -272,6 +272,16 @@ public class InstrumentCollection extends AbstractTableModel
             this.fireTableDataChanged();
         }
     }
+    
+    protected void loadDataForSpecifiedSerialNumber(String s)
+    {
+        ArrayList<Instrument> selectionSet = Instrument.selectBySerialNumber(s);
+        if(selectionSet != null)
+        {
+            rows = selectionSet;
+            this.fireTableDataChanged();
+        }
+    }
 
     void setMooring(Mooring m)
     {

@@ -22,10 +22,10 @@ import javax.swing.table.TableColumnModel;
 import org.apache.log4j.PropertyConfigurator;
 import org.imos.abos.forms.DataFileProcessorForm;
 import org.wiley.LabMaster.Common;
+import org.wiley.table.DateTimeEditor;
 import org.wiley.table.DateTimeField;
 import org.wiley.table.EditableBaseTable;
 import org.wiley.table.StringEditor;
-import org.wiley.table.DateTimeEditor;
 import org.wiley.util.SettableCaseJTextField;
 
 public class InstrumentDataFileTable extends EditableBaseTable
@@ -247,7 +247,10 @@ public class InstrumentDataFileTable extends EditableBaseTable
         form.setParent(this);
         form.setRunStatus(false);
         form.setInstrumentDataFile(row);
-        form.setLocationRelativeTo(this);
+        
+        form.setLocation(this.getLocationOnScreen());
+        //form.setLocationRelativeTo(this);
+        
         form.initialise();
         form.setVisible(true);
 

@@ -21,14 +21,11 @@ import java.util.TimeZone;
 import javax.swing.JFrame;
 import javax.swing.SwingUtilities;
 import org.apache.log4j.Logger;
-import org.imos.abos.dbms.Instrument;
-import org.imos.abos.dbms.InstrumentDataFile;
-import org.imos.abos.dbms.InstrumentDataParser;
-import org.imos.abos.dbms.Mooring;
-import org.imos.abos.dbms.RawInstrumentData;
+import org.imos.abos.dbms.*;
 import org.imos.abos.parsers.AbstractDataParser;
 import org.wiley.core.Common;
 import org.wiley.core.forms.MemoryWindow;
+import org.wiley.util.FileViewerDialog;
 
 /**
  *
@@ -54,7 +51,8 @@ public class DataFileProcessorForm extends MemoryWindow
     @Override
     public void initialise()
     {
-       super.initialise();
+        parseFailureLimitField.setValue(AbstractDataParser.PARSE_FAILURE_LIMIT);
+        super.initialise();
     }
 
     public void setParent(Frame parent)
@@ -90,6 +88,7 @@ public class DataFileProcessorForm extends MemoryWindow
         parserDescriptionField = new org.wiley.util.basicField();
         overrideDepthField = new org.wiley.util.labelledDecimalField();
         jLabel1 = new javax.swing.JLabel();
+        parseFailureLimitField = new org.wiley.util.labelledIntegerField();
 
         addWindowListener(new java.awt.event.WindowAdapter() {
             public void windowClosing(java.awt.event.WindowEvent evt) {
@@ -121,24 +120,28 @@ public class DataFileProcessorForm extends MemoryWindow
 
         jLabel1.setText("m");
 
+        parseFailureLimitField.setIntegerValue(new java.lang.Integer(100));
+        parseFailureLimitField.setLabel("Max Parse Failures Before Abort");
+
         org.jdesktop.layout.GroupLayout layout = new org.jdesktop.layout.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
             .add(layout.createSequentialGroup()
+                .addContainerGap()
                 .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-                    .add(layout.createSequentialGroup()
-                        .addContainerGap()
-                        .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-                            .add(jScrollPane1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 581, Short.MAX_VALUE)
-                            .add(buttonPanel, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 581, Short.MAX_VALUE)
-                            .add(instrumentDataParserCombo, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 369, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                            .add(parserDescriptionField, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 525, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)))
-                    .add(layout.createSequentialGroup()
-                        .add(28, 28, 28)
-                        .add(overrideDepthField, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 210, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                        .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-                        .add(jLabel1)))
+                    .add(jScrollPane1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 581, Short.MAX_VALUE)
+                    .add(buttonPanel, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 581, Short.MAX_VALUE)
+                    .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.TRAILING)
+                        .add(layout.createSequentialGroup()
+                            .add(overrideDepthField, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 210, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                            .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
+                            .add(jLabel1)
+                            .add(18, 18, 18)
+                            .add(parseFailureLimitField, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 257, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
+                        .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.TRAILING, false)
+                            .add(org.jdesktop.layout.GroupLayout.LEADING, instrumentDataParserCombo, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                            .add(org.jdesktop.layout.GroupLayout.LEADING, parserDescriptionField, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 525, Short.MAX_VALUE))))
                 .addContainerGap())
         );
         layout.setVerticalGroup(
@@ -151,11 +154,12 @@ public class DataFileProcessorForm extends MemoryWindow
                 .add(18, 18, 18)
                 .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.CENTER)
                     .add(overrideDepthField, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                    .add(jLabel1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 24, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
+                    .add(jLabel1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 24, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                    .add(parseFailureLimitField, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
                 .add(30, 30, 30)
                 .add(buttonPanel, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-                .add(jScrollPane1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 251, Short.MAX_VALUE)
+                .add(jScrollPane1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 379, Short.MAX_VALUE)
                 .addContainerGap())
         );
 
@@ -205,6 +209,8 @@ public class DataFileProcessorForm extends MemoryWindow
 
                         final AbstractDataParser parser = (AbstractDataParser) component;
 
+                        parser.setMaximumAllowedParseFailures(parseFailureLimitField.getIntegerValue());
+                        
                         parser.setParentForm(DataFileProcessorForm.this);
                         parser.setInstrument(currentInstrument);
                         parser.setInstrumentDataFile(currentFile);
@@ -221,6 +227,14 @@ public class DataFileProcessorForm extends MemoryWindow
 
                         currentFile.update();
 
+                        if(parser.getParseFailureCount() > 0)
+                        {
+                            FileViewerDialog fvd = new FileViewerDialog(DataFileProcessorForm.this, true);
+                            fvd.initialise();
+                            fvd.setFileName(parser.getErrorLogFile().getFullName());
+                            fvd.setVisible(true);
+                        }
+                        
                         SwingUtilities.invokeLater(new Runnable()
                         {
                             @Override
@@ -293,6 +307,7 @@ public class DataFileProcessorForm extends MemoryWindow
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JTextArea messageArea;
     private org.wiley.util.labelledDecimalField overrideDepthField;
+    private org.wiley.util.labelledIntegerField parseFailureLimitField;
     private org.wiley.util.basicField parserDescriptionField;
     private javax.swing.JButton runButton;
     // End of variables declaration//GEN-END:variables

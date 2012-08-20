@@ -125,6 +125,7 @@ public class Instrument  implements Cloneable
         "Status"
     };
 
+    @Override
     public String toString()
     {
         return make + "-" + model + "-" + serialNumber;
@@ -663,6 +664,23 @@ public class Instrument  implements Cloneable
         return doSelect( selectSQL
                         + " where make like "
                         + StringUtilities.quoteString(make)
+                        + getDefaultSortOrder());
+    }
+    
+    public static ArrayList<Instrument> selectBySerialNumber(String s_num)
+    {
+        if(s_num == null)
+            return null;
+
+        if(s_num.trim().isEmpty())
+            return null;
+
+        if(! s_num.trim().endsWith("%"))
+            s_num = s_num.trim() + "%";
+        
+        return doSelect( selectSQL
+                        + " where serial_number like "
+                        + StringUtilities.quoteString(s_num)
                         + getDefaultSortOrder());
     }
 
