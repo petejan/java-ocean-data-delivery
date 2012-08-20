@@ -9,12 +9,7 @@
 
 package org.imos.abos.parsers;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Enumeration;
@@ -44,12 +39,15 @@ public abstract class AbstractDataParser
     protected Instrument currentInstrument;
     protected Mooring currentMooring;
 
-    protected Integer parseFailureLimit = new Integer(100);
+    public static Integer PARSE_FAILURE_LIMIT = new Integer(100);
 
     protected Double instrumentDepth;
     protected boolean instrumentDepthSet = false;
 
     protected ArrayList<String> headers = new ArrayList();
+    
+    protected TextFileLogger errorlogger = null;
+    protected int PARSE_FAILURES = 0;
 
     abstract protected boolean isHeader(String dataLine);
     abstract protected void parseHeader(String dataLine) throws ParseException, NoSuchElementException;
@@ -60,6 +58,41 @@ public abstract class AbstractDataParser
         TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
     }
 
+    /**
+     * get the number of parse failures
+     * @return 
+     */
+    
+    public int getParseFailureCount()
+    {
+        return PARSE_FAILURES;
+    }
+    
+    /**
+     * get the error log file if required
+     * @return 
+     */
+    
+    public TextFileLogger getErrorLogFile()
+    {
+        return errorlogger;
+    }
+    
+    /**
+     * set the maximum allowed number of parse failures
+     * @return 
+     */
+    
+    public void setMaximumAllowedParseFailures(Integer failures)
+    {
+        PARSE_FAILURE_LIMIT = failures;
+    }
+    
+    public Integer getMaximumAllowedParseFailures()
+    {
+        return PARSE_FAILURE_LIMIT;
+    }
+    
     public ArrayList<String> getHeaders()
     {
         return headers;
@@ -123,10 +156,10 @@ public abstract class AbstractDataParser
     {
         String dataLine;
         int rowCount = 0;
-        int parseFailures = 0;
+        
         String $HOME = System.getProperty("user.home");
         //TextFileLogger errorlogger = new TextFileLogger($HOME + "/" + fileName.trim() + "_errors", "csv");
-        TextFileLogger errorlogger = new TextFileLogger(fileName.trim() + "_errors", "csv");
+        errorlogger = new TextFileLogger(fileName.trim() + "_errors", "csv");
         try
         {
             errorlogger.open();
@@ -163,12 +196,20 @@ public abstract class AbstractDataParser
                     }
                     catch (ParseException ex)
                     {
-                        errorlogger.receive(ex.getMessage() + "|" + dataLine);
+                        errorlogger.receive("Row: " + (rowCount+1)
+                                + " - "
+                                + ex.getMessage() 
+                                + "|" 
+                                + dataLine);
                         continue;
                     }
                     catch (NoSuchElementException nex)
                     {
-                        errorlogger.receive(nex.getMessage() + "|" + dataLine);
+                        errorlogger.receive("Row: " + (rowCount+1)
+                                + " - "
+                                + nex.getMessage() 
+                                + "|" 
+                                + dataLine);
                         continue;
                     }
                 }
@@ -178,9 +219,13 @@ public abstract class AbstractDataParser
                 }
                 catch (ParseException ex)
                 {
-                    errorlogger.receive(ex.getMessage() + "|" + dataLine);
-                    parseFailures++;
-                    if (parseFailures > parseFailureLimit)
+                    errorlogger.receive("Row: " + (rowCount+1)
+                                + " - "
+                                + ex.getMessage() 
+                                + "|" 
+                                + dataLine);
+                    PARSE_FAILURES++;
+                    if (PARSE_FAILURES > PARSE_FAILURE_LIMIT)
                     {
                         AbstractDataParser.logger.error("Too many parse failures - quitting.");
                         break;
@@ -189,9 +234,14 @@ public abstract class AbstractDataParser
                 catch (NoSuchElementException nse)
                 {
                     nse.printStackTrace();
-                    errorlogger.receive("Insufficient data elements - " + nse.getMessage() + "|" + dataLine);
-                    parseFailures++;
-                    if (parseFailures > parseFailureLimit)
+                    errorlogger.receive("Row: " + (rowCount+1)
+                                + " - "
+                                +"Insufficient data elements - " 
+                                + nse.getMessage() 
+                                + "|" 
+                                + dataLine);
+                    PARSE_FAILURES++;
+                    if (PARSE_FAILURES > PARSE_FAILURE_LIMIT)
                     {
                         AbstractDataParser.logger.error("Too many parse failures - quitting.");
                         if(parentForm != null)
@@ -200,7 +250,7 @@ public abstract class AbstractDataParser
                     }
                 }
             }
-            if (parseFailures > 0)
+            if (PARSE_FAILURES > 0)
             {
                 AbstractDataParser.logger.debug("Wrote errors to file " + errorlogger.getFullName());
                 if(parentForm != null)
@@ -212,9 +262,9 @@ public abstract class AbstractDataParser
         {
             ioe.printStackTrace();
         }
-        AbstractDataParser.logger.debug("Finished processing file, read " + rowCount + " rows, found " + parseFailures + " bad rows.");
+        AbstractDataParser.logger.debug("Finished processing file, read " + rowCount + " rows, found " + PARSE_FAILURES + " bad rows.");
         if(parentForm != null)
-            parentForm.updateMessageArea("Finished processing file, read " + rowCount + " rows, found " + parseFailures + " bad rows.");
+            parentForm.updateMessageArea("Finished processing file, read " + rowCount + " rows, found " + PARSE_FAILURES + " bad rows.");
     }
 
     protected void processFile(File dataFile)

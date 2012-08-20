@@ -24,6 +24,14 @@ import org.imos.abos.dbms.RawInstrumentData;
 public class BranknerTDR2050Parser extends AbstractDataParser
 {
 
+    protected SimpleDateFormat dateParser = new SimpleDateFormat("yy/MM/dd HH:mm:ss");
+    
+    public BranknerTDR2050Parser()
+    {
+        super();
+        dateParser.setTimeZone(tz);
+    }
+    
     @Override
     protected void parseHeader(String dataLine) throws ParseException, NoSuchElementException
     {
@@ -35,7 +43,7 @@ public class BranknerTDR2050Parser extends AbstractDataParser
     @Override
     protected void parseData(String dataLine) throws ParseException, NoSuchElementException
     {
-        SimpleDateFormat dateParser = new SimpleDateFormat("yy/MM/dd HH:mm:ss");
+        
         DecimalFormat deciFormat = new DecimalFormat("-######.0#");
 
         String dateString;
@@ -145,16 +153,12 @@ public class BranknerTDR2050Parser extends AbstractDataParser
 
             row.setParameterCode("WATER_PRESSURE");
             row.setParameterValue(pressure);
-            row.setSourceFileID(currentFile.getDataFilePrimaryKey());
-            row.setQualityCode("RAW");
-
+            
             ok = row.insert();
             
-            row.setParameterCode("CALC_DEPTH");
+            row.setParameterCode("WATER_DEPTH");
             row.setParameterValue(depth);
-            row.setSourceFileID(currentFile.getDataFilePrimaryKey());
-            row.setQualityCode("RAW");
-
+            
             ok = row.insert();
 
             

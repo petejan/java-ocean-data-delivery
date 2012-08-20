@@ -416,14 +416,14 @@ public class WETLabsFLNTUSCalculationForm extends MemoryWindow implements DataPr
             row.setLatitude(selectedMooring.getLatitudeIn());
             row.setLongitude(selectedMooring.getLongitudeIn());
             row.setMooringID(selectedMooring.getMooringID());
-            row.setParameterCode("TURBIDITY");
+            row.setParameterCode("TURB");
             row.setParameterValue(sbe.calculatedTurbidityValue);
             row.setSourceFileID(sbe.sourceFileID);
             row.setQualityCode("RAW");
 
             boolean ok = row.insert();
 
-            row.setParameterCode("CHLOROPHYLL");
+            row.setParameterCode("CPHL");
             row.setParameterValue(sbe.calculatedChlorophyllValue);
             row.setSourceFileID(sbe.sourceFileID);
             row.setQualityCode("RAW");

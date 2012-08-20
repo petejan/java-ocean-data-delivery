@@ -203,11 +203,21 @@ public class InstrumentTable extends EditableBaseTable
     @Override
     public void runRightClick( int row, int column )
     {
-
-        String s = JOptionPane.showInputDialog(this,"Enter instrument make....");
-        if(s != null)
+        if(column == 3)
         {
-            collection.loadDataForSpecifiedMake(s);
+            String s = JOptionPane.showInputDialog(this,"Enter instrument S/num....");
+            if(s != null)
+            {
+                collection.loadDataForSpecifiedSerialNumber(s);
+            }
+        }
+        else
+        {
+            String s = JOptionPane.showInputDialog(this,"Enter instrument make....");
+            if(s != null)
+            {
+                collection.loadDataForSpecifiedMake(s);
+            }
         }
     }
 
@@ -234,7 +244,11 @@ public class InstrumentTable extends EditableBaseTable
         }
 
         InstrumentDataFileTable form = new InstrumentDataFileTable();
-        form.setLocationRelativeTo(this);
+        
+        //form.setLocationRelativeTo(this);
+        
+        form.setLocation(this.getLocationOnScreen());
+        
         form.setRunStatus(false);
         form.setInstrument(row);
         form.initialise();
