@@ -16,11 +16,13 @@ package org.imos.abos.dbms;
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.sql.Timestamp;
+import java.util.ArrayList;
 import javax.swing.JComboBox;
 import javax.swing.JOptionPane;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.table.TableColumnModel;
+import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
 import org.wiley.LabMaster.Common;
 import org.wiley.table.ComboBoxEditor;
@@ -32,7 +34,7 @@ import org.wiley.util.SettableCaseJTextField;
 
 public class InstrumentTable extends EditableBaseTable
 {
-
+    private static Logger logger = Logger.getLogger(InstrumentTable.class.getName());
     private Mooring currentMooring = null;
 
     public InstrumentTable()
@@ -93,6 +95,11 @@ public class InstrumentTable extends EditableBaseTable
                     );
 
                 collection.setMooring(currentMooring);
+                if(collection.getRowCount() == 0)
+                {
+                    attachInstrumentsToMooring();
+                    collection.setMooring(currentMooring);
+                }
         }
         else
         {
@@ -137,6 +144,15 @@ public class InstrumentTable extends EditableBaseTable
         spareButton2.setToolTipText("Maintain calibration files for instrument");
         spareButton2.setVisible(true);
         spareButton2.setEnabled(true);
+        
+        if(currentMooring != null)
+        {
+            spareButton3.setText("Link Files");
+            spareButton3.setMnemonic('l');
+            spareButton3.setToolTipText("Link instruments to mooring");
+            spareButton3.setVisible(true);
+            spareButton3.setEnabled(true);
+        }
 
         this.setVisible( true );
     }
@@ -197,6 +213,9 @@ public class InstrumentTable extends EditableBaseTable
 
         spareButton2.setMaximumSize(new Dimension(maxSize,27));
         spareButton2.setPreferredSize(new Dimension(prefSize, 27));
+        
+        spareButton3.setMaximumSize(new Dimension(maxSize,27));
+        spareButton3.setPreferredSize(new Dimension(prefSize, 27));
 
     }
 
@@ -283,6 +302,46 @@ public class InstrumentTable extends EditableBaseTable
 
         //Common.showMessage(this, "Not Implemented","This function is not yet implemented.");
 
+    }
+    
+    @Override
+    public void spareButton3_actionPerformed(ActionEvent e)
+    {
+        String s = JOptionPane.showInputDialog(this,"Enter instrument ID to link: ");
+        if(s != null)
+        {
+            try
+            {
+                Integer ix = new Integer(s.trim());
+                Instrument ins= Instrument.selectByInstrumentID(ix);
+                
+                if(ins != null)
+                {
+                    Mooring.assignAttachedInstrument(currentMooring.getMooringID(), ix);
+                }
+            }
+            catch(NumberFormatException nex)
+            {
+                logger.error("Not an integer number - " + s);
+            }
+        }
+            
+        //Common.showMessage(this, "Not Implemented","This function is not yet implemented.");
+    }
+    
+    private void attachInstrumentsToMooring()
+    {
+        ArrayList<InstrumentDataFile> linkedFiles = InstrumentDataFile.selectDataFilesForMooring(currentMooring.getMooringID());
+        
+        if(linkedFiles != null)
+        {
+            for(int i = 0; i < linkedFiles.size(); i++)
+            {
+                InstrumentDataFile row = linkedFiles.get(i);
+                
+                boolean OK = Mooring.assignAttachedInstrument(currentMooring.getMooringID(), row.getInstrumentID());
+            }
+        }
     }
 
     protected void setMooring(Mooring m)
