@@ -850,5 +850,27 @@ public class Mooring  implements Cloneable
     {
         return longitudeOut;
     }
+
+    /**
+     * assign an instrument to a specified mooring
+     * @param MID
+     * @param instrumentID
+     * @return true if successful, false otherwise. Most likely failure cause would be a PK
+     *          error if the instrument is already assigned - possible.
+     */
+    public static boolean assignAttachedInstrument(String MID, Integer instrumentID)
+    {
+        String SQL = "insert into mooring_attached_instruments"
+                + "(mooring_id, instrument_id)"
+                + " values "
+                + "("
+                + StringUtilities.quoteString(MID)
+                + ","
+                + instrumentID
+                + ")"
+                ;
+        
+        return Common.executeSQL(SQL);
+    }
 }
 
