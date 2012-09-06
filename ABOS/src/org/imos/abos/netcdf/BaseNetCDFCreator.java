@@ -153,7 +153,7 @@ public abstract class BaseNetCDFCreator
     {
         dataFile.addVariableAttribute("TIME", "name", "TIME");
         dataFile.addVariableAttribute("TIME", "standard_name", "TIME");
-        dataFile.addVariableAttribute("TIME", "units", "days since 1950-01-01T00:00:00Z");
+        dataFile.addVariableAttribute("TIME", "units", "hours since 1950-01-01T00:00:00Z");
         dataFile.addVariableAttribute("TIME", "axis", "T");
         dataFile.addVariableAttribute("TIME", "valid_min", 0.0);
         dataFile.addVariableAttribute("TIME", "valid_max", 999999999);
@@ -245,7 +245,7 @@ public abstract class BaseNetCDFCreator
             ArrayList dims = null;
             // Define the coordinate variables.
             dataFile.addVariable("level", DataType.FLOAT, new Dimension[]{lvlDim});
-            dataFile.addVariable("TIME", DataType.DOUBLE, new Dimension[]{timeDim});
+            dataFile.addVariable("TIME", DataType.INT, new Dimension[]{timeDim});
             // Define the netCDF variables for the pressure and temperature
             // data.
             dims = new ArrayList();
@@ -256,7 +256,7 @@ public abstract class BaseNetCDFCreator
             //
             writeBaseVariableAttributes();
             ArrayFloat.D1 depths = new ArrayFloat.D1(lvlDim.getLength());
-            ArrayDouble.D1 times = new ArrayDouble.D1(timeDim.getLength());
+            ArrayInt.D1 times = new ArrayInt.D1(timeDim.getLength());
             for (int j = 0; j < lvlDim.getLength(); j++)
             {
                 Double currentDepth = depthArray.get(j);
@@ -268,8 +268,8 @@ public abstract class BaseNetCDFCreator
             {
                 Timestamp ts = timeArray.get(i);
                 long offsetTime = (ts.getTime() - anchorTime) / 1000;
-                double elapsedDays = (double) offsetTime / 3600 / 24;
-                times.set(i, elapsedDays);
+                int elapsedHours = (int) offsetTime / 3600;
+                times.set(i, elapsedHours);
             }
             // Create the data.
             ArrayList<String> varNames = new ArrayList();
