@@ -688,12 +688,12 @@ public class InstrumentCalibrationFile  implements Cloneable
         else
             return null;
     }
-
+   
     /**
      * select all data files linked to a specified instrument
      * @return
      */
-    public static ArrayList<InstrumentCalibrationFile> selectDataFilesForInstrument(Integer ID)
+    public static ArrayList<InstrumentCalibrationFile> selectCalibrationFilesForInstrument(Integer ID)
     {
         return doSelect( selectSQL
                         + " where instrument_id = "
@@ -706,7 +706,7 @@ public class InstrumentCalibrationFile  implements Cloneable
      * @param ID
      * @return
      */
-    public static ArrayList<InstrumentCalibrationFile> selectDataFilesForMooring(String ID)
+    public static ArrayList<InstrumentCalibrationFile> selectCalibrationFilesForMooring(String ID)
     {
         return doSelect( selectSQL
                         + " where mooring_id = "

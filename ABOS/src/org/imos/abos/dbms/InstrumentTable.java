@@ -222,7 +222,15 @@ public class InstrumentTable extends EditableBaseTable
     @Override
     public void runRightClick( int row, int column )
     {
-        if(column == 3)
+        if(column == 2)
+        {
+            String s = JOptionPane.showInputDialog(this,"Enter instrument Model....");
+            if(s != null)
+            {
+                collection.loadDataForSpecifiedModel(s);
+            }
+        }
+        else if(column == 3)
         {
             String s = JOptionPane.showInputDialog(this,"Enter instrument S/num....");
             if(s != null)

@@ -630,7 +630,29 @@ public class Instrument  implements Cloneable
                         + ")"
                         + getDefaultSortOrder());
     }
+    
+    /**
+     * select all instruments with a calibration file linked to the specified mooring
+     * 
+     * @param mooringID
+     * @return
+     */
+    public static ArrayList<Instrument> selectInstrumentsWithCalibrationFilesForMooring(String mooringID)
+    { 
+        return doSelect( selectSQL
+                        + " where instrument_id in "
+                        + "("
+                        + " select distinct instrument_id from instrument_calibration_values "
+                        + " where mooring_id = "
+                        + StringUtilities.quoteString(mooringID)
+                        + ")"
+                        + getDefaultSortOrder());
+    }
 
+    public static ArrayList<Instrument> selectInstrumentsWithCalibrationFilesForMooring(Mooring mooring)
+    {
+        return selectInstrumentsWithCalibrationFilesForMooring(mooring.getMooringID());
+    }
     /**
      * select all instruments assigned to a mooring regardless of whether they have any
      * data files linked to them - this can happen with instruments attached to an SBE16
@@ -646,6 +668,20 @@ public class Instrument  implements Cloneable
                         + " select distinct instrument_id from mooring_attached_instruments "
                         + " where mooring_id = "
                         + StringUtilities.quoteString(mooringID)
+                        + ")"
+                        + getDefaultSortOrder());
+    }
+    
+    public static ArrayList<Instrument> selectInstrumentsWithCalibrationFilesAttachedToMooring(String mooringID)
+    {
+        return doSelect( selectSQL
+                        + " where instrument_id in "
+                        + "("
+                        + " select distinct mooring_attached_instruments.instrument_id"
+                        + " from mooring_attached_instruments, instrument_calibration_files"
+                        + " where mooring_id = "
+                        + StringUtilities.quoteString(mooringID)
+                        + " and instrument_calibration_files.instrument_id = mooring_attached_instruments.instrument_id"
                         + ")"
                         + getDefaultSortOrder());
     }
@@ -681,6 +717,23 @@ public class Instrument  implements Cloneable
         return doSelect( selectSQL
                         + " where serial_number like "
                         + StringUtilities.quoteString(s_num)
+                        + getDefaultSortOrder());
+    }
+    
+    public static ArrayList<Instrument> selectByModel(String mod)
+    {
+        if(mod == null)
+            return null;
+
+        if(mod.trim().isEmpty())
+            return null;
+
+        if(! mod.trim().endsWith("%"))
+            mod = mod.trim() + "%";
+        
+        return doSelect( selectSQL
+                        + " where model like "
+                        + StringUtilities.quoteString(mod)
                         + getDefaultSortOrder());
     }
 

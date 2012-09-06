@@ -9,13 +9,12 @@
 
 package org.imos.abos.netcdf.pulse7;
 
-import org.apache.log4j.Logger;
-import org.apache.log4j.PropertyConfigurator;
-import org.wiley.core.Common;
-
 import java.text.SimpleDateFormat;
 import java.util.TimeZone;
+import org.apache.log4j.Logger;
+import org.apache.log4j.PropertyConfigurator;
 import org.imos.abos.netcdf.BaseNetCDFCreator;
+import org.wiley.core.Common;
 
 /**
  *

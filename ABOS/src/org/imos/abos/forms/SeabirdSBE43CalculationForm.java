@@ -247,14 +247,14 @@ public class SeabirdSBE43CalculationForm extends MemoryWindow implements DataPro
         runButton.setBackground(Color.RED);
         runButton.setForeground(Color.WHITE);
         
-        String insProc = new String("INSERT INTO instrument_data_processors (processors_pk, mooring_id, class_name, parameters, processing_date, display_code) VALUES ("
-                + "nextval('instrument_data_processor_sequence'),"
-                + "'" + selectedMooring.getMooringID() + "',"
-                + "'" + this.getClass().getName() + "',"
-                + "'" + paramToString() + "',"
-                + "'" + Common.current() + "',"
-                + "'Y'"
-                + ")");
+        String insProc = "INSERT INTO instrument_data_processors (processors_pk, mooring_id, class_name, parameters, processing_date, display_code) VALUES ("
+     + "nextval('instrument_data_processor_sequence'),"
+     + "'" + selectedMooring.getMooringID() + "',"
+     + "'" + this.getClass().getName() + "',"
+     + "'" + paramToString() + "',"
+     + "'" + Common.current() + "',"
+     + "'Y'"
+     + ")";
 
         Connection conn = Common.getConnection();
 
@@ -307,13 +307,12 @@ public class SeabirdSBE43CalculationForm extends MemoryWindow implements DataPro
 
         try
         {
-            String storedProc = new String("{ ? = call xtract_sbe43data_selector"
-                                            + "("
-                                            + sourceInstrument.getInstrumentID()
-                                            + " , "
-                                            + StringUtilities.quoteString(selectedMooring.getMooringID())
-                                            + ") }"
-                                            );
+            String storedProc = "{ ? = call xtract_sbe43data_selector"
+                                 + "("
+                                 + sourceInstrument.getInstrumentID()
+                                 + " , "
+                                 + StringUtilities.quoteString(selectedMooring.getMooringID())
+                                 + ") }";
             conn = Common.getConnection();
             conn.setAutoCommit(false);
 

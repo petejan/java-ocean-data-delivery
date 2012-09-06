@@ -15,6 +15,7 @@ package org.imos.abos.dbms;
  * @modified
  *
  * 2012-04-18 PDW Added extra columns for netCDF descriptors
+ * 2012-08-28 PDW Added column for netCDF long name, max/min valid values
  */
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
@@ -66,16 +67,23 @@ public class ParameterCodes  implements Cloneable
 
     private String code;
     private String description;
-    private String netCDFName;
+    private String netCDFStandardName;
+    private String netCDFLongName;
     private String units;
     private String displayCode;
+    
+    private Double minimumValidValue;
+    private Double maximumValidValue;
 
     private static String[] columnNames = new String[]
     {
         "Code",
         "Description",
-        "NetCDF Name",
+        "CDF Std Name",
+        "CDF Long Name",
         "Units",
+        "Min Val",
+        "Max Val",
         "Display"
     };
 
@@ -85,14 +93,20 @@ public class ParameterCodes  implements Cloneable
         String.class,
         String.class,
         String.class,
+        String.class,
+        Double.class,
+        Double.class,
         Boolean.class
     };
 
     private static String selectSQL = "select"
                 + " code,"
                 + " description,"
-                + " netcdf_name,"
+                + " netcdf_std_name,"
+                + " netcdf_long_name,"
                 + " units,"
+                + " minimum_valid_value,"
+                + " maximum_valid_value,"
                 + " display_code"
                 + " from parameters"
                 ;
@@ -103,13 +117,16 @@ public class ParameterCodes  implements Cloneable
             + "("
             + " code,"
             + " description,"
-            + " netcdf_name,"
+            + " netcdf_std_name,"
+            + " netcdf_long_name,"
             + " units,"
+            + " minimum_valid_value,"
+            + " maximum_valid_value,"
             + " display_code"
             + ")"
             + " values "
             + "("
-            + "?,?,?,?,?"
+            + "?,?,?,?,?,?,?,?"
             + ")"
             ;
     
@@ -122,8 +139,11 @@ public class ParameterCodes  implements Cloneable
     {
         return "update parameters "
                 + " set description = ?,\n"
-                + " netcdf_name = ?,\n"
+                + " netcdf_std_name = ?,\n"
+                + " netcdf_long_name = ?,\n"
                 + " units = ?,\n"
+                + " minimum_valid_value = ?,\n"
+                + " maximum_valid_value = ?,\n"
                 + " display_code = ?\n"
                 + " where code = ?";
     }
@@ -257,10 +277,16 @@ public class ParameterCodes  implements Cloneable
         else if(columnIndex == 1)
             return description;
         else if(columnIndex == 2)
-            return netCDFName;
+            return netCDFStandardName;
         else if(columnIndex == 3)
-            return units;
+            return netCDFLongName;
         else if(columnIndex == 4)
+            return units;
+        else if(columnIndex == 5)
+            return minimumValidValue;
+        else if(columnIndex == 6)
+            return maximumValidValue;
+        else if(columnIndex == 7)
             return getDisplayCodeAsBoolean();
         else
             return null;
@@ -296,10 +322,16 @@ public class ParameterCodes  implements Cloneable
         else if(aColumn == 1)
             return setDescription(value);
         else if(aColumn == 2)
-            return setNetCDFName((String) value);
+            return setNetCDFStandardName((String) value);
         else if(aColumn == 3)
-            return setUnits((String) value);
+            return setNetCDFLongName((String) value);
         else if(aColumn == 4)
+            return setUnits((String) value);
+        else if(aColumn == 5)
+            return setMinimumValidValue((Number) value);
+        else if(aColumn == 6)
+            return setMaximumValidValue((Number) value);
+        else if(aColumn == 7)
             return setDisplayCode(value);
         else
             return false;
@@ -435,10 +467,22 @@ public class ParameterCodes  implements Cloneable
         try
         {
             psql.setString(1, description);
-            psql.setString(2, netCDFName);
-            psql.setString(3, units);
-            psql.setString(4, displayCode);
-            psql.setString(5, code);
+            psql.setString(2, netCDFStandardName);
+            psql.setString(3, netCDFLongName);
+            psql.setString(4, units);
+            
+            if(minimumValidValue != null)
+                psql.setDouble(5, minimumValidValue);
+            else
+                psql.setNull(5, java.sql.Types.DOUBLE);
+            
+            if(maximumValidValue != null)
+                psql.setDouble(6, maximumValidValue);
+            else
+                psql.setNull(6, java.sql.Types.DOUBLE);
+            
+            psql.setString(7, displayCode);
+            psql.setString(8, code);
 
             int affectedRows = psql.executeUpdate();
             if(affectedRows == 1)
@@ -465,9 +509,12 @@ public class ParameterCodes  implements Cloneable
     {
         setParameterCode( (String) currentRow.elementAt(0) );
         setDescription((String) currentRow.elementAt(1));
-        setNetCDFName((String) currentRow.elementAt(2));
-        setUnits((String) currentRow.elementAt(3));
-        setDisplayCode((String) currentRow.elementAt(4));
+        setNetCDFStandardName((String) currentRow.elementAt(2));
+        setNetCDFLongName((String) currentRow.elementAt(3));
+        setUnits((String) currentRow.elementAt(4));
+        setMinimumValidValue((Number) currentRow.elementAt(5));
+        setMaximumValidValue((Number) currentRow.elementAt(6));
+        setDisplayCode((String) currentRow.elementAt(7));
 
         isNew = false;
         isEdited = false;
@@ -500,27 +547,50 @@ public class ParameterCodes  implements Cloneable
             return description.trim();
     }
 
-    public boolean setNetCDFName(String string)
+    public boolean setNetCDFStandardName(String string)
     {
         if(string != null && (! string.isEmpty()))
         {
-            netCDFName = string.trim();
+            netCDFStandardName = string.trim();
         }
         else
         {
-            netCDFName = null;
+            netCDFStandardName = null;
+        }
+
+        isEdited = true;
+        return true;
+    }
+    
+    public boolean setNetCDFLongName(String string)
+    {
+        if(string != null && (! string.isEmpty()))
+        {
+            netCDFLongName = string.trim();
+        }
+        else
+        {
+            netCDFLongName = null;
         }
 
         isEdited = true;
         return true;
     }
 
-    public String getNetCDFName()
+    public String getNetCDFStandardName()
     {
-        if(netCDFName == null || netCDFName.trim().isEmpty())
+        if(netCDFStandardName == null || netCDFStandardName.trim().isEmpty())
             return null;
         else
-            return netCDFName.trim();
+            return netCDFStandardName.trim();
+    }
+    
+    public String getNetCDFLongName()
+    {
+        if(netCDFLongName == null || netCDFLongName.trim().isEmpty())
+            return null;
+        else
+            return netCDFLongName.trim();
     }
 
     public boolean setUnits(String string)
@@ -665,9 +735,21 @@ public class ParameterCodes  implements Cloneable
         {
             psql.setString(1, code);
             psql.setString(2, description);
-            psql.setString(3, netCDFName);
-            psql.setString(4, units);
-            psql.setString(5, displayCode);
+            psql.setString(3, netCDFStandardName);
+            psql.setString(4, netCDFLongName);
+            psql.setString(5, units);
+            
+            if(minimumValidValue != null)
+                psql.setDouble(6, minimumValidValue);
+            else
+                psql.setNull(6, java.sql.Types.DOUBLE);
+            
+            if(maximumValidValue != null)
+                psql.setDouble(7, maximumValidValue);
+            else
+                psql.setNull(7, java.sql.Types.DOUBLE);
+            
+            psql.setString(8, displayCode);
 
             int affectedRows = psql.executeUpdate();
             if(affectedRows == 1)
@@ -694,15 +776,49 @@ public class ParameterCodes  implements Cloneable
     public Boolean getDisplayCodeAsBoolean()
     {
         if(displayCode == null)
-            return new Boolean(true);
+            return true;
 
         if(displayCode.trim().isEmpty())
-            return new Boolean(true);
+            return true;
 
         if(displayCode.startsWith("N"))
-            return new Boolean(false);
+            return false;
         else
-            return new Boolean(true);
+            return true;
+    }
+
+    private boolean setMinimumValidValue(Number number)
+    {
+        if(number != null)
+            minimumValidValue = number.doubleValue();
+        else
+            minimumValidValue = null;
+        
+        isEdited = true;
+        
+        return true;
+    }
+    
+    public Double getMinimumValidValue()
+    {
+        return minimumValidValue;
+    }
+    
+    private boolean setMaximumValidValue(Number number)
+    {
+        if(number != null)
+            maximumValidValue = number.doubleValue();
+        else
+            maximumValidValue = null;
+        
+        isEdited = true;
+        
+        return true;
+    }
+    
+    public Double getMaximumValidValue()
+    {
+        return maximumValidValue;
     }
 }
 

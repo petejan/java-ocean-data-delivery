@@ -28,11 +28,7 @@ import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
-import org.imos.abos.dbms.Instrument;
-import org.imos.abos.dbms.Mooring;
-import org.imos.abos.dbms.ParameterCodes;
-import org.imos.abos.dbms.ProcessedInstrumentData;
-import org.imos.abos.dbms.RawInstrumentData;
+import org.imos.abos.dbms.*;
 import org.wiley.core.Common;
 import org.wiley.core.forms.MemoryWindow;
 
@@ -241,14 +237,14 @@ public class ProcessedDataCreationForm extends MemoryWindow implements DataProce
         runButton.setForeground(Color.WHITE);
         
         // TODO: should only form ones do this, or should all create a record in the table?
-        String insProc = new String("INSERT INTO instrument_data_processors (processors_pk, mooring_id, class_name, parameters, processing_date, display_code) VALUES ("
-                + "nextval('instrument_data_processor_sequence'),"
-                + "'" + selectedMooring.getMooringID() + "',"
-                + "'" + this.getClass().getName() + "',"
-                + "'" + paramToString() + "',"
-                + "'" + Common.current() + "',"
-                + "'Y'"
-                + ")");
+        String insProc = "INSERT INTO instrument_data_processors (processors_pk, mooring_id, class_name, parameters, processing_date, display_code) VALUES ("
+     + "nextval('instrument_data_processor_sequence'),"
+     + "'" + selectedMooring.getMooringID() + "',"
+     + "'" + this.getClass().getName() + "',"
+     + "'" + paramToString() + "',"
+     + "'" + Common.current() + "',"
+     + "'Y'"
+     + ")";
 
         Connection conn = Common.getConnection();
 
@@ -326,13 +322,13 @@ public class ProcessedDataCreationForm extends MemoryWindow implements DataProce
             }
         }
         
-        String update = new String("UPDATE instrument_data_processors SET " 
-                + "processing_date = '" + Common.current() + "',"
-                + "count = "+ selectionSet.size()
-                + " WHERE "
-                + "mooring_id = '" + selectedMooring.getMooringID() + "'"
-                + " AND class_name = '" + this.getClass().getName() + "'"
-                + " AND parameters = '" + paramToString()  + "'");
+        String update = "UPDATE instrument_data_processors SET " 
+     + "processing_date = '" + Common.current() + "',"
+     + "count = "+ selectionSet.size()
+     + " WHERE "
+     + "mooring_id = '" + selectedMooring.getMooringID() + "'"
+     + " AND class_name = '" + this.getClass().getName() + "'"
+     + " AND parameters = '" + paramToString()  + "'";
 
         Connection conn = Common.getConnection();
 

@@ -22,6 +22,7 @@ import javax.swing.JFrame;
 import org.apache.log4j.Logger;
 import org.imos.abos.dbms.Instrument;
 import org.imos.abos.dbms.InstrumentDataFile;
+import org.imos.abos.dbms.Mooring;
 import org.wiley.core.Common;
 import org.wiley.core.forms.MemoryWindow;
 
@@ -271,6 +272,12 @@ public class InstrumentDataForm extends MemoryWindow
             if ( OK )
             {
                 savedItem = editableItem;
+                //
+                // add this instrument to the list of attached instruments for the mooring
+                //
+                Mooring.assignAttachedInstrument(mooringCombo.getSelectedMooring().getMooringID(), 
+                                                 parentInstrument.getInstrumentID());
+                
                 quitButtonActionPerformed( new ActionEvent(this, 0, "SUCCESS") );
             } 
             else

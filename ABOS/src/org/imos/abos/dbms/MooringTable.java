@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.table.TableColumnModel;
+import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
 import org.imos.abos.parsers.AbstractDataParser;
 import org.wiley.JDBCAdapter;
@@ -31,6 +32,7 @@ import org.wiley.util.StringUtilities;
 public class MooringTable extends EditableBaseTable
 {
 
+    private static Logger logger = Logger.getLogger(MooringTable.class.getName());
     public MooringTable()
     {
         super();
@@ -429,21 +431,32 @@ public class MooringTable extends EditableBaseTable
             return;
         }
 
-        String SQL = "select instrument_id, depth, parameter_code, avg(parameter_value), max(parameter_value), min(parameter_value), count(*)"
-                    + " from processed_instrument_data"
+        String SQL = " select pid.instrument_id, "
+                    + " ins.make || '/' || ins.model as Make,"
+                    + " depth, parameter_code,"
+                    + " avg(parameter_value)as avg_value,"
+                    + " max(parameter_value) as max_value,"
+                    + " min(parameter_value) as min_value,"
+                    + " count(*) as total_count\n"
+                    + " from processed_instrument_data pid, instrument ins\n"
                     + " where mooring_id = "
                     + StringUtilities.quoteString(selectedRow.getMooringID())
-                    + " group by instrument_id, depth, parameter_code"
-                    + " order by depth, instrument_id, parameter_code"
+                    + "\n"
+                    + "and ins.instrument_id = pid.instrument_id\n"
+                    + " group by 1,2,3,4"
+                    + " order by depth, instrument_id, parameter_code\n"
+                    + ";\n"
                     ;
-
+        
+        logger.debug(SQL);
+        
         JDBCAdapter dataSelector = new JDBCAdapter(Common.getConnection());
         dataSelector.executeQuery(SQL);
         DataDisplayTable table = new DataDisplayTable();
         table.setRunStatus(false);
         table.setDataTitle("Summary of Processed Data For Mooring " + selectedRow.getMooringID());
         table.setData(dataSelector);
-        table.initialise();
+        table.initialise();       
     }
 
     private class DataDisplayTable extends BaseTable

@@ -43,7 +43,9 @@ public class BaseNetCDFConstants
     public static String conventions = "CF-1.6;IMOS-1.3" ;
     public static String title = "Pulse 7 Mooring Temperature & Pressure Data" ;
     public static String institution = "CSIRO" ;
-    public static String source = "" ;
+    
+    public static String source = "Moorings" ;
+    
     public static String netcdf_version = "3.6" ;
     public static String quality_control_set = "1." ;
     public static String site_code = "" ;

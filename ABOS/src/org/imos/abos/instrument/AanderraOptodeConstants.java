@@ -56,6 +56,16 @@ public class AanderraOptodeConstants extends AbstractInstrumentConstants
 
     public Double BPhaseConstant = 0.894295;
     public Double BPhaseMultiplier = 1.10633;
+    
+    public Double UchidaC1Coefficient;
+    public Double UchidaC2Coefficient;
+    public Double UchidaC3Coefficient;
+    public Double UchidaC4Coefficient;
+    public Double UchidaC5Coefficient;
+    public Double UchidaC6Coefficient;
+    public Double UchidaC7Coefficient;
+    public Double UchidaC8Coefficient;
+    public Double UchidaC9Coefficient;
 
     public void setInstrumentAndMooring(Instrument ins, Mooring m)
     {
@@ -113,8 +123,58 @@ public class AanderraOptodeConstants extends AbstractInstrumentConstants
         {
             C4Coeffs = parseData(paramValue);
         }
+        else if(paramName.equalsIgnoreCase("UCHIDA_C1"))
+        {
+            UchidaC1Coefficient = parseDataValue(paramValue);
+        }
+        else if(paramName.equalsIgnoreCase("UCHIDA_C2"))
+        {
+            UchidaC2Coefficient = parseDataValue(paramValue);
+        }
+        else if(paramName.equalsIgnoreCase("UCHIDA_C3"))
+        {
+            UchidaC3Coefficient = parseDataValue(paramValue);
+        }
+        else if(paramName.equalsIgnoreCase("UCHIDA_C4"))
+        {
+            UchidaC4Coefficient = parseDataValue(paramValue);
+        }
+        else if(paramName.equalsIgnoreCase("UCHIDA_C5"))
+        {
+            UchidaC5Coefficient = parseDataValue(paramValue);
+        }
+        else if(paramName.equalsIgnoreCase("UCHIDA_C6"))
+        {
+            UchidaC6Coefficient = parseDataValue(paramValue);
+        }
+        else if(paramName.equalsIgnoreCase("UCHIDA_C7"))
+        {
+            UchidaC7Coefficient = parseDataValue(paramValue);
+        }
+        else if(paramName.equalsIgnoreCase("UCHIDA_C8"))
+        {
+            UchidaC8Coefficient = parseDataValue(paramValue);
+        }
+        else if(paramName.equalsIgnoreCase("UCHIDA_C9"))
+        {
+            UchidaC9Coefficient = parseDataValue(paramValue);
+        }
+        
     }
 
+    private Double parseDataValue(String datum)
+    {
+        try
+        {
+            Double d = new Double(datum);
+            return d;
+        }
+        catch(NumberFormatException nex)
+        {
+            logger.error(nex);
+            return null;
+        }
+    }
     private double[] parseData(String data)
     {
         StringTokenizer st = new StringTokenizer(data,",");

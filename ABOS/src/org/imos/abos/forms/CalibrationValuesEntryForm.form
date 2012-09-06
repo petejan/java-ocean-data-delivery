@@ -147,11 +147,19 @@
             </Component>
             <Component class="javax.swing.JButton" name="cloneButton">
               <Properties>
-                <Property name="text" type="java.lang.String" value="Clone"/>
+                <Property name="text" type="java.lang.String" value="Clone For New Mooring"/>
                 <Property name="enabled" type="boolean" value="false"/>
               </Properties>
               <Events>
                 <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="cloneButtonActionPerformed"/>
+              </Events>
+            </Component>
+            <Component class="javax.swing.JButton" name="cloneValuesButton">
+              <Properties>
+                <Property name="text" type="java.lang.String" value="Clone For New Instrument/Mooring"/>
+              </Properties>
+              <Events>
+                <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="cloneValuesButtonActionPerformed"/>
               </Events>
             </Component>
           </SubComponents>
