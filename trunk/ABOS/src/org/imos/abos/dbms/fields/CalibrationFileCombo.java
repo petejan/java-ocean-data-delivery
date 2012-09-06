@@ -19,8 +19,9 @@ import java.awt.event.ItemListener;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.util.ArrayList;
-import javax.swing.*;
+import javax.swing.JComboBox;
 import org.apache.log4j.Logger;
+import org.imos.abos.dbms.Instrument;
 import org.imos.abos.dbms.InstrumentCalibrationFile;
 import org.imos.abos.dbms.Mooring;
 import org.wiley.util.BasicCombo;
@@ -148,13 +149,16 @@ public class CalibrationFileCombo extends BasicCombo implements PropertyChangeLi
             logger.debug(evt.getPropertyName());
         }
     }
+    
+    public void setSelectedInstrument(Instrument ins)
+    {
+        codes = InstrumentCalibrationFile.selectCalibrationFilesForInstrument(ins.getInstrumentID());
+        setComboData();
+    }
 
-    public void setMooring(Mooring selectedItem)
+    public void setComboData()
     {
         combo.removeAllItems();
-
-        codes = InstrumentCalibrationFile.selectFilesWithCalibrationValuesForMooring(selectedItem);
-
         if(codes != null && codes.size() > 0)
         {
             combo.addItem("");
@@ -204,5 +208,11 @@ public class CalibrationFileCombo extends BasicCombo implements PropertyChangeLi
         };
 
         combo.addItemListener(il);
+    }
+    
+    public void setMooring(Mooring selectedItem)
+    {
+        codes = InstrumentCalibrationFile.selectFilesWithCalibrationValuesForMooring(selectedItem);
+        setComboData();
     }
 }

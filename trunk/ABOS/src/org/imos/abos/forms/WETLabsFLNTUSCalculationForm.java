@@ -259,14 +259,14 @@ public class WETLabsFLNTUSCalculationForm extends MemoryWindow implements DataPr
                     targetInstrument.getInstrumentID());
         }
 
-        String insProc = new String("INSERT INTO instrument_data_processors (processors_pk, mooring_id, class_name, parameters, processing_date, display_code) VALUES ("
-                + "nextval('instrument_data_processor_sequence'),"
-                + "'" + selectedMooring.getMooringID() + "',"
-                + "'" + this.getClass().getName() + "',"
-                + "'" + paramToString() + "',"
-                + "'" + Common.current() + "',"
-                + "'Y'"
-                + ")");
+        String insProc = "INSERT INTO instrument_data_processors (processors_pk, mooring_id, class_name, parameters, processing_date, display_code) VALUES ("
+     + "nextval('instrument_data_processor_sequence'),"
+     + "'" + selectedMooring.getMooringID() + "',"
+     + "'" + this.getClass().getName() + "',"
+     + "'" + paramToString() + "',"
+     + "'" + Common.current() + "',"
+     + "'Y'"
+     + ")";
 
         Connection conn = Common.getConnection();
 
@@ -327,13 +327,12 @@ public class WETLabsFLNTUSCalculationForm extends MemoryWindow implements DataPr
         try
         {
             
-            String storedProc = new String("{ ? = call xtract_wetlabs_flntus_selector"
-                                            + "("
-                                            + sourceInstrument.getInstrumentID()
-                                            + " , "
-                                            + StringUtilities.quoteString(selectedMooring.getMooringID())
-                                            + ") }"
-                                            );
+            String storedProc = "{ ? = call xtract_wetlabs_flntus_selector"
+                                 + "("
+                                 + sourceInstrument.getInstrumentID()
+                                 + " , "
+                                 + StringUtilities.quoteString(selectedMooring.getMooringID())
+                                 + ") }";
              
             conn = Common.getConnection();
             conn.setAutoCommit(false);

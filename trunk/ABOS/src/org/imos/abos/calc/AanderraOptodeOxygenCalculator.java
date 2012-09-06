@@ -148,6 +148,68 @@ public class AanderraOptodeOxygenCalculator
         return new Double(o2);
     }
     
+    /**
+     * calculate dissolved oxygen using the CSIRO/Uchida algorithm
+     * 
+     * @param optodeTemperature
+     * @param optodeBPhaseValue
+     * @param salinity
+     * @param pressure
+     * @return 
+     */
+    
+    public static Double UchidaCalculateDissolvedOxygenInUMolesPerKg(Double optodeTemperature, Double optodeBPhaseValue, Double salinity, Double pressure)
+    {
+        double dissolvedOxygen = AanderraOptodeOxygenCalculator.UchidaCalculateDissolvedOxygenInUMolesPerLitre(optodeTemperature, optodeBPhaseValue);
+        
+        double depthDensity = SeawaterParameterCalculator.calculateSeawaterDensityAtDepth(salinity, optodeTemperature, pressure); // kg/m^3
+        dissolvedOxygen = (dissolvedOxygen / (depthDensity / 1000));
+        
+        return dissolvedOxygen;
+        
+    }
+    public static Double UchidaCalculateDissolvedOxygenInUMolesPerLitre(Double optodeTemperature, Double optodeBPhaseValue)
+    {
+        if(constants == null)
+        {
+            logger.error("No constants class assigned, no computation is possible!");
+            return null;
+        }
+
+        if (optodeTemperature == null || optodeBPhaseValue == null )
+        {
+            return null;
+        }
+        
+        if(
+                constants.UchidaC1Coefficient == null 
+                || constants.UchidaC2Coefficient == null
+                || constants.UchidaC3Coefficient == null
+                || constants.UchidaC4Coefficient == null
+                || constants.UchidaC5Coefficient == null
+                || constants.UchidaC6Coefficient == null
+                || constants.UchidaC7Coefficient == null
+          )
+        {
+            logger.error("At least 1 Uchida constant missing, no computation is possible!");
+            return null;
+        }
+        
+        double p1 = (constants.UchidaC4Coefficient + constants.UchidaC5Coefficient * optodeTemperature);
+        double p2 = (constants.UchidaC6Coefficient + constants.UchidaC7Coefficient * optodeBPhaseValue);
+        
+        double p3 = constants.UchidaC1Coefficient
+                    + constants.UchidaC2Coefficient * optodeTemperature
+                    + constants.UchidaC3Coefficient * Math.pow(optodeTemperature, 2)
+                ;
+        
+        double dissolvedOxygen = ((p1/p2) - 1)/p3;
+        
+        
+        
+        return dissolvedOxygen;
+    }
+    
     public static void main(String args[])
     {
         String $HOME = System.getProperty("user.home");
@@ -164,11 +226,11 @@ public class AanderraOptodeOxygenCalculator
         
         aoc.setInstrumentAndMooring(Instrument.selectByInstrumentID(620), Mooring.selectByMooringID("PULSE_7")); // Optode-1161, Pulse-7
         
-        aooc.setOptodeConstants(aoc);
+        AanderraOptodeOxygenCalculator.setOptodeConstants(aoc);
         
         System.out.println("Constants " + aoc);
         
-        System.out.println("DO = " + aooc.calculateDissolvedOxygenInUMolesPerKg(8.707, 37.36512725, 34.56124872, 34.56124872) + " umol/kg");
+        System.out.println("DO = " + AanderraOptodeOxygenCalculator.calculateDissolvedOxygenInUMolesPerKg(8.707, 37.36512725, 34.56124872, 34.56124872) + " umol/kg");
                 
     }
 }

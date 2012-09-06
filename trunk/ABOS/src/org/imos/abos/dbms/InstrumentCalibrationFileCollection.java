@@ -45,7 +45,7 @@ public class InstrumentCalibrationFileCollection extends AbstractTableModel
     public void setMooring(Mooring m)
     {
         parentMooring = m;
-        rows = InstrumentCalibrationFile.selectDataFilesForMooring(parentMooring.getMooringID());
+        rows = InstrumentCalibrationFile.selectCalibrationFilesForMooring(parentMooring.getMooringID());
     }
 
     public void loadFromPersistentStore()
@@ -56,7 +56,7 @@ public class InstrumentCalibrationFileCollection extends AbstractTableModel
     public void loadDataFilesForInstrument()
     {
         if(parentInstrument != null)
-            rows = InstrumentCalibrationFile.selectDataFilesForInstrument(parentInstrument.getInstrumentID());
+            rows = InstrumentCalibrationFile.selectCalibrationFilesForInstrument(parentInstrument.getInstrumentID());
     }
 
     public int getRowCount()

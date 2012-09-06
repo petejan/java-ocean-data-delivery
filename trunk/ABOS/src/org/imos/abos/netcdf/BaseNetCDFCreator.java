@@ -22,7 +22,10 @@ import org.imos.abos.netcdf.pulse7.Pulse7NetCDFCreator;
 import org.wiley.core.Common;
 import org.wiley.util.SQLWrapper;
 import org.wiley.util.StringUtilities;
-import ucar.ma2.*;
+import ucar.ma2.ArrayFloat;
+import ucar.ma2.ArrayInt;
+import ucar.ma2.DataType;
+import ucar.ma2.InvalidRangeException;
 import ucar.nc2.Dimension;
 import ucar.nc2.NetcdfFileWriteable;
 
@@ -152,7 +155,7 @@ public abstract class BaseNetCDFCreator
     protected void writeBaseVariableAttributes()
     {
         dataFile.addVariableAttribute("TIME", "name", "TIME");
-        dataFile.addVariableAttribute("TIME", "standard_name", "TIME");
+        dataFile.addVariableAttribute("TIME", "long_name", "TIME");
         dataFile.addVariableAttribute("TIME", "units", "hours since 1950-01-01T00:00:00Z");
         dataFile.addVariableAttribute("TIME", "axis", "T");
         dataFile.addVariableAttribute("TIME", "valid_min", 0.0);
@@ -207,14 +210,27 @@ public abstract class BaseNetCDFCreator
             dataFile.addVariableAttribute(variable, "sensor", ins.getMake() + "-" + ins.getModel());
             dataFile.addVariableAttribute(variable, "sensor_serial_number", ins.getSerialNumber());
         }
-        dataFile.addVariableAttribute(variable, "name", param.getDescription());
-        dataFile.addVariableAttribute(variable, "units", param.getUnits());
-        dataFile.addVariableAttribute(variable, "standard_name", param.getNetCDFName());
-        dataFile.addVariableAttribute(variable, "valid_min", -999999);
-        dataFile.addVariableAttribute(variable, "valid_max", 999999);
-        dataFile.addVariableAttribute(variable, "_FillValue", Double.NaN);
-        dataFile.addVariableAttribute(variable, "quality_control_set", 1.0);
-        dataFile.addVariableAttribute(variable, "csiro_instrument_id", instrumentID);
+        
+        if(param != null)
+        {
+            dataFile.addVariableAttribute(variable, "name", param.getDescription());
+            dataFile.addVariableAttribute(variable, "units", param.getUnits());
+            
+            if(param.getNetCDFStandardName() != null && !(param.getNetCDFStandardName().trim().isEmpty()))
+                dataFile.addVariableAttribute(variable, "standard_name", param.getNetCDFStandardName());
+            else
+                dataFile.addVariableAttribute(variable, "long_name", param.getNetCDFLongName());
+            
+            if(param.getMinimumValidValue() != null)
+                dataFile.addVariableAttribute(variable, "valid_min", param.getMinimumValidValue());
+            
+            if(param.getMaximumValidValue() != null)
+                dataFile.addVariableAttribute(variable, "valid_max", param.getMaximumValidValue());
+            
+            dataFile.addVariableAttribute(variable, "_FillValue", Double.NaN);
+            dataFile.addVariableAttribute(variable, "quality_control_set", 1.0);
+            dataFile.addVariableAttribute(variable, "csiro_instrument_id", instrumentID);
+        }
     }
 
     protected void createCDFFile()

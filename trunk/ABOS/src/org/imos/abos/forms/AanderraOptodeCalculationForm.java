@@ -81,6 +81,7 @@ public class AanderraOptodeCalculationForm extends MemoryWindow implements DataP
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
+        buttonGroup1 = new javax.swing.ButtonGroup();
         jPanel1 = new javax.swing.JPanel();
         mooringCombo1 = new org.imos.abos.dbms.fields.MooringCombo();
         mooringDescriptionField = new org.wiley.util.basicField();
@@ -88,6 +89,8 @@ public class AanderraOptodeCalculationForm extends MemoryWindow implements DataP
         sourceInstrumentCombo = new org.imos.abos.dbms.fields.InstrumentSelectorCombo();
         targetInstrumentCombo = new org.imos.abos.dbms.fields.InstrumentSelectorCombo();
         deleteDataBox = new javax.swing.JCheckBox();
+        aanderraAlgorithmButton = new javax.swing.JRadioButton();
+        csiroUchidaButton = new javax.swing.JRadioButton();
         jPanel2 = new javax.swing.JPanel();
         runButton = new javax.swing.JButton();
         quitButton = new javax.swing.JButton();
@@ -127,6 +130,17 @@ public class AanderraOptodeCalculationForm extends MemoryWindow implements DataP
             }
         });
 
+        buttonGroup1.add(aanderraAlgorithmButton);
+        aanderraAlgorithmButton.setText("Use Aanderra Supplied algorithm");
+
+        buttonGroup1.add(csiroUchidaButton);
+        csiroUchidaButton.setText("Use CSIRO/Uchida Supplied algorithm");
+        csiroUchidaButton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                csiroUchidaButtonActionPerformed(evt);
+            }
+        });
+
         org.jdesktop.layout.GroupLayout jPanel1Layout = new org.jdesktop.layout.GroupLayout(jPanel1);
         jPanel1.setLayout(jPanel1Layout);
         jPanel1Layout.setHorizontalGroup(
@@ -134,20 +148,28 @@ public class AanderraOptodeCalculationForm extends MemoryWindow implements DataP
             .add(jPanel1Layout.createSequentialGroup()
                 .addContainerGap()
                 .add(jPanel1Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-                    .add(deleteDataBox, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 398, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                    .add(calibrationFileCombo1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                     .add(jPanel1Layout.createSequentialGroup()
-                        .add(mooringCombo1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 169, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                        .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-                        .add(mooringDescriptionField, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 343, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
-                    .add(sourceInstrumentCombo, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 562, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                    .add(targetInstrumentCombo, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 562, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                    .add(calibrationFileCombo1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 562, Short.MAX_VALUE))
+                        .add(jPanel1Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
+                            .add(deleteDataBox, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 398, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                            .add(jPanel1Layout.createSequentialGroup()
+                                .add(mooringCombo1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 169, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
+                                .add(mooringDescriptionField, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 343, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
+                            .add(sourceInstrumentCombo, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 562, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                            .add(targetInstrumentCombo, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 562, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                            .add(jPanel1Layout.createSequentialGroup()
+                                .add(6, 6, 6)
+                                .add(jPanel1Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
+                                    .add(csiroUchidaButton)
+                                    .add(aanderraAlgorithmButton))))
+                        .add(0, 0, Short.MAX_VALUE)))
                 .addContainerGap())
         );
         jPanel1Layout.setVerticalGroup(
             jPanel1Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
             .add(jPanel1Layout.createSequentialGroup()
-                .addContainerGap(20, Short.MAX_VALUE)
+                .addContainerGap(org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .add(jPanel1Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
                     .add(org.jdesktop.layout.GroupLayout.TRAILING, mooringCombo1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 21, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                     .add(org.jdesktop.layout.GroupLayout.TRAILING, mooringDescriptionField, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
@@ -158,8 +180,12 @@ public class AanderraOptodeCalculationForm extends MemoryWindow implements DataP
                 .add(18, 18, 18)
                 .add(calibrationFileCombo1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.UNRELATED)
+                .add(aanderraAlgorithmButton)
+                .add(4, 4, 4)
+                .add(csiroUchidaButton)
+                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
                 .add(deleteDataBox)
-                .add(274, 274, 274))
+                .add(218, 218, 218))
         );
 
         jPanel2.setBorder(javax.swing.BorderFactory.createEtchedBorder());
@@ -187,7 +213,7 @@ public class AanderraOptodeCalculationForm extends MemoryWindow implements DataP
             .add(layout.createSequentialGroup()
                 .addContainerGap()
                 .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-                    .add(org.jdesktop.layout.GroupLayout.TRAILING, jPanel1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .add(jPanel1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                     .add(jPanel2, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 606, Short.MAX_VALUE))
                 .addContainerGap())
         );
@@ -195,10 +221,10 @@ public class AanderraOptodeCalculationForm extends MemoryWindow implements DataP
             layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
             .add(layout.createSequentialGroup()
                 .addContainerGap()
-                .add(jPanel1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 218, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(org.jdesktop.layout.LayoutStyle.UNRELATED)
+                .add(jPanel1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 261, Short.MAX_VALUE)
+                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
                 .add(jPanel2, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .addContainerGap())
         );
 
         pack();
@@ -214,10 +240,6 @@ public class AanderraOptodeCalculationForm extends MemoryWindow implements DataP
 
     private void runButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_runButtonActionPerformed
 
-        //
-        // hard-coded instrument for testing etc
-        //
-        //sourceInstrument = Instrument.selectByInstrumentID(4);
         sourceInstrument = sourceInstrumentCombo.getSelectedInstrument();
         targetInstrument = targetInstrumentCombo.getSelectedInstrument();
 
@@ -248,14 +270,14 @@ public class AanderraOptodeCalculationForm extends MemoryWindow implements DataP
         runButton.setBackground(Color.RED);
         runButton.setForeground(Color.WHITE);
 
-        String insProc = new String("INSERT INTO instrument_data_processors (processors_pk, mooring_id, class_name, parameters, processing_date, display_code) VALUES ("
-                + "nextval('instrument_data_processor_sequence'),"
-                + "'" + selectedMooring.getMooringID() + "',"
-                + "'" + this.getClass().getName() + "',"
-                + "'" + paramToString() + "',"
-                + "'" + Common.current() + "',"
-                + "'Y'"
-                + ")");
+        String insProc = "INSERT INTO instrument_data_processors (processors_pk, mooring_id, class_name, parameters, processing_date, display_code) VALUES ("
+     + "nextval('instrument_data_processor_sequence'),"
+     + "'" + selectedMooring.getMooringID() + "',"
+     + "'" + this.getClass().getName() + "',"
+     + "'" + paramToString() + "',"
+     + "'" + Common.current() + "',"
+     + "'Y'"
+     + ")";
 
         Connection conn = Common.getConnection();
 
@@ -311,6 +333,11 @@ public class AanderraOptodeCalculationForm extends MemoryWindow implements DataP
         // TODO add your handling code here:
 }//GEN-LAST:event_deleteDataBoxActionPerformed
 
+    private void csiroUchidaButtonActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_csiroUchidaButtonActionPerformed
+    {//GEN-HEADEREND:event_csiroUchidaButtonActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_csiroUchidaButtonActionPerformed
+
     public void calculateDataValues()
     {
         Connection conn = null;
@@ -319,13 +346,12 @@ public class AanderraOptodeCalculationForm extends MemoryWindow implements DataP
 
         try
         {
-            String storedProc = new String("{ ? = call xtract_optode_data_selector"
-                                            + "("
-                                            + sourceInstrument.getInstrumentID()
-                                            + " , "
-                                            + StringUtilities.quoteString(selectedMooring.getMooringID())
-                                            + ") }"
-                                            );
+            String storedProc = "{ ? = call xtract_optode_data_selector"
+                                 + "("
+                                 + sourceInstrument.getInstrumentID()
+                                 + " , "
+                                 + StringUtilities.quoteString(selectedMooring.getMooringID())
+                                 + ") }";
             conn = Common.getConnection();
             conn.setAutoCommit(false);
 
@@ -388,12 +414,15 @@ public class AanderraOptodeCalculationForm extends MemoryWindow implements DataP
             }
         }
 
-        calculateOxygenValues();
+        if(aanderraAlgorithmButton.isSelected())
+            calculateOxygenValuesUsingAanderraAlgorithm();
+        else
+            calculateOxygenValuesUsingCSIROUchidaAlgorithm();
 
         insertData();
     }
 
-    private void calculateOxygenValues()
+    private void calculateOxygenValuesUsingAanderraAlgorithm()
     {
         constants = new AanderraOptodeConstants();
         constants.setInstrumentAndMooring(targetInstrument, selectedMooring);
@@ -427,6 +456,46 @@ public class AanderraOptodeCalculationForm extends MemoryWindow implements DataP
             row.calculatedDissolvedOxygenPerKg = AanderraOptodeOxygenCalculator.calculateDissolvedOxygenInUMolesPerKg(
                                                                                             row.optodeTemperatureValue,
                                                                                             row.optodeDPhaseValue,
+                                                                                            row.calculatedSalinityValue,
+                                                                                            row.pressureValue
+                                                                                            );
+        }
+    }
+    
+    private void calculateOxygenValuesUsingCSIROUchidaAlgorithm()
+    {
+        constants = new AanderraOptodeConstants();
+        constants.setInstrumentAndMooring(targetInstrument, selectedMooring);
+
+        AanderraOptodeOxygenCalculator.setOptodeConstants(constants);
+
+        boolean ok = true;
+
+        for(int i = 0; i < dataSet.size(); i++)
+        {
+            optodeData row = dataSet.get(i);
+            row.calculatedSalinityValue = SalinityCalculator.calculateSalinityForITS90Temperature(row.salinityTemperature,
+                                                                                        row.conductivityValue * 10,
+                                                                                        row.pressureValue
+                                                                                        );
+            //
+            // convert temperature voltage value to temperature in deg C
+            //
+            row.optodeTemperatureValue = constants.A_Coefficient + (constants.B_Coefficient * row.optodeTemperatureVolts);
+            //
+            // convert BPhase voltage value to Optode BPhase
+            //
+            row.optodeBPhaseValue = constants.BPhaseVoltConstant + (row.optodeBPhaseVolts * constants.BPhaseVoltMultiplier);
+            //
+            // convert BPhase to DPhase
+            //
+            row.optodeDPhaseValue = constants.BPhaseConstant + (constants.BPhaseMultiplier * row.optodeBPhaseValue);
+            //
+            // finally use Aanderra supplied algorithm to convert DPhase value to dissolved oxygen
+            //
+            row.calculatedDissolvedOxygenPerKg = AanderraOptodeOxygenCalculator.UchidaCalculateDissolvedOxygenInUMolesPerKg(
+                                                                                            row.optodeTemperatureValue,
+                                                                                            row.optodeBPhaseValue,
                                                                                             row.calculatedSalinityValue,
                                                                                             row.pressureValue
                                                                                             );
@@ -667,7 +736,10 @@ public class AanderraOptodeCalculationForm extends MemoryWindow implements DataP
 
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
+    private javax.swing.JRadioButton aanderraAlgorithmButton;
+    private javax.swing.ButtonGroup buttonGroup1;
     private org.imos.abos.dbms.fields.CalibrationFileCombo calibrationFileCombo1;
+    private javax.swing.JRadioButton csiroUchidaButton;
     private javax.swing.JCheckBox deleteDataBox;
     private javax.swing.JPanel jPanel1;
     private javax.swing.JPanel jPanel2;

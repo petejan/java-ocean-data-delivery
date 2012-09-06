@@ -17,20 +17,11 @@ package org.imos.abos.forms;
 
 import java.awt.Frame;
 import java.util.TimeZone;
-import javax.swing.JComboBox;
-import javax.swing.JFrame;
-import javax.swing.JOptionPane;
-import javax.swing.JTable;
-import javax.swing.UIManager;
-import javax.swing.UnsupportedLookAndFeelException;
+import javax.swing.*;
 import javax.swing.table.TableColumnModel;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
-import org.imos.abos.dbms.Instrument;
-import org.imos.abos.dbms.InstrumentCalibrationFile;
-import org.imos.abos.dbms.InstrumentCalibrationValue;
-import org.imos.abos.dbms.InstrumentCalibrationValueCollection;
-import org.imos.abos.dbms.Mooring;
+import org.imos.abos.dbms.*;
 import org.imos.abos.dbms.fields.MooringCombo;
 import org.wiley.core.Common;
 import org.wiley.core.forms.MemoryWindow;
@@ -135,6 +126,7 @@ public class CalibrationValuesEntryForm extends MemoryWindow
         jPanel1 = new javax.swing.JPanel();
         runButton = new javax.swing.JButton();
         cloneButton = new javax.swing.JButton();
+        cloneValuesButton = new javax.swing.JButton();
         dataScrollPane = new javax.swing.JScrollPane();
         dataTable = new javax.swing.JTable();
         buttonPanel = new javax.swing.JPanel();
@@ -168,7 +160,7 @@ public class CalibrationValuesEntryForm extends MemoryWindow
         });
         jPanel1.add(runButton);
 
-        cloneButton.setText("Clone");
+        cloneButton.setText("Clone For New Mooring");
         cloneButton.setEnabled(false);
         cloneButton.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -176,6 +168,14 @@ public class CalibrationValuesEntryForm extends MemoryWindow
             }
         });
         jPanel1.add(cloneButton);
+
+        cloneValuesButton.setText("Clone For New Instrument/Mooring");
+        cloneValuesButton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                cloneValuesButtonActionPerformed(evt);
+            }
+        });
+        jPanel1.add(cloneValuesButton);
 
         org.jdesktop.layout.GroupLayout topPanelLayout = new org.jdesktop.layout.GroupLayout(topPanel);
         topPanel.setLayout(topPanelLayout);
@@ -343,6 +343,14 @@ public class CalibrationValuesEntryForm extends MemoryWindow
         }
     }//GEN-LAST:event_cloneButtonActionPerformed
 
+    private void cloneValuesButtonActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_cloneValuesButtonActionPerformed
+    {//GEN-HEADEREND:event_cloneValuesButtonActionPerformed
+        CalibrationValuesCloneForm form = new CalibrationValuesCloneForm(this, true);
+        form.setVisible(true);
+     
+        fetchDataForFile();
+    }//GEN-LAST:event_cloneValuesButtonActionPerformed
+
     /**
     * @param args the command line arguments
     */
@@ -387,6 +395,7 @@ public class CalibrationValuesEntryForm extends MemoryWindow
     private javax.swing.JPanel buttonPanel;
     private org.wiley.util.basicField calFileDisplayField;
     private javax.swing.JButton cloneButton;
+    private javax.swing.JButton cloneValuesButton;
     private javax.swing.JScrollPane dataScrollPane;
     private javax.swing.JTable dataTable;
     private org.wiley.util.basicField instrumentDisplayField;

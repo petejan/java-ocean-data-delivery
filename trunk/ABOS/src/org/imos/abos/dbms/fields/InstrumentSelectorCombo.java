@@ -57,7 +57,6 @@ public class InstrumentSelectorCombo extends BasicCombo
         else
         {
             combo.addItem("");
-
         }
 
         ItemListener il = new ItemListener()
@@ -171,6 +170,70 @@ public class InstrumentSelectorCombo extends BasicCombo
         combo.removeAllItems();
 
         codes = Instrument.selectInstrumentsForMooring(selectedItem.getMooringID());
+
+        if(codes != null && codes.size() > 0)
+        {
+            combo.addItem("");
+
+            for(int i = 0; i < codes.size(); i++)
+            {
+                Instrument ps = codes.get(i);
+                combo.addItem(ps.getInstrumentID()
+                            + ": "
+                            + ps.getMake()
+                            + " "
+                            + ps.getModel()
+                            + " S/No. "
+                            + ps.getSerialNumber()
+                            );
+            }
+        }
+        else
+        {
+            combo.addItem("");
+
+        }
+
+        ItemListener il = new ItemListener()
+        {
+            public void itemStateChanged(ItemEvent e)
+            {
+                //logger.debug("Item state change");
+
+                if(e.getStateChange() == ItemEvent.SELECTED)
+                {
+                    //logger.debug("Item selected");
+                    int index = combo.getSelectedIndex() - 1;
+
+                    if(index < 0)
+                    {
+                        logger.debug("Selected blank row");
+                    }
+                    else
+                    {
+                        selected =  codes.get(index);
+                        if(selected != null)
+                        {
+                            //logger.debug("Selected " + selected.getDescription() );
+                        }
+                        else
+                        {
+                            logger.debug("Selected item is null");
+                        }
+                    }
+                }
+            }
+
+        };
+
+        combo.addItemListener(il);
+    }
+
+    public void setInstrumentDataSet(ArrayList<Instrument> set)
+    {
+        codes = set;
+        
+        combo.removeAllItems();
 
         if(codes != null && codes.size() > 0)
         {
