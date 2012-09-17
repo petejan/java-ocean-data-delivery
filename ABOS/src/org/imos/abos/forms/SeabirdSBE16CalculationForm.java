@@ -293,7 +293,7 @@ public class SeabirdSBE16CalculationForm extends MemoryWindow implements DataPro
         String $HOME = System.getProperty("user.home");
 
         //String filename = $HOME + "/sbe37_data_" + df.format(Common.current());
-        String filename = "sbe37_data_" + df.format(Common.current());
+        String filename = "sbe16_data_" + df.format(Common.current());
         TextFileLogger file = new TextFileLogger(filename,"csv");
 
         try

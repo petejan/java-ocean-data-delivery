@@ -309,7 +309,7 @@ public class MooringTable extends EditableBaseTable
                 //
                 // delete all data for the file
                 //
-                RawInstrumentData.deleteDataForFile(currentFile.getInstrumentID());
+                RawInstrumentData.deleteDataForFile(currentFile.getDataFilePrimaryKey());
                 //
                 // now re-parse & load the data
                 //

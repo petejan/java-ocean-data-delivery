@@ -12,6 +12,11 @@ package org.imos.abos.dbms;
 /**
  *
  * @author peter
+ * 
+ * @modified
+ * 
+ * 20120917 PDW Fixed screwup in deleteDataForFile(...) method - was deleting data for the instrument instead
+ *              and as the same instrument could be used on multiple moorings, this is NOT desired behaviour
  */
 import java.sql.Date;
 import java.sql.PreparedStatement;
@@ -36,7 +41,7 @@ public class RawInstrumentData  implements Cloneable
     public static boolean deleteDataForFile(Integer instrumentDataFileID)
     {
         String deleteSQL = "delete from raw_instrument_data"
-                + " where instrument_id = "
+                + " where source_file_id = "
                 + instrumentDataFileID
                 ;
 

@@ -282,7 +282,8 @@ public class InstrumentDataFileTable extends EditableBaseTable
             //
             // delete all data for the file
             //
-            RawInstrumentData.deleteDataForFile(selectedRow.getInstrumentID());
+            //RawInstrumentData.deleteDataForFile(selectedRow.getInstrumentID());
+            RawInstrumentData.deleteDataForFile(selectedRow.getDataFilePrimaryKey());
             //
             // now re-parse & load the data
             //

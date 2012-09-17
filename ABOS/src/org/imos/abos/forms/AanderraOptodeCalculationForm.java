@@ -30,6 +30,7 @@ import javax.swing.UnsupportedLookAndFeelException;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
 import org.imos.abos.calc.AanderraOptodeOxygenCalculator;
+import org.imos.abos.calc.OxygenSolubilityCalculator;
 import org.imos.abos.calc.SalinityCalculator;
 import org.imos.abos.dbms.Instrument;
 import org.imos.abos.dbms.InstrumentCalibrationFile;
@@ -335,7 +336,7 @@ public class AanderraOptodeCalculationForm extends MemoryWindow implements DataP
 
     private void csiroUchidaButtonActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_csiroUchidaButtonActionPerformed
     {//GEN-HEADEREND:event_csiroUchidaButtonActionPerformed
-        // TODO add your handling code here:
+        // nothing to do - ignore
     }//GEN-LAST:event_csiroUchidaButtonActionPerformed
 
     public void calculateDataValues()
@@ -438,6 +439,9 @@ public class AanderraOptodeCalculationForm extends MemoryWindow implements DataP
                                                                                         row.conductivityValue * 10,
                                                                                         row.pressureValue
                                                                                         );
+            
+            row.calculatedOxySolValue = OxygenSolubilityCalculator.calculateOxygenSolubilityInUMolesPerKg(row.salinityTemperature, 
+                                                                                                          row.calculatedSalinityValue);
             //
             // convert temperature voltage value to temperature in deg C
             //
@@ -478,6 +482,9 @@ public class AanderraOptodeCalculationForm extends MemoryWindow implements DataP
                                                                                         row.conductivityValue * 10,
                                                                                         row.pressureValue
                                                                                         );
+            row.calculatedOxySolValue = OxygenSolubilityCalculator.calculateOxygenSolubilityInUMolesPerKg(row.salinityTemperature, 
+                                                                                                          row.calculatedSalinityValue);
+            
             //
             // convert temperature voltage value to temperature in deg C
             //
@@ -525,11 +532,29 @@ public class AanderraOptodeCalculationForm extends MemoryWindow implements DataP
 
             ok = pid.insert();
 
-//            pid.setInstrumentID(sourceInstrument.getInstrumentID());
-//            pid.setParameterCode("PSAL");
-//            pid.setParameterValue(row.calculatedSalinityValue);
-//
-//            ok = pid.insert();
+            pid.setInstrumentID(targetInstrument.getInstrumentID());
+            pid.setParameterCode("OPTODE_BPHASE_VALUE");
+            pid.setParameterValue(row.optodeBPhaseValue);
+
+            ok = pid.insert();
+            
+            pid.setInstrumentID(targetInstrument.getInstrumentID());
+            pid.setParameterCode("OPTODE_TEMP_VALUE");
+            pid.setParameterValue(row.optodeTemperatureValue);
+
+            ok = pid.insert();
+            
+            pid.setInstrumentID(targetInstrument.getInstrumentID());
+            pid.setParameterCode("OPTODE_OXYSOL_VALUE");
+            pid.setParameterValue(row.calculatedOxySolValue);
+
+            ok = pid.insert();
+            
+            pid.setInstrumentID(targetInstrument.getInstrumentID());
+            pid.setParameterCode("OPTODE_PSAL_VALUE");
+            pid.setParameterValue(row.calculatedSalinityValue);
+
+            ok = pid.insert();
 
         }
     }
@@ -545,15 +570,16 @@ public class AanderraOptodeCalculationForm extends MemoryWindow implements DataP
 
         try
         {
-            String header = "Timestamp," +
-                    "Optode Temp," +
-                    "Optode BPhase," +
-                    "Optode DPhase, " +
-                    "Salinity Temp, " +
-                    "Salinity Conduct, " +
-                    "Salinity Press, " +
-                    "Calc Salinity, " +
-                    "Calc Oxygen (uM/kg)";
+            String header = "Timestamp," 
+                    + "Optode Temp,"
+                    + "Optode BPhase,"
+                    + "Optode DPhase, "
+                    + "Salinity Temp, " 
+                    + "Salinity Conduct, " 
+                    + "Salinity Press, " 
+                    + "Calc Salinity, " 
+                    + "Calc OxySol (uM/kg),"
+                    + "Calc Oxygen (uM/kg)";
 
             file.open();
 
@@ -582,6 +608,8 @@ public class AanderraOptodeCalculationForm extends MemoryWindow implements DataP
                         + ","
                         + row.calculatedSalinityValue
                         + ","
+                        + row.calculatedOxySolValue
+                        + ","
                         + row.calculatedDissolvedOxygenPerKg
                         );
 
@@ -601,6 +629,8 @@ public class AanderraOptodeCalculationForm extends MemoryWindow implements DataP
                         + row.pressureValue
                         + ","
                         + row.calculatedSalinityValue
+                        + ","
+                        + row.calculatedOxySolValue
                         + ","
                         + row.calculatedDissolvedOxygenPerKg
                         );
@@ -715,6 +745,7 @@ public class AanderraOptodeCalculationForm extends MemoryWindow implements DataP
         public Double conductivityValue;
 
         public Double calculatedSalinityValue;
+        public Double calculatedOxySolValue;
         public Double calculatedDissolvedOxygenPerKg;
 
         public void setData(Vector row)

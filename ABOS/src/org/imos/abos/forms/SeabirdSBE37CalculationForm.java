@@ -186,7 +186,7 @@ public class SeabirdSBE37CalculationForm  extends MemoryWindow implements DataPr
     @Override
     public void initialise()
     {
-        //initComponents();
+        initComponents();
 
         this.setVisible(true);
     }
