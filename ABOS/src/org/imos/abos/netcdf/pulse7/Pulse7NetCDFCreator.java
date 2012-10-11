@@ -61,6 +61,8 @@ public class Pulse7NetCDFCreator extends BaseNetCDFCreator
                         + nameFormatter.format(startTime)
                         + Pulse7Constants.PLATFORM_CODE
                         + Pulse7Constants.FILE_VERSION
+                        + Pulse7Constants.deployment_code
+                        + "_"
                         + Pulse7Constants.PRODUCT_TYPE
                         + Pulse7Constants.END_DATE
                         + nameFormatter.format(endTime)
@@ -77,25 +79,7 @@ public class Pulse7NetCDFCreator extends BaseNetCDFCreator
     {
         SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd\'T\'HH:mm:ss\'Z\'");
         df.setTimeZone(tz);
-        if (currentMooring != null)
-        {
-            dataFile.addGlobalAttribute("Mooring", currentMooring.getShortDescription());
-            dataFile.addGlobalAttribute("Latitude", currentMooring.getLatitudeIn());
-            dataFile.addGlobalAttribute("Longitude", currentMooring.getLongitudeIn());
-            Pulse7Constants.geospatial_lat_min = currentMooring.getLatitudeIn();
-            Pulse7Constants.geospatial_lat_max = currentMooring.getLatitudeOut();
-            Pulse7Constants.geospatial_lon_min = currentMooring.getLongitudeIn();
-            Pulse7Constants.geospatial_lon_max = currentMooring.getLongitudeOut();
-            if (Pulse7Constants.geospatial_lat_max == null)
-            {
-                Pulse7Constants.geospatial_lat_max = Pulse7Constants.geospatial_lat_min;
-            }
-            if (Pulse7Constants.geospatial_lon_max == null)
-            {
-                Pulse7Constants.geospatial_lon_max = Pulse7Constants.geospatial_lon_min;
-            }
-        }
-        
+                
         dataFile.addGlobalAttribute("level", Pulse7Constants.level);
         
         dataFile.addGlobalAttribute("field_trip_id", Pulse7Constants.field_trip_id);
@@ -109,6 +93,7 @@ public class Pulse7NetCDFCreator extends BaseNetCDFCreator
         dataFile.addGlobalAttribute("abstract", Pulse7Constants.Abstract);
         dataFile.addGlobalAttribute("keywords", Pulse7Constants.keywords);
 
+        dataFile.addGlobalAttribute("geospatial_vertical_min", 0);
         dataFile.addGlobalAttribute("geospatial_vertical_max", Pulse7Constants.geospatial_vertical_max);
     }
 }

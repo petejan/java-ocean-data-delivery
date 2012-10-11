@@ -61,6 +61,8 @@ public class Pulse6NetCDFCreator extends BaseNetCDFCreator
                         + nameFormatter.format(startTime)
                         + Pulse6Constants.PLATFORM_CODE
                         + Pulse6Constants.FILE_VERSION
+                        + Pulse6Constants.deployment_code
+                        + "_"
                         + Pulse6Constants.PRODUCT_TYPE
                         + Pulse6Constants.END_DATE
                         + nameFormatter.format(endTime)
@@ -74,28 +76,7 @@ public class Pulse6NetCDFCreator extends BaseNetCDFCreator
 
     @Override
     protected void writeMooringSpecificAttributes()
-    {
-        SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd\'T\'HH:mm:ss\'Z\'");
-        df.setTimeZone(tz);
-        if (currentMooring != null)
-        {
-            dataFile.addGlobalAttribute("Mooring", currentMooring.getShortDescription());
-            dataFile.addGlobalAttribute("Latitude", currentMooring.getLatitudeIn());
-            dataFile.addGlobalAttribute("Longitude", currentMooring.getLongitudeIn());
-            Pulse6Constants.geospatial_lat_min = currentMooring.getLatitudeIn();
-            Pulse6Constants.geospatial_lat_max = currentMooring.getLatitudeOut();
-            Pulse6Constants.geospatial_lon_min = currentMooring.getLongitudeIn();
-            Pulse6Constants.geospatial_lon_max = currentMooring.getLongitudeOut();
-            if (Pulse6Constants.geospatial_lat_max == null)
-            {
-                Pulse6Constants.geospatial_lat_max = Pulse6Constants.geospatial_lat_min;
-            }
-            if (Pulse6Constants.geospatial_lon_max == null)
-            {
-                Pulse6Constants.geospatial_lon_max = Pulse6Constants.geospatial_lon_min;
-            }
-        }
-
+    { 
         dataFile.addGlobalAttribute("level", Pulse6Constants.level);
 
         dataFile.addGlobalAttribute("field_trip_id", Pulse6Constants.field_trip_id);
@@ -109,7 +90,10 @@ public class Pulse6NetCDFCreator extends BaseNetCDFCreator
         dataFile.addGlobalAttribute("abstract", Pulse6Constants.Abstract);
         dataFile.addGlobalAttribute("keywords", Pulse6Constants.keywords);
 
+        dataFile.addGlobalAttribute("geospatial_vertical_min", 0);
         dataFile.addGlobalAttribute("geospatial_vertical_max", Pulse6Constants.geospatial_vertical_max);
+        
+        dataFile.addGlobalAttribute("comment", "Aanderra optode data have been omitted from this data set due to an apparent instrument malfunction.");
     }
 }
 

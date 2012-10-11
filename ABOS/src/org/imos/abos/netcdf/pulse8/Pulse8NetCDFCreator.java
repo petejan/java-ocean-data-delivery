@@ -62,6 +62,8 @@ public class Pulse8NetCDFCreator extends BaseNetCDFCreator
                         + nameFormatter.format(startTime)
                         + Pulse8Constants.PLATFORM_CODE
                         + Pulse8Constants.FILE_VERSION
+                        + Pulse8Constants.deployment_code
+                        + "_"
                         + Pulse8Constants.PRODUCT_TYPE
                         + Pulse8Constants.END_DATE
                         + nameFormatter.format(endTime)
@@ -78,25 +80,7 @@ public class Pulse8NetCDFCreator extends BaseNetCDFCreator
     {
         SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd\'T\'HH:mm:ss\'Z\'");
         df.setTimeZone(tz);
-        if (currentMooring != null)
-        {
-            dataFile.addGlobalAttribute("Mooring", currentMooring.getShortDescription());
-            dataFile.addGlobalAttribute("Latitude", currentMooring.getLatitudeIn());
-            dataFile.addGlobalAttribute("Longitude", currentMooring.getLongitudeIn());
-            Pulse8Constants.geospatial_lat_min = currentMooring.getLatitudeIn();
-            Pulse8Constants.geospatial_lat_max = currentMooring.getLatitudeOut();
-            Pulse8Constants.geospatial_lon_min = currentMooring.getLongitudeIn();
-            Pulse8Constants.geospatial_lon_max = currentMooring.getLongitudeOut();
-            if (Pulse8Constants.geospatial_lat_max == null)
-            {
-                Pulse8Constants.geospatial_lat_max = Pulse7Constants.geospatial_lat_min;
-            }
-            if (Pulse8Constants.geospatial_lon_max == null)
-            {
-                Pulse8Constants.geospatial_lon_max = Pulse7Constants.geospatial_lon_min;
-            }
-        }
-        
+                
         dataFile.addGlobalAttribute("level", Pulse8Constants.level);
         
         dataFile.addGlobalAttribute("field_trip_id", Pulse8Constants.field_trip_id);
@@ -110,6 +94,9 @@ public class Pulse8NetCDFCreator extends BaseNetCDFCreator
         dataFile.addGlobalAttribute("abstract", Pulse8Constants.Abstract);
         dataFile.addGlobalAttribute("keywords", Pulse8Constants.keywords);
 
+        dataFile.addGlobalAttribute("geospatial_vertical_min", 0);
         dataFile.addGlobalAttribute("geospatial_vertical_max", Pulse8Constants.geospatial_vertical_max);
+        
+        dataFile.addGlobalAttribute("comment", "Aanderra optode data have been omitted from this data set due to an apparent inconsistency with Seabird SBE43 data.");
     }
 }

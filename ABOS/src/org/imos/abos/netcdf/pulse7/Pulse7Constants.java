@@ -24,14 +24,14 @@ public class Pulse7Constants extends BaseNetCDFConstants
     public static Double geospatial_lon_min = 142.26 ;
     public static Double geospatial_lon_max = 142.26 ;
     public static Double geospatial_vertical_min = 0.0 ;
-    public static Double geospatial_vertical_max = 0.0 ;
+    public static Double geospatial_vertical_max = 620.0 ;
     
     public static String level = "15" ;
     public static String field_trip_id = "" ;
     public static String field_trip_description = "SS-2011-V1" ;
     public static String site_code = "SOTS" ;
     public static String platform_code = "PULSE" ;
-    public static String deployment_code = "PULSE-7-2011" ;
+    public static String deployment_code = "PULSE-7-2010" ;     // year of deployment not recovery
 
     public static String title = "Pulse 7 Mooring Data" ;
     
