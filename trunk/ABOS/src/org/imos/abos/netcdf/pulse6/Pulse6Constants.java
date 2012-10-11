@@ -22,10 +22,10 @@ public class Pulse6Constants extends BaseNetCDFConstants
     public static String field_trip_description = "SS-2010-V2" ;
     public static String site_code = "SOTS" ;
     public static String platform_code = "PULSE" ;
-    public static String deployment_code = "PULSE-6-2010" ;
+    public static String deployment_code = "PULSE-6-2009" ;     // year of deployment not recovery
 
     public static String title = "Pulse 6 Mooring Data" ;
-    public static Double geospatial_vertical_max = 4500.0 ;
+    public static Double geospatial_vertical_max = 515.0 ;
 
     public static String Abstract = "The Pulse 6 mooring was deployed from September 2009 to March 2010 at Lat -46.3224, Lon 140.6776. "
                                 + "Moored instruments are deployed by the IMOS Australian Bluewater Observing System (ABOS) Southern Ocean Time Series sub-facility for "

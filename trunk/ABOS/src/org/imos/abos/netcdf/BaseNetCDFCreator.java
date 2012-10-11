@@ -107,6 +107,10 @@ public abstract class BaseNetCDFCreator
                 + StringUtilities.quoteString(Common.getRawSQLTimestamp(startTime))
                 + " and "
                 + StringUtilities.quoteString(Common.getRawSQLTimestamp(endTime))
+                + " and parameter_code in "
+                + "("
+                + "select code from parameters where netcdf_std_name is not null or netcdf_long_name is not null"
+                + ")"
                 + " order by instrument_id, parameter_code, data_timestamp"
                 ;
         //logger.debug(SQL);
@@ -173,13 +177,44 @@ public abstract class BaseNetCDFCreator
         BaseNetCDFConstants.time_coverage_start = df.format(startTime);
         BaseNetCDFConstants.time_coverage_end = df.format(endTime);
 
+        if (currentMooring != null)
+        {
+            dataFile.addGlobalAttribute("Mooring", currentMooring.getShortDescription());
+            dataFile.addGlobalAttribute("Latitude", currentMooring.getLatitudeIn());
+            dataFile.addGlobalAttribute("Longitude", currentMooring.getLongitudeIn());
+            
+            BaseNetCDFConstants.geospatial_lat_min = currentMooring.getLatitudeIn();
+            BaseNetCDFConstants.geospatial_lat_max = currentMooring.getLatitudeOut();
+            BaseNetCDFConstants.geospatial_lon_min = currentMooring.getLongitudeIn();
+            BaseNetCDFConstants.geospatial_lon_max = currentMooring.getLongitudeOut();
+            
+            if (BaseNetCDFConstants.geospatial_lat_max == null)
+            {
+                BaseNetCDFConstants.geospatial_lat_max = BaseNetCDFConstants.geospatial_lat_min;
+            }
+            if (BaseNetCDFConstants.geospatial_lon_max == null)
+            {
+                BaseNetCDFConstants.geospatial_lon_max = BaseNetCDFConstants.geospatial_lon_min;
+            }
+        }
+
+        dataFile.addGlobalAttribute("geospatial_lat_min", BaseNetCDFConstants.geospatial_lat_min);
+        dataFile.addGlobalAttribute("geospatial_lon_min", BaseNetCDFConstants.geospatial_lon_min);
+        dataFile.addGlobalAttribute("geospatial_lat_max", BaseNetCDFConstants.geospatial_lat_max);
+        dataFile.addGlobalAttribute("geospatial_lon_max", BaseNetCDFConstants.geospatial_lon_max);
+        
+        dataFile.addGlobalAttribute("time_coverage_start", df.format(currentMooring.getTimestampIn()));
+        dataFile.addGlobalAttribute("time_coverage_end", df.format(currentMooring.getTimestampOut()));
       
         dataFile.addGlobalAttribute("date_created", BaseNetCDFConstants.date_created);
         
         dataFile.addGlobalAttribute("project", BaseNetCDFConstants.project);
         dataFile.addGlobalAttribute("conventions", BaseNetCDFConstants.conventions);
+        dataFile.addGlobalAttribute("citation", BaseNetCDFConstants.citation);
+        dataFile.addGlobalAttribute("distribution_statement", BaseNetCDFConstants.distribution_statement);
         
         dataFile.addGlobalAttribute("institution", BaseNetCDFConstants.institution);
+        dataFile.addGlobalAttribute("cdm_data_type", BaseNetCDFConstants.cdm_data_type);
         dataFile.addGlobalAttribute("institution_address", BaseNetCDFConstants.institution_address);
         dataFile.addGlobalAttribute("source", BaseNetCDFConstants.source);
         dataFile.addGlobalAttribute("netcdf_version", BaseNetCDFConstants.netcdf_version);
