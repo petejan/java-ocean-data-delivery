@@ -797,6 +797,39 @@ public class RawInstrumentData  implements Cloneable
                         + StringUtilities.quoteString(paramCode)
                         + getDefaultSortOrder());
     }
+    /**
+     * select all data for the specified instrument, mooring and parameter code
+     *
+     * @param insID
+     * @param moorID
+     * @param paramCode
+     * @return an ArrayList of RawInstrumentData
+     */
+    public static ArrayList<RawInstrumentData> selectInstrumentAndMooringAndParameter(Integer insID, String moorID, String paramCode)
+    {
+        String sql = "select "
+                    + " source_file_id,"
+                    + " instrument_id,"
+                    + " mooring_id,"
+                    + " data_timestamp,"
+                    + " latitude,"
+                    + " longitude,"
+                    + " depth,"
+                    + " parameter_code,"
+                    + " parameter_value,"
+                    + " quality_code"
+                    + " from raw_instrument_data"
+                    ;
+
+        return doSelect( sql
+                        + " where instrument_id = "
+                        + insID
+                        + " and mooring_id = "
+                        + StringUtilities.quoteString(moorID)
+                        + " and parameter_code = "
+                        + StringUtilities.quoteString(paramCode)
+                        + " ORDER BY data_timestamp" );
+    }
 
     @Override
     public Object clone()
