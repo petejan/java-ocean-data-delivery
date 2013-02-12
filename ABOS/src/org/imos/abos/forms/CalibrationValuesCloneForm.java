@@ -25,7 +25,7 @@ import org.wiley.core.Common;
 public class CalibrationValuesCloneForm extends javax.swing.JDialog
 {
 
-    private static Logger logger = Logger.getLogger(ProcessedDataCreationForm.class.getName());
+    private static Logger logger = Logger.getLogger(CalibrationValuesCloneForm.class.getName());
 
     private JFrame parentFrame;
     
