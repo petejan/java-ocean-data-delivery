@@ -58,6 +58,7 @@ public class AanderraOptodeCalculationForm extends MemoryWindow implements DataP
 
     private ArrayList<optodeData> dataSet = new ArrayList();
     private AanderraOptodeConstants constants = null;
+    private String algo = "Uchida";
 
     /** Creates new form AanderraOptodeCalculationForm */
     public AanderraOptodeCalculationForm()
@@ -246,6 +247,10 @@ public class AanderraOptodeCalculationForm extends MemoryWindow implements DataP
 
         selectedMooring = mooringCombo1.getSelectedMooring();
         selectedFile = calibrationFileCombo1.getSelectedFile();
+        if (aanderraAlgorithmButton.isSelected())
+        {
+            algo = "Aanderra";
+        }
 
         if(selectedMooring == null)
         {
@@ -342,24 +347,50 @@ public class AanderraOptodeCalculationForm extends MemoryWindow implements DataP
     public void calculateDataValues()
     {
         Connection conn = null;
-        CallableStatement proc = null;
+        Statement proc = null;
         ResultSet results = null;
 
         try
         {
-            String storedProc = "{ ? = call xtract_optode_data_selector"
-                                 + "("
-                                 + sourceInstrument.getInstrumentID()
-                                 + " , "
-                                 + StringUtilities.quoteString(selectedMooring.getMooringID())
-                                 + ") }";
+            // need something like?
+            // SELECT time, value AS BatteryVoltage INTO TEMP sofs2 FROM data WHERE obs_code='BatteryVoltage' AND set_code = 1011 AND time BETWEEN :s AND :e ORDER BY time, set_code;
+
+            // ALTER TABLE sofs2 ADD SignificantWaveHeight  numeric;
+            // UPDATE sofs2 SET SignificantWaveHeight = d.value FROM data d WHERE d.time = sofs2.time AND obs_code='SignificantWaveHeight';
+
+            String tab;
             conn = Common.getConnection();
             conn.setAutoCommit(false);
+            proc = conn.createStatement();
+            
+            tab = "SELECT date_trunc('hour', data_timestamp) AS out_timestamp, data_timestamp, source_file_id, depth, parameter_value as optode_bphase INTO TEMP aanderra FROM raw_instrument_data WHERE parameter_code = 'OPTODE_BPHASE_VOLT' AND mooring_id = "+StringUtilities.quoteString(selectedMooring.getMooringID())+" AND instrument_id = "+ sourceInstrument.getInstrumentID()+" ORDER BY data_timestamp";           
+            proc.execute(tab);
+            tab = "ALTER TABLE aanderra ADD optode_temp  numeric";
+            proc.execute(tab);
+            tab = "UPDATE aanderra SET optode_temp = d.parameter_value FROM raw_instrument_data d WHERE d.data_timestamp = aanderra.data_timestamp AND parameter_code = 'OPTODE_TEMP_VOLT' AND d.depth = aanderra.depth";
+            proc.execute(tab);
+            
+            tab = "ALTER TABLE aanderra ADD water_time timestamp with time zone -- because they maybe different"; 
+            proc.execute(tab);
+            tab = "ALTER TABLE aanderra ADD water_temperature  numeric";
+            proc.execute(tab);
+            tab = "UPDATE aanderra SET water_temperature = d.parameter_value, water_time = d.data_timestamp  FROM raw_instrument_data d WHERE trunc(extract(epoch from d.data_timestamp) / (15 * 60)) = trunc(extract(epoch from aanderra.data_timestamp) / (15 * 60)) AND parameter_code = 'WATER_TEMP' AND d.depth = aanderra.depth";
+            proc.execute(tab);
+            
+            tab = "ALTER TABLE aanderra ADD pressure  numeric";
+            proc.execute(tab);
+            tab = "UPDATE aanderra SET pressure = depth; -- just in case we don't have a pressure obs at this depth";
+            proc.execute(tab);
+            tab = "UPDATE aanderra SET pressure = d.parameter_value FROM raw_instrument_data d WHERE trunc(extract(epoch from d.data_timestamp) / (15 * 60)) = trunc(extract(epoch from aanderra.data_timestamp) / (15 * 60)) AND parameter_code = 'WATER_PRESSURE' AND d.depth = aanderra.depth";
+            proc.execute(tab);
+            
+            tab = "ALTER TABLE aanderra ADD conductivity  numeric";
+            proc.execute(tab);
+            tab = "UPDATE aanderra SET conductivity = d.parameter_value FROM raw_instrument_data d WHERE trunc(extract(epoch from d.data_timestamp) / (15 * 60)) = trunc(extract(epoch from aanderra.data_timestamp) / (15 * 60)) AND parameter_code = 'CONDUCTIVITY' AND d.depth = aanderra.depth";
+            proc.execute(tab);
 
-            proc = conn.prepareCall(storedProc);
-            proc.registerOutParameter(1, Types.OTHER);
-            proc.execute();
-            results = (ResultSet) proc.getObject(1);
+            proc.execute("SELECT out_timestamp, source_file_id, depth, optode_temp, optode_bphase, water_temperature, pressure, conductivity FROM aanderra");
+            results = (ResultSet) proc.getResultSet();
             ResultSetMetaData resultsMetaData = results.getMetaData();
             int colCount        = resultsMetaData.getColumnCount();
 
@@ -387,6 +418,8 @@ public class AanderraOptodeCalculationForm extends MemoryWindow implements DataP
                 dataSet.add(row);
             }
 
+            proc.execute("DROP Table aanderra");
+
             results.close();
             proc.close();
             conn.setAutoCommit(true);
@@ -394,6 +427,18 @@ public class AanderraOptodeCalculationForm extends MemoryWindow implements DataP
         catch(SQLException sex)
         {
             logger.error(sex);
+            if (conn != null)
+            {
+                try
+                {
+                    conn.rollback();
+                    conn.setAutoCommit(true);
+                }
+                catch (SQLException ex)
+                {
+                    logger.error(sex);
+                }
+            }
         }
         finally
         {
@@ -403,11 +448,6 @@ public class AanderraOptodeCalculationForm extends MemoryWindow implements DataP
                     results.close();
                 if(proc != null)
                     proc.close();
-                if(conn != null)
-                {
-                    conn.rollback();
-                    conn.setAutoCommit(true);
-                }
             }
             catch(SQLException sex)
             {
@@ -415,12 +455,32 @@ public class AanderraOptodeCalculationForm extends MemoryWindow implements DataP
             }
         }
 
-        if(aanderraAlgorithmButton.isSelected())
+        if(algo.equals("Aanderra"))
             calculateOxygenValuesUsingAanderraAlgorithm();
         else
             calculateOxygenValuesUsingCSIROUchidaAlgorithm();
 
         insertData();
+        
+        String update = "UPDATE instrument_data_processors SET " 
+                            + "processing_date = '" + Common.current() + "',"
+                            + "count = "+ dataSet.size()
+                            + " WHERE "
+                            + "mooring_id = '" + selectedMooring.getMooringID() + "'"
+                            + " AND class_name = '" + this.getClass().getName() + "'"
+                            + " AND parameters = '" + paramToString()  + "'";
+
+        Statement stmt;
+        try
+        {
+            stmt = conn.createStatement();
+            stmt.executeUpdate(update);
+            logger.debug("Update processed table count " + dataSet.size());
+        }
+        catch (SQLException ex)
+        {
+            logger.error(ex);
+        }                    
     }
 
     private void calculateOxygenValuesUsingAanderraAlgorithm()
@@ -445,7 +505,7 @@ public class AanderraOptodeCalculationForm extends MemoryWindow implements DataP
             //
             // convert temperature voltage value to temperature in deg C
             //
-            row.optodeTemperatureValue = constants.A_Coefficient + (constants.B_Coefficient * row.optodeTemperatureVolts);
+            row.optodeTemperatureValue = constants.TempVoltConstant + (constants.TempVoltMultiplier * row.optodeTemperatureVolts);
             //
             // convert BPhase voltage value to Optode BPhase
             //
@@ -488,7 +548,7 @@ public class AanderraOptodeCalculationForm extends MemoryWindow implements DataP
             //
             // convert temperature voltage value to temperature in deg C
             //
-            row.optodeTemperatureValue = constants.A_Coefficient + (constants.B_Coefficient * row.optodeTemperatureVolts);
+            row.optodeTemperatureValue = constants.TempVoltConstant + (constants.TempVoltMultiplier * row.optodeTemperatureVolts);
             //
             // convert BPhase voltage value to Optode BPhase
             //
@@ -528,31 +588,35 @@ public class AanderraOptodeCalculationForm extends MemoryWindow implements DataP
             pid.setParameterCode("DOX2");
             pid.setParameterValue(row.calculatedDissolvedOxygenPerKg);
             pid.setSourceFileID(row.sourceFileID);
-            pid.setQualityCode("RAW");
+            pid.setQualityCode("DERIVED");
 
             ok = pid.insert();
 
             pid.setInstrumentID(targetInstrument.getInstrumentID());
             pid.setParameterCode("OPTODE_BPHASE_VALUE");
             pid.setParameterValue(row.optodeBPhaseValue);
+            pid.setQualityCode("RAW");
 
             ok = pid.insert();
             
             pid.setInstrumentID(targetInstrument.getInstrumentID());
             pid.setParameterCode("OPTODE_TEMP_VALUE");
             pid.setParameterValue(row.optodeTemperatureValue);
+            pid.setQualityCode("RAW");
 
             ok = pid.insert();
             
             pid.setInstrumentID(targetInstrument.getInstrumentID());
             pid.setParameterCode("OPTODE_OXYSOL_VALUE");
             pid.setParameterValue(row.calculatedOxySolValue);
+            pid.setQualityCode("DERIVED");
 
             ok = pid.insert();
             
             pid.setInstrumentID(targetInstrument.getInstrumentID());
             pid.setParameterCode("OPTODE_PSAL_VALUE");
             pid.setParameterValue(row.calculatedSalinityValue);
+            pid.setQualityCode("DERIVED");
 
             ok = pid.insert();
 
@@ -691,7 +755,9 @@ public class AanderraOptodeCalculationForm extends MemoryWindow implements DataP
     {
         return "MOORING="+selectedMooring.getMooringID() + 
                 ",SRC_INST="+sourceInstrument.getInstrumentID()+
-                ",TGT_INST="+targetInstrument.getInstrumentID()+",FILE="+selectedFile.getDataFilePrimaryKey();
+                ",TGT_INST="+targetInstrument.getInstrumentID()+
+                ",ALGO="+algo+
+                ",FILE="+selectedFile.getDataFilePrimaryKey();
     }
 
     public boolean setupFromString(String s)

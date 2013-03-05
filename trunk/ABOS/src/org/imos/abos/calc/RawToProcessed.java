@@ -11,6 +11,7 @@ package org.imos.abos.calc;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.TimeZone;
@@ -35,7 +36,7 @@ public class RawToProcessed
     
     public void ProcessMooingId(String mooringId)
     {
-        String sel = new String("SELECT class_name, parameters FROM instrument_data_processors WHERE mooring_id = '" + mooringId + "' ORDER BY processing_date");
+        String sel = new String("SELECT class_name, parameters, processors_pk FROM instrument_data_processors WHERE mooring_id = '" + mooringId + "' ORDER BY processing_date");
 
         Connection conn = Common.getConnection();
 
@@ -47,13 +48,17 @@ public class RawToProcessed
            
            String className;
            String params;
+           int pk;
            
-            while (rs.next())
-            {
+           ResultSetMetaData rsmd = rs.getMetaData();
+           
+           while (rs.next())
+           {
                 className = rs.getString(1);
                 params = rs.getString(2);
+                pk = rs.getInt(3);
 
-                logger.info("Class = " + className + " params " + params);
+                logger.info("Class = " + className + " pk " + pk + " params " + params);
 
                 final Object component;
 
@@ -66,8 +71,8 @@ public class RawToProcessed
                     parser.setupFromString(params);
                     parser.calculateDataValues();
                 }
-            }
-           
+           }
+
         }
         catch (InstantiationException ex)
         {
