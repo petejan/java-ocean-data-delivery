@@ -285,24 +285,34 @@ public class SeabirdSBE37CalculationForm  extends MemoryWindow implements DataPr
         logger.info("Calculate " + selectedMooring.getMooringID() + " " + sourceInstrument.toString() + " " + targetInstrument.toString());
         
         Connection conn = null;
-        CallableStatement proc = null;
+        Statement proc = null;
         ResultSet results = null;
+        String tab;
 
         try
         {
-            String storedProc = "{ ? = call xtract_sbe37data_selector"
-                                 + "("
-                                 + sourceInstrument.getInstrumentID()
-                                 + " , "
-                                 + StringUtilities.quoteString(selectedMooring.getMooringID())
-                                 + ") }";
             conn = Common.getConnection();
             conn.setAutoCommit(false);
+            proc = conn.createStatement();
             
-            proc = conn.prepareCall(storedProc);
-            proc.registerOutParameter(1, Types.OTHER);
-            proc.execute();
-            results = (ResultSet) proc.getObject(1);
+            tab = "SELECT distinct on(date_trunc('hour', data_timestamp)) date_trunc('hour', data_timestamp) AS out_timestamp, data_timestamp, source_file_id, depth, parameter_value AS water_temperature INTO TEMP sbe37 FROM raw_instrument_data WHERE parameter_code = 'WATER_TEMP' AND mooring_id = "+StringUtilities.quoteString(selectedMooring.getMooringID())+" AND instrument_id = "+ sourceInstrument.getInstrumentID();                       
+            proc.execute(tab);
+
+            tab = "ALTER TABLE sbe37 ADD pressure  numeric";
+            proc.execute(tab);
+            tab = "UPDATE sbe37 SET pressure = depth; -- just in case we don't have a pressure obs at this depth";
+            proc.execute(tab);
+            tab = "UPDATE sbe37 SET pressure = d.parameter_value FROM raw_instrument_data d WHERE d.data_timestamp = sbe37.data_timestamp AND parameter_code = 'WATER_PRESSURE' AND d.depth = sbe37.depth";
+            proc.execute(tab);
+            
+            tab = "ALTER TABLE sbe37 ADD conductivity  numeric";
+            proc.execute(tab);
+            tab = "UPDATE sbe37 SET conductivity = d.parameter_value FROM raw_instrument_data d WHERE d.data_timestamp = sbe37.data_timestamp AND parameter_code = 'CONDUCTIVITY' AND d.depth = sbe37.depth";
+            proc.execute(tab);
+
+            proc.execute("SELECT out_timestamp, source_file_id, depth, water_temperature, pressure, conductivity FROM sbe37");
+            results = (ResultSet) proc.getResultSet();
+
             ResultSetMetaData resultsMetaData = results.getMetaData();
             int colCount        = resultsMetaData.getColumnCount();
 
