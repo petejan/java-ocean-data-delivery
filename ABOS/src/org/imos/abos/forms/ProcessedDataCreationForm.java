@@ -323,12 +323,12 @@ public class ProcessedDataCreationForm extends MemoryWindow implements DataProce
         }
         
         String update = "UPDATE instrument_data_processors SET " 
-     + "processing_date = '" + Common.current() + "',"
-     + "count = "+ selectionSet.size()
-     + " WHERE "
-     + "mooring_id = '" + selectedMooring.getMooringID() + "'"
-     + " AND class_name = '" + this.getClass().getName() + "'"
-     + " AND parameters = '" + paramToString()  + "'";
+                        + "processing_date = '" + Common.current() + "',"
+                        + "count = "+ selectionSet.size()
+                        + " WHERE "
+                        + "mooring_id = '" + selectedMooring.getMooringID() + "'"
+                        + " AND class_name = '" + this.getClass().getName() + "'"
+                        + " AND parameters = '" + paramToString()  + "'";
 
         Connection conn = Common.getConnection();
 
@@ -337,7 +337,7 @@ public class ProcessedDataCreationForm extends MemoryWindow implements DataProce
         {
             stmt = conn.createStatement();
             stmt.executeUpdate(update);
-            logger.debug("Update processed table ");
+            logger.debug("Update processed table count " + selectionSet.size());
         }
         catch (SQLException ex)
         {

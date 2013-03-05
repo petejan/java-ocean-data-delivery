@@ -373,10 +373,42 @@ public class WETLabsFLNTUSCalculationForm extends MemoryWindow implements DataPr
             results.close();
             proc.close();
             conn.setAutoCommit(true);
+            
+            String update = "UPDATE instrument_data_processors SET " 
+                            + "processing_date = '" + Common.current() + "',"
+                            + "count = "+ dataSet.size()
+                            + " WHERE "
+                            + "mooring_id = '" + selectedMooring.getMooringID() + "'"
+                            + " AND class_name = '" + this.getClass().getName() + "'"
+                            + " AND parameters = '" + paramToString()  + "'";
+
+            Statement stmt;
+            try
+            {
+                stmt = conn.createStatement();
+                stmt.executeUpdate(update);
+                logger.debug("Update processed table count " + dataSet.size());
+            }
+            catch (SQLException ex)
+            {
+                logger.error(ex);
+            }                        
         }
         catch(SQLException sex)
         {
             logger.error(sex);
+            if (conn != null)
+            {
+                try
+                {
+                    conn.rollback();
+                    conn.setAutoCommit(true);
+                }
+                catch (SQLException ex)
+                {
+                    logger.error(sex);
+                }
+            }
         }
         finally
         {
@@ -386,11 +418,6 @@ public class WETLabsFLNTUSCalculationForm extends MemoryWindow implements DataPr
                     results.close();
                 if(proc != null)
                     proc.close();
-                if(conn != null)
-                {
-                    conn.rollback();
-                    conn.setAutoCommit(true);
-                }
             }
             catch(SQLException sex)
             {

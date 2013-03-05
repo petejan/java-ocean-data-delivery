@@ -15,6 +15,8 @@ import java.sql.*;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Vector;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
@@ -22,6 +24,7 @@ import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
 import org.imos.abos.calc.SalinityCalculator;
 import org.imos.abos.dbms.Instrument;
+import org.imos.abos.dbms.InstrumentCalibrationFile;
 import org.imos.abos.dbms.Mooring;
 import org.imos.abos.dbms.ProcessedInstrumentData;
 import org.wiley.core.Common;
@@ -406,7 +409,27 @@ public class SeabirdSBE16CalculationForm extends MemoryWindow implements DataPro
 
     public boolean setupFromString(String s)
     {
-        throw new UnsupportedOperationException("Not supported yet.");
+        Matcher mat = Pattern.compile("(?:MOORING= *)(([^,]*))").matcher(s);
+        mat.find();
+        
+        String mooringId = mat.group(2);
+        
+        mat = Pattern.compile("(?:SRC= *)(([^,]*))").matcher(s);
+        mat.find();
+        
+        int srcInstrumentId = Integer.parseInt(mat.group(2));
+        
+        mat = Pattern.compile("(?:TARGET= *)(([^,]*))").matcher(s);
+        mat.find();
+                
+        int tgtInstrumentId = Integer.parseInt(mat.group(2));
+        
+        selectedMooring = Mooring.selectByMooringID(mooringId);
+        
+        sourceInstrument = Instrument.selectByInstrumentID(srcInstrumentId);
+        targetInstrument = Instrument.selectByInstrumentID(tgtInstrumentId);
+        
+        return true;
     }
 
     public void calculateDataValues()

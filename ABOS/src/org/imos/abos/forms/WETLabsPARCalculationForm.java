@@ -350,6 +350,32 @@ public class WETLabsPARCalculationForm extends MemoryWindow implements DataProce
             }
 
             insertData();
+            
+            String update = "UPDATE instrument_data_processors SET " 
+                            + "processing_date = '" + Common.current() + "',"
+                            + "count = "+ dataSet.size()
+                            + " WHERE "
+                            + "mooring_id = '" + selectedMooring.getMooringID() + "'"
+                            + " AND class_name = '" + this.getClass().getName() + "'"
+                            + " AND parameters = '" + paramToString()  + "'";
+
+            Connection conn = Common.getConnection();
+
+            Statement stmt;
+            try
+            {
+                stmt = conn.createStatement();
+                stmt.executeUpdate(update);
+                logger.debug("Update processed table count " + dataSet.size());
+            }
+            catch (SQLException ex)
+            {
+                logger.error(ex);
+            }            
+        }
+        else
+        {
+            logger.warn("No Data");
         }
     }
 
@@ -375,6 +401,7 @@ public class WETLabsPARCalculationForm extends MemoryWindow implements DataProce
             boolean ok = row.insert();
 
         }
+        
     }
 
     private void displayData()
