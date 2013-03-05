@@ -59,7 +59,7 @@ public class Pulse7NetCDFCreator extends BaseNetCDFCreator
                         + Pulse7Constants.DATA_CODE
                         + Pulse7Constants.START_DATE
                         + nameFormatter.format(startTime)
-                        + Pulse7Constants.PLATFORM_CODE
+                        + "_" + Pulse7Constants.platform_code + "_"
                         + Pulse7Constants.FILE_VERSION
                         + Pulse7Constants.deployment_code
                         + "_"
