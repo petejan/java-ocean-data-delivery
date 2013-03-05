@@ -48,8 +48,8 @@ public class AanderraOptodeConstants extends AbstractInstrumentConstants
     /*
      * these all need to be parameterised somewhere!
      */
-    public Double A_Coefficient = -5.00;
-    public Double B_Coefficient = 9.00;
+    public Double TempVoltConstant = -5.00;
+    public Double TempVoltMultiplier = 9.00;
 
     public Double BPhaseVoltConstant = 10.0;
     public Double BPhaseVoltMultiplier = 12.0;
@@ -122,6 +122,30 @@ public class AanderraOptodeConstants extends AbstractInstrumentConstants
         else if(paramName.equalsIgnoreCase("C4"))
         {
             C4Coeffs = parseData(paramValue);
+        }
+        else if(paramName.equalsIgnoreCase("BPhaseConstant"))
+        {
+            BPhaseConstant = parseDataValue(paramValue);
+        }
+        else if(paramName.equalsIgnoreCase("BPhaseMultiplier"))
+        {
+            BPhaseMultiplier = parseDataValue(paramValue);
+        }
+        else if(paramName.equalsIgnoreCase("TempVoltConstant"))
+        {
+            TempVoltConstant = parseDataValue(paramValue);
+        }
+        else if(paramName.equalsIgnoreCase("TempVoltMultiplier"))
+        {
+            TempVoltMultiplier = parseDataValue(paramValue);
+        }
+        else if(paramName.equalsIgnoreCase("BPhaseVoltConstant"))
+        {
+            BPhaseVoltConstant = parseDataValue(paramValue);
+        }
+        else if(paramName.equalsIgnoreCase("BPhaseVoltMultiplier"))
+        {
+            BPhaseVoltMultiplier = parseDataValue(paramValue);
         }
         else if(paramName.equalsIgnoreCase("UCHIDA_C1"))
         {
