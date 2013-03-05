@@ -16,6 +16,7 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 import org.apache.log4j.Logger;
 import org.imos.abos.dbms.Instrument;
+import org.imos.abos.dbms.InstrumentCalibrationValue;
 import org.imos.abos.dbms.Mooring;
 import org.imos.abos.dbms.ParameterCodes;
 import org.imos.abos.netcdf.pulse7.Pulse7NetCDFCreator;
@@ -244,6 +245,21 @@ public abstract class BaseNetCDFCreator
         {
             dataFile.addVariableAttribute(variable, "sensor", ins.getMake() + "-" + ins.getModel());
             dataFile.addVariableAttribute(variable, "sensor_serial_number", ins.getSerialNumber());
+            
+            ArrayList<InstrumentCalibrationValue> values = InstrumentCalibrationValue.selectByInstrumentAndMooring(ins.getInstrumentID(), currentMooring.getMooringID());            
+
+            for(InstrumentCalibrationValue v : values)
+            {
+                // System.out.println("Calibration Value " + v.getParameterCode() + " " + v.getParameterValue());
+                if (v.getDataType().contains("NUMBER"))
+                {
+                    dataFile.addVariableAttribute(variable, "calibration_" + v.getParameterCode(), Double.parseDouble(v.getParameterValue()));
+                }
+                else
+                {
+                    dataFile.addVariableAttribute(variable, "calibration_" + v.getParameterCode(), v.getParameterValue());
+                }
+            }
         }
         
         if(param != null)

@@ -157,7 +157,7 @@ public class Pulse7TemperatureProcessor
                         + Pulse7Constants.DATA_CODE
                         + Pulse7Constants.START_DATE
                         + nameFormatter.format(startTime)
-                        + Pulse7Constants.PLATFORM_CODE
+                        + "_" + Pulse7Constants.platform_code + "_"
                         + Pulse7Constants.FILE_VERSION
                         + Pulse7Constants.PRODUCT_TYPE
                         + Pulse7Constants.END_DATE

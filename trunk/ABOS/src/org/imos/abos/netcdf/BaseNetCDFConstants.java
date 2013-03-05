@@ -13,7 +13,7 @@ package org.imos.abos.netcdf;
  *
  * @author peter
  */
-public class BaseNetCDFConstants
+public abstract class BaseNetCDFConstants
 {
     //
     // file naming codes
@@ -22,26 +22,22 @@ public class BaseNetCDFConstants
     public static String FACILITY_CODE = "ABOS-SOTS_";
     public static String DATA_CODE = "";
     public static String START_DATE = "";
-    public static String PLATFORM_CODE = "_PULSE_";
     public static String FILE_VERSION = "FV01_";
     public static String PRODUCT_TYPE = "";
     public static String END_DATE = "END-";
     public static String CREATION_DATE = "_C-";
     public static String SUFFIX = ".nc";
 
-
-
-
-    public static String instrument_make = "" ;
-    public static String instrument_model = "" ;
-    public static String instrument_serial_no = "" ;
+    public static String instrument_make;
+    public static String instrument_model;
+    public static String instrument_serial_no;
     public static String level = "1." ;
     public static String date_created = null ;
     public static String field_trip_id = "" ;
     public static String field_trip_description = "" ;
     public static String project = "Integrated Marine Observing System (IMOS)" ;
     public static String conventions = "CF-1.6;IMOS-1.3" ;
-    public static String title = "Pulse 7 Mooring Temperature & Pressure Data" ;
+    public static String title;
     public static String institution = "CSIRO" ;
     
     public static String cdm_data_type = "Station";
@@ -50,8 +46,8 @@ public class BaseNetCDFConstants
     
     public static String netcdf_version = "3.6" ;
     public static String quality_control_set = "1." ;
-    public static String site_code = "" ;
-    public static String platform_code = "NRSMAI" ;
+    public static String site_code = "SOTS" ;
+    public static String platform_code = "PLATFORM" ;
     public static String naming_authority = "IMOS" ;
     public static String product_type = "" ;
     public static Double geospatial_lat_min = 0.0 ;
@@ -60,8 +56,8 @@ public class BaseNetCDFConstants
     public static Double geospatial_lon_max = 0.0 ;
     public static Double geospatial_vertical_min = 0.0 ;
     public static Double geospatial_vertical_max = 0.0 ;
-    public static String time_coverage_start = "" ;
-    public static String time_coverage_end = "" ;
+    public static String time_coverage_start ;
+    public static String time_coverage_end;
     public static String local_time_zone = "UTC/GMT" ;
     public static String data_centre = "eMarine Information Infrastructure (eMII)" ;
     public static String data_centre_email = "info@emii.org.au" ;
