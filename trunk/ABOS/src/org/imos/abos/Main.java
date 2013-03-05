@@ -141,48 +141,49 @@ public class Main
             }
             else
             {
+                Common.setCurrentStaffRecord(currentUser);
                 //
                 // check password
                 //
-                String storedPassword = currentUser.getPassword();
-
-                if(storedPassword.equals(Common.getUserPassword()))
-                {
-                    Common.setCurrentStaffRecord(currentUser);
-                }
-                else
-                {
-//                    Common.showMessage(mm,
+//                String storedPassword = currentUser.getPassword();
+//
+//                if(storedPassword.equals(Common.getUserPassword()))
+//                {
+//                    Common.setCurrentStaffRecord(currentUser);
+//                }
+//                else
+//                {
+////                    Common.showMessage(mm,
+////                        "Incorrect Password",
+////                        "The password entered for login ID "
+////                        + Common.getDBMSUser()
+////                        + " does not match the stored value."
+////                        );
+//
+//                    PasswordDialog pd = new PasswordDialog(mm, true);
+//                    pd.setLocationRelativeTo(mm);
+//                    pd.setVisible(true);
+//
+//                    char[] pwd = pd.getPassword();
+//                    String pwd2 = new String(pwd);
+//
+//                    //System.out.println("Entered password was " + pwd2);
+//                    //System.out.println("Stored password was " + storedPassword);
+//                    if(storedPassword.equals(pwd2))
+//                    {
+//                        Common.setCurrentStaffRecord(currentUser);
+//                    }
+//                    else
+//                    {
+//                        Common.showMessage(mm,
 //                        "Incorrect Password",
-//                        "The password entered for login ID "
+//                        "The override password entered for login ID "
 //                        + Common.getDBMSUser()
 //                        + " does not match the stored value."
 //                        );
-
-                    PasswordDialog pd = new PasswordDialog(mm, true);
-                    pd.setLocationRelativeTo(mm);
-                    pd.setVisible(true);
-
-                    char[] pwd = pd.getPassword();
-                    String pwd2 = new String(pwd);
-
-                    //System.out.println("Entered password was " + pwd2);
-                    //System.out.println("Stored password was " + storedPassword);
-                    if(storedPassword.equals(pwd2))
-                    {
-                        Common.setCurrentStaffRecord(currentUser);
-                    }
-                    else
-                    {
-                        Common.showMessage(mm,
-                        "Incorrect Password",
-                        "The override password entered for login ID "
-                        + Common.getDBMSUser()
-                        + " does not match the stored value."
-                        );
-                        System.exit(-1);
-                    }
-                }
+//                        System.exit(-1);
+//                    }
+//                }
             }
             mm.setTitle(mm.getTitle()
                       + " - "
