@@ -45,7 +45,7 @@ public class InterpolatedDataCreationForm extends MemoryWindow implements DataPr
 
     private static Logger logger = Logger.getLogger(InterpolatedDataCreationForm.class.getName());
 
-    private Mooring selectedMooring =null;
+    private Mooring selectedMooring = null;
     private Instrument sourceInstrument = null;
     private Instrument targetInstrument = null;
 
@@ -314,6 +314,7 @@ public class InterpolatedDataCreationForm extends MemoryWindow implements DataPr
             Timestamp start = row.getDataTimestamp();
             Timestamp end = selectionSet.get(selectionSet.size()-1).getDataTimestamp();
             
+            logger.info("Data points " + selectionSet.size());
             double x[] = new double[selectionSet.size()];
             double y[] = new double[selectionSet.size()];
 
@@ -349,12 +350,12 @@ public class InterpolatedDataCreationForm extends MemoryWindow implements DataPr
         }
         
         String update = "UPDATE instrument_data_processors SET " 
-     + "processing_date = '" + Common.current() + "',"
-     + "count = "+ selectionSet.size()
-     + " WHERE "
-     + "mooring_id = '" + selectedMooring.getMooringID() + "'"
-     + " AND class_name = '" + this.getClass().getName() + "'"
-     + " AND parameters = '" + paramToString()  + "'";
+                            + "processing_date = '" + Common.current() + "',"
+                            + "count = "+ selectionSet.size()
+                            + " WHERE "
+                            + "mooring_id = '" + selectedMooring.getMooringID() + "'"
+                            + " AND class_name = '" + this.getClass().getName() + "'"
+                            + " AND parameters = '" + paramToString()  + "'";
 
         Connection conn = Common.getConnection();
 
@@ -363,7 +364,7 @@ public class InterpolatedDataCreationForm extends MemoryWindow implements DataPr
         {
             stmt = conn.createStatement();
             stmt.executeUpdate(update);
-            logger.debug("Update processed table ");
+            logger.debug("Update processed table count " + selectionSet.size());
         }
         catch (SQLException ex)
         {

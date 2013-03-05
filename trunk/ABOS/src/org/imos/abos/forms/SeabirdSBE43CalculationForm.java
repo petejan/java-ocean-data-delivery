@@ -22,6 +22,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.TimeZone;
 import java.util.Vector;
+import java.util.logging.Level;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.swing.SwingUtilities;
@@ -322,6 +323,7 @@ public class SeabirdSBE43CalculationForm extends MemoryWindow implements DataPro
             results = (ResultSet) proc.getObject(1);
             ResultSetMetaData resultsMetaData = results.getMetaData();
             int colCount        = resultsMetaData.getColumnCount();
+            int rowCount = 0;
 
             while (results.next())
             {
@@ -363,17 +365,51 @@ public class SeabirdSBE43CalculationForm extends MemoryWindow implements DataPro
                  */
 
                 dataSet.add(sbe);
-
-                
+                rowCount++;                
             }
             results.close();
             proc.close();
             conn.setAutoCommit(true);
+            logger.info("Closed Results count " + rowCount);
+            
+        String update = "UPDATE instrument_data_processors SET " 
+                        + "processing_date = '" + Common.current() + "',"
+                        + "count = "+ rowCount
+                        + " WHERE "
+                        + "mooring_id = '" + selectedMooring.getMooringID() + "'"
+                        + " AND class_name = '" + this.getClass().getName() + "'"
+                        + " AND parameters = '" + paramToString()  + "'";
+
+        Statement stmt;
+        try
+        {
+            stmt = conn.createStatement();
+            stmt.executeUpdate(update);
+            logger.debug("Update processed table count " + rowCount);
+        }
+        catch (SQLException ex)
+        {
+            logger.error(ex);
+        }
+
+            
 
         }
         catch(SQLException sex)
         {
             logger.error(sex);
+            if (conn != null)
+            {
+                try
+                {
+                    conn.rollback();
+                    conn.setAutoCommit(true);
+                }
+                catch (SQLException ex)
+                {
+                    logger.error(sex);
+                }
+            }
         }
         finally
         {
@@ -383,11 +419,6 @@ public class SeabirdSBE43CalculationForm extends MemoryWindow implements DataPro
                     results.close();
                 if(proc != null)
                     proc.close();
-                if(conn != null)
-                {
-                    conn.rollback();
-                    conn.setAutoCommit(true);
-                }
             }
             catch(SQLException sex)
             {
@@ -396,6 +427,7 @@ public class SeabirdSBE43CalculationForm extends MemoryWindow implements DataPro
         }
 
         insertData();
+        
     }
 
     private void insertData()
