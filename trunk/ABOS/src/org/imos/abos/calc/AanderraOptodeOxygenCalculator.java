@@ -52,6 +52,17 @@ public class AanderraOptodeOxygenCalculator
         constants = c;
     }
 
+    protected static double correctSalinity(double salinity, double temperature)
+    {
+        double ts = Math.log((298.15 - temperature) / (273.15 + temperature));
+        
+        return Math.exp(salinity * (b0 + b1 * ts + (b2 * Math.pow(ts, 2)) + (b3 * Math.pow(ts, 3))) + c0 * Math.pow(salinity, 2));        
+    }
+    
+    protected static double correctDepth(double pressure)
+    {
+        return 1-(0.032*pressure/1000);
+    }
     /**
      * calculate oxygen concentration in uMole/kg of seawater
      *
@@ -125,26 +136,14 @@ public class AanderraOptodeOxygenCalculator
 
         //logger.debug("Oxygen before salinity adjustment: " + o2);
 
-        //;
-        //; scale Temperature
-        //;
-        double ts = Math.log((298.15 - optodeTemperature) / (273.15 + optodeTemperature));
-        o2 = o2 * Math.exp(salinity.doubleValue() * (b0 + b1 * ts + (b2 * Math.pow(ts, 2)) + (b3 * Math.pow(ts, 3)))
-                + c0 * Math.pow(salinity.doubleValue(), 2));
+        o2 = o2 * correctSalinity(salinity.doubleValue(), optodeTemperature);
 
         //logger.debug("salinity adjusted oxygen before density adjustment: " + o2);
+        
+        o2 = o2 * correctDepth(pressure);
 
-        //;
-        //;convert to umol/kg
-        // TODO: check if this should be depth density or surface density? (Sea Bird appnote 64 calls it sigma_theta)
-        //;
-//        double density = SeawaterParameterCalculator.calculateSeawaterDensityAtSurface(salinity.doubleValue(), optodeTemperature);
-//        o2 = o2/(density/1000);
-
-        double depthDensity = SeawaterParameterCalculator.calculateSeawaterDensityAtDepth(salinity, optodeTemperature, pressure); // kg/m^3
-        o2 = (o2 / (depthDensity / 1000));
-
-        //logger.debug("Temperature & density adjusted oxygen: " + o2);
+        //logger.debug("salinity & depth djusted oxygen: " + o2);
+        
         return new Double(o2);
     }
     
@@ -162,8 +161,15 @@ public class AanderraOptodeOxygenCalculator
     {
         double dissolvedOxygen = AanderraOptodeOxygenCalculator.UchidaCalculateDissolvedOxygenInUMolesPerLitre(optodeTemperature, optodeBPhaseValue);
         
-        double depthDensity = SeawaterParameterCalculator.calculateSeawaterDensityAtDepth(salinity, optodeTemperature, pressure); // kg/m^3
-        dissolvedOxygen = (dissolvedOxygen / (depthDensity / 1000));
+        //logger.debug("Oxygen before salinity adjustment: " + dissolvedOxygen);
+
+        dissolvedOxygen = dissolvedOxygen * correctSalinity(salinity.doubleValue(), optodeTemperature);
+
+        //logger.debug("salinity adjusted oxygen before density adjustment: " + dissolvedOxygen);
+        
+        dissolvedOxygen = dissolvedOxygen * correctDepth(pressure);
+
+        //logger.debug("salinity & depth djusted oxygen: " + dissolvedOxygen);
         
         return dissolvedOxygen;
         
@@ -204,9 +210,7 @@ public class AanderraOptodeOxygenCalculator
                 ;
         
         double dissolvedOxygen = ((p1/p2) - 1)/p3;
-        
-        
-        
+                        
         return dissolvedOxygen;
     }
     
@@ -224,13 +228,13 @@ public class AanderraOptodeOxygenCalculator
         
         AanderraOptodeConstants aoc = new AanderraOptodeConstants();
         
-        aoc.setInstrumentAndMooring(Instrument.selectByInstrumentID(620), Mooring.selectByMooringID("PULSE_7")); // Optode-1161, Pulse-7
+        aoc.setInstrumentAndMooring(Instrument.selectByInstrumentID(620), Mooring.selectByMooringID("Pulse-7-2010")); // Optode-1161, Pulse-7
         
         AanderraOptodeOxygenCalculator.setOptodeConstants(aoc);
         
         System.out.println("Constants " + aoc);
         
-        System.out.println("DO = " + AanderraOptodeOxygenCalculator.calculateDissolvedOxygenInUMolesPerKg(8.707, 37.36512725, 34.56124872, 34.56124872) + " umol/kg");
+        System.out.println("DO = " + AanderraOptodeOxygenCalculator.UchidaCalculateDissolvedOxygenInUMolesPerKg(9.445, 32.7004, 34.6727, 31.682) + " umol/kg");
                 
     }
 }
