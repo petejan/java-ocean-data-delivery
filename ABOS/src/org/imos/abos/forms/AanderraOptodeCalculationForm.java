@@ -554,11 +554,7 @@ public class AanderraOptodeCalculationForm extends MemoryWindow implements DataP
             //
             row.optodeBPhaseValue = constants.BPhaseVoltConstant + (row.optodeBPhaseVolts * constants.BPhaseVoltMultiplier);
             //
-            // convert BPhase to DPhase
-            //
-            row.optodeDPhaseValue = constants.BPhaseConstant + (constants.BPhaseMultiplier * row.optodeBPhaseValue);
-            //
-            // finally use Aanderra supplied algorithm to convert DPhase value to dissolved oxygen
+            // finally use Aanderra supplied algorithm to convert BPhase value to dissolved oxygen
             //
             row.calculatedDissolvedOxygenPerKg = AanderraOptodeOxygenCalculator.UchidaCalculateDissolvedOxygenInUMolesPerKg(
                                                                                             row.optodeTemperatureValue,
