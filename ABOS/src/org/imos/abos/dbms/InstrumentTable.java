@@ -25,11 +25,7 @@ import javax.swing.table.TableColumnModel;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
 import org.wiley.LabMaster.Common;
-import org.wiley.table.ComboBoxEditor;
-import org.wiley.table.DateTimeField;
-import org.wiley.table.EditableBaseTable;
-import org.wiley.table.StringEditor;
-import org.wiley.table.DateTimeEditor;
+import org.wiley.table.*;
 import org.wiley.util.SettableCaseJTextField;
 
 public class InstrumentTable extends EditableBaseTable

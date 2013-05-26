@@ -621,15 +621,15 @@ public class InstrumentDataParser  implements Cloneable
     public Boolean getDisplayCodeAsBoolean()
     {
         if(displayCode == null)
-            return new Boolean(true);
+            return true;
 
         if(displayCode.trim().isEmpty())
-            return new Boolean(true);
+            return true;
 
         if(displayCode.startsWith("N"))
-            return new Boolean(false);
+            return false;
         else
-            return new Boolean(true);
+            return true;
     }
 }
 

@@ -9,8 +9,6 @@
 
 package org.imos.abos;
 
-import org.wiley.core.startMenu;
-import org.wiley.util.PasswordDialog;
 import java.awt.Dimension;
 import java.awt.Toolkit;
 import java.util.TimeZone;
@@ -20,6 +18,8 @@ import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
 import org.wiley.core.Common;
 import org.wiley.core.dbms.Staff;
+import org.wiley.core.startMenu;
+import org.wiley.util.PasswordDialog;
 
 /**
  *
