@@ -19,7 +19,6 @@ import org.apache.log4j.PropertyConfigurator;
 import org.wiley.core.Common;
 import org.wiley.core.dbms.Staff;
 import org.wiley.core.startMenu;
-import org.wiley.util.PasswordDialog;
 
 /**
  *

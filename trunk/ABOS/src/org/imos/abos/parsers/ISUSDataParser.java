@@ -14,11 +14,7 @@ import java.sql.Timestamp;
 import java.text.DecimalFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.Calendar;
-import java.util.GregorianCalendar;
-import java.util.NoSuchElementException;
-import java.util.StringTokenizer;
-import java.util.TimeZone;
+import java.util.*;
 import org.imos.abos.dbms.ArrayInstrumentData;
 import org.imos.abos.dbms.RawInstrumentData;
 import org.wiley.util.DateUtilities;
@@ -181,7 +177,7 @@ public class ISUSDataParser extends AbstractDataParser
 
         ok |= array.insert();
         
-        logger.debug(row.getDataTimestamp() + " " + array.getDataTimestamp());
+        //logger.debug(row.getDataTimestamp() + " " + array.getDataTimestamp());
     }
 
 }

@@ -24,6 +24,7 @@ import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.table.TableColumnModel;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
+import org.imos.abos.dbms.fields.MooringCombo;
 import org.wiley.LabMaster.Common;
 import org.wiley.table.*;
 import org.wiley.util.SettableCaseJTextField;
@@ -143,9 +144,17 @@ public class InstrumentTable extends EditableBaseTable
         
         if(currentMooring != null)
         {
-            spareButton3.setText("Link Files");
+            spareButton3.setText("Link Instrument");
             spareButton3.setMnemonic('l');
-            spareButton3.setToolTipText("Link instruments to mooring");
+            spareButton3.setToolTipText("Link other instruments to current mooring");
+            spareButton3.setVisible(true);
+            spareButton3.setEnabled(true);
+        }
+        else
+        {
+            spareButton3.setText("Link Mooring");
+            spareButton3.setMnemonic('l');
+            spareButton3.setToolTipText("Link selected instrument to mooring");
             spareButton3.setVisible(true);
             spareButton3.setEnabled(true);
         }
@@ -311,22 +320,46 @@ public class InstrumentTable extends EditableBaseTable
     @Override
     public void spareButton3_actionPerformed(ActionEvent e)
     {
-        String s = JOptionPane.showInputDialog(this,"Enter instrument ID to link: ");
-        if(s != null)
+        if(currentMooring != null)
         {
-            try
+            String s = JOptionPane.showInputDialog(this,"Enter instrument ID to link: ");
+            if(s != null)
             {
-                Integer ix = new Integer(s.trim());
-                Instrument ins= Instrument.selectByInstrumentID(ix);
-                
-                if(ins != null)
+                try
                 {
-                    Mooring.assignAttachedInstrument(currentMooring.getMooringID(), ix);
+                    Integer ix = new Integer(s.trim());
+                    Instrument ins= Instrument.selectByInstrumentID(ix);
+
+                    if(ins != null)
+                    {
+                        Mooring.assignAttachedInstrument(currentMooring.getMooringID(), ix);
+                    }
+                }
+                catch(NumberFormatException nex)
+                {
+                    logger.error("Not an integer number - " + s);
                 }
             }
-            catch(NumberFormatException nex)
+        }
+        else
+        {
+            Integer currentRow = getSelectedRowNumber();
+            if(currentRow == null || currentRow < 0)
             {
-                logger.error("Not an integer number - " + s);
+                Common.showMessage(this, "No Row Selection","There is no row selected.");
+                return;
+            }
+            Instrument selectedInstrument = (Instrument) collection.getSelectedRow(currentRow);
+
+            MooringCombo mooringSelector = new MooringCombo();
+            
+            JOptionPane.showMessageDialog( this, mooringSelector, "Select a Mooring to Link", JOptionPane.QUESTION_MESSAGE);
+            
+            Mooring selectedMooring = mooringSelector.getSelectedMooring();
+            
+            if(selectedMooring != null)
+            {
+                Mooring.assignAttachedInstrument(selectedMooring.getMooringID(), selectedInstrument.getInstrumentID());
             }
         }
             
