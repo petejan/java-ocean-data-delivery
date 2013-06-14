@@ -262,9 +262,21 @@ public abstract class AbstractDataParser
         {
             ioe.printStackTrace();
         }
-        AbstractDataParser.logger.debug("Finished processing file, read " + rowCount + " rows, found " + PARSE_FAILURES + " bad rows.");
+        AbstractDataParser.logger.debug("Finished processing file " 
+                                        + fileName 
+                                        + ", read " 
+                                        + rowCount 
+                                        + " rows, found " 
+                                        + PARSE_FAILURES 
+                                        + " bad rows.\n");
         if(parentForm != null)
-            parentForm.updateMessageArea("Finished processing file, read " + rowCount + " rows, found " + PARSE_FAILURES + " bad rows.");
+            parentForm.updateMessageArea("Finished processing file " 
+                                        + fileName 
+                                        + ", read " 
+                                        + rowCount 
+                                        + " rows, found " 
+                                        + PARSE_FAILURES 
+                                        + " bad rows.\n");
     }
 
     protected void processFile(File dataFile)
