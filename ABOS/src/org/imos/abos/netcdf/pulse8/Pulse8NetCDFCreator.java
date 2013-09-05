@@ -13,8 +13,6 @@ import java.util.TimeZone;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
 import org.imos.abos.netcdf.BaseNetCDFCreator;
-import org.imos.abos.netcdf.pulse7.Pulse7Constants;
-import org.imos.abos.netcdf.pulse7.Pulse7NetCDFCreator;
 import org.wiley.core.Common;
 
 /**
@@ -23,7 +21,7 @@ import org.wiley.core.Common;
  */
 public class Pulse8NetCDFCreator extends BaseNetCDFCreator
 {
-    private static Logger logger = Logger.getLogger(Pulse7NetCDFCreator.class.getName());
+    private static Logger logger = Logger.getLogger(Pulse8NetCDFCreator.class.getName());
 
     public void Pulse7NetCDFCreator()
     {
@@ -37,13 +35,13 @@ public class Pulse8NetCDFCreator extends BaseNetCDFCreator
         if(args.length == 0)
         {
             PropertyConfigurator.configure("log4j.properties");
-            Common.build("ABOS.conf");
+            Common.build($HOME + "/ABOS/ABOS.properties");
         }
 
         Pulse8NetCDFCreator cdf = new Pulse8NetCDFCreator();
 
-        cdf.createTimeArray("PULSE_8");
-        cdf.createDepthArray("PULSE_8");
+        cdf.createTimeArray("Pulse-8-2011");
+        cdf.createDepthArray("Pulse-8-2011");
         cdf.createCDFFile();
     }
 
@@ -62,7 +60,7 @@ public class Pulse8NetCDFCreator extends BaseNetCDFCreator
                         + nameFormatter.format(startTime)
                         + "_" + Pulse8Constants.platform_code + "_"
                         + Pulse8Constants.FILE_VERSION
-                        + Pulse8Constants.deployment_code
+                        + Pulse8Constants.deployment_code.toUpperCase()
                         + "_"
                         + Pulse8Constants.PRODUCT_TYPE
                         + Pulse8Constants.END_DATE
@@ -81,7 +79,7 @@ public class Pulse8NetCDFCreator extends BaseNetCDFCreator
         SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd\'T\'HH:mm:ss\'Z\'");
         df.setTimeZone(tz);
                 
-        dataFile.addGlobalAttribute("level", Pulse8Constants.level);
+        // dataFile.addGlobalAttribute("level", Pulse8Constants.level);
         
         dataFile.addGlobalAttribute("field_trip_id", Pulse8Constants.field_trip_id);
         dataFile.addGlobalAttribute("field_trip_description", Pulse8Constants.field_trip_description);
@@ -97,6 +95,6 @@ public class Pulse8NetCDFCreator extends BaseNetCDFCreator
         dataFile.addGlobalAttribute("geospatial_vertical_min", 0);
         dataFile.addGlobalAttribute("geospatial_vertical_max", Pulse8Constants.geospatial_vertical_max);
         
-        dataFile.addGlobalAttribute("comment", "Aanderra optode data have been omitted from this data set due to an apparent inconsistency with Seabird SBE43 data.");
+        // dataFile.addGlobalAttribute("comment", "Aanderra optode data have been omitted from this data set due to an apparent inconsistency with Seabird SBE43 data.");
     }
 }

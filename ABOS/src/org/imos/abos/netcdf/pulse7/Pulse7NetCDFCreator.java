@@ -36,13 +36,13 @@ public class Pulse7NetCDFCreator extends BaseNetCDFCreator
         if(args.length == 0)
         {
             PropertyConfigurator.configure("log4j.properties");
-            Common.build("ABOS.conf");
+            Common.build($HOME + "/ABOS/ABOS.properties");
         }
 
         Pulse7NetCDFCreator cdf = new Pulse7NetCDFCreator();
 
-        cdf.createTimeArray("PULSE_7");
-        cdf.createDepthArray("PULSE_7");
+        cdf.createTimeArray("Pulse-7-2010");
+        cdf.createDepthArray("Pulse-7-2010");
         cdf.createCDFFile();
     }
 
@@ -61,7 +61,7 @@ public class Pulse7NetCDFCreator extends BaseNetCDFCreator
                         + nameFormatter.format(startTime)
                         + "_" + Pulse7Constants.platform_code + "_"
                         + Pulse7Constants.FILE_VERSION
-                        + Pulse7Constants.deployment_code
+                        + Pulse7Constants.deployment_code.toUpperCase()
                         + "_"
                         + Pulse7Constants.PRODUCT_TYPE
                         + Pulse7Constants.END_DATE
@@ -80,7 +80,7 @@ public class Pulse7NetCDFCreator extends BaseNetCDFCreator
         SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd\'T\'HH:mm:ss\'Z\'");
         df.setTimeZone(tz);
                 
-        dataFile.addGlobalAttribute("level", Pulse7Constants.level);
+        // dataFile.addGlobalAttribute("level", Pulse7Constants.level);
         
         dataFile.addGlobalAttribute("field_trip_id", Pulse7Constants.field_trip_id);
         dataFile.addGlobalAttribute("field_trip_description", Pulse7Constants.field_trip_description);

@@ -63,7 +63,7 @@ public class Instrument  implements Cloneable
 
     public static String getDefaultSortOrder()
     {
-        return " order by instrument_id";
+        return " order by make, model, serial_number";
     }
 
     public static Class getColumnClass(int column)
@@ -626,6 +626,20 @@ public class Instrument  implements Cloneable
                         + "("
                         + " select distinct instrument_id from instrument_data_files "
                         + " where mooring_id = "
+                        + StringUtilities.quoteString(mooringID)
+                        + ")"
+                        + getDefaultSortOrder());
+    }
+    
+    public static ArrayList<Instrument> selectForRawData(String mooringID, String param)
+    {
+        return doSelect( selectSQL
+                        + " where instrument_id in "
+                        + "("
+                        + " select distinct instrument_id from raw_instrument_data "
+                        + " where parameter_code = "
+                        + StringUtilities.quoteString(param)
+                        + " AND mooring_id = "
                         + StringUtilities.quoteString(mooringID)
                         + ")"
                         + getDefaultSortOrder());

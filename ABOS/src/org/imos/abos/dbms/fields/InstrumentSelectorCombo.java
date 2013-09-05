@@ -16,6 +16,7 @@ package org.imos.abos.dbms.fields;
 import java.awt.Dimension;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import javax.swing.*;
 import org.apache.log4j.Logger;
@@ -167,6 +168,7 @@ public class InstrumentSelectorCombo extends BasicCombo
 
     public void setMooring(Mooring selectedItem)
     {
+        DecimalFormat df = new DecimalFormat("0000");
         combo.removeAllItems();
 
         codes = Instrument.selectInstrumentsForMooring(selectedItem.getMooringID());
@@ -178,7 +180,7 @@ public class InstrumentSelectorCombo extends BasicCombo
             for(int i = 0; i < codes.size(); i++)
             {
                 Instrument ps = codes.get(i);
-                combo.addItem(ps.getInstrumentID()
+                combo.addItem(df.format(ps.getInstrumentID())
                             + ": "
                             + ps.getMake()
                             + " "
@@ -229,6 +231,70 @@ public class InstrumentSelectorCombo extends BasicCombo
         combo.addItemListener(il);
     }
 
+    public void setMooringParam(Mooring selectedItem, String param)
+    {
+        DecimalFormat df = new DecimalFormat("0000");
+        combo.removeAllItems();
+
+        codes = Instrument.selectForRawData(selectedItem.getMooringID(), param);
+
+        if(codes != null && codes.size() > 0)
+        {
+            combo.addItem("");
+
+            for(int i = 0; i < codes.size(); i++)
+            {
+                Instrument ps = codes.get(i);
+                combo.addItem(df.format(ps.getInstrumentID())
+                            + ": "
+                            + ps.getMake()
+                            + " "
+                            + ps.getModel()
+                            + " S/No. "
+                            + ps.getSerialNumber()
+                            );
+            }
+        }
+        else
+        {
+            combo.addItem("");
+
+        }
+
+        ItemListener il = new ItemListener()
+        {
+            public void itemStateChanged(ItemEvent e)
+            {
+                //logger.debug("Item state change");
+
+                if(e.getStateChange() == ItemEvent.SELECTED)
+                {
+                    //logger.debug("Item selected");
+                    int index = combo.getSelectedIndex() - 1;
+
+                    if(index < 0)
+                    {
+                        logger.debug("Selected blank row");
+                    }
+                    else
+                    {
+                        selected =  codes.get(index);
+                        if(selected != null)
+                        {
+                            //logger.debug("Selected " + selected.getDescription() );
+                        }
+                        else
+                        {
+                            logger.debug("Selected item is null");
+                        }
+                    }
+                }
+            }
+
+        };
+
+        combo.addItemListener(il);
+    }
     public void setInstrumentDataSet(ArrayList<Instrument> set)
     {
         codes = set;

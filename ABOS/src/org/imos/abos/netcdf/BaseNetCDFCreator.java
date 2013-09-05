@@ -19,7 +19,6 @@ import org.imos.abos.dbms.Instrument;
 import org.imos.abos.dbms.InstrumentCalibrationValue;
 import org.imos.abos.dbms.Mooring;
 import org.imos.abos.dbms.ParameterCodes;
-import org.imos.abos.netcdf.pulse7.Pulse7NetCDFCreator;
 import org.wiley.core.Common;
 import org.wiley.util.SQLWrapper;
 import org.wiley.util.StringUtilities;
@@ -52,7 +51,7 @@ public abstract class BaseNetCDFCreator
         String SQL = "select distinct depth from processed_instrument_data" + " where mooring_id = " + StringUtilities.quoteString(mooringID) + " order by depth";
         query.setConnection(Common.getConnection());
         query.executeQuery(SQL);
-        Vector depthSet = Pulse7NetCDFCreator.query.getData();
+        Vector depthSet = BaseNetCDFCreator.query.getData();
         if (depthSet != null && depthSet.size() > 0)
         {
             for (int i = 0; i < depthSet.size(); i++)
@@ -307,11 +306,11 @@ public abstract class BaseNetCDFCreator
             writeGlobalAttributes();
             writeMooringSpecificAttributes();
             //add dimensions
-            Dimension lvlDim = dataFile.addDimension("level", depthArray.size());
+            Dimension lvlDim = dataFile.addDimension("DEPTH", depthArray.size());
             Dimension timeDim = dataFile.addDimension("TIME", RECORD_COUNT);
             ArrayList dims = null;
             // Define the coordinate variables.
-            dataFile.addVariable("level", DataType.FLOAT, new Dimension[]{lvlDim});
+            dataFile.addVariable("DEPTH", DataType.FLOAT, new Dimension[]{lvlDim});
             dataFile.addVariable("TIME", DataType.INT, new Dimension[]{timeDim});
             // Define the netCDF variables for the pressure and temperature
             // data.
@@ -403,7 +402,7 @@ public abstract class BaseNetCDFCreator
             dataFile.create();
             // A newly created Java integer array to be initialized to zeros.
             int[] origin = new int[varNames.size() + 2];
-            dataFile.write("level", depths);
+            dataFile.write("DEPTH", depths);
             dataFile.write("TIME", times);
             for (int i = 0; i < varNames.size(); i++)
             {

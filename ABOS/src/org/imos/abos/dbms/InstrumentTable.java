@@ -71,7 +71,7 @@ public class InstrumentTable extends EditableBaseTable
         if(args.length == 0)
         {
             PropertyConfigurator.configure("log4j.properties");
-            Common.build("ABOS.conf");
+            Common.build($HOME + "/ABOS/ABOS.properties");
         }
 
         InstrumentTable table = new InstrumentTable();
@@ -281,6 +281,10 @@ public class InstrumentTable extends EditableBaseTable
         
         form.setLocation(this.getLocationOnScreen());
         
+        if (currentMooring != null)
+        {
+            form.setMooring(currentMooring);
+        }
         form.setRunStatus(false);
         form.setInstrument(row);
         form.initialise();
@@ -332,7 +336,7 @@ public class InstrumentTable extends EditableBaseTable
 
                     if(ins != null)
                     {
-                        Mooring.assignAttachedInstrument(currentMooring.getMooringID(), ix);
+                        Mooring.assignAttachedInstrument(currentMooring.getMooringID(), ix, 0.0);
                     }
                 }
                 catch(NumberFormatException nex)
@@ -359,7 +363,7 @@ public class InstrumentTable extends EditableBaseTable
             
             if(selectedMooring != null)
             {
-                Mooring.assignAttachedInstrument(selectedMooring.getMooringID(), selectedInstrument.getInstrumentID());
+                Mooring.assignAttachedInstrument(selectedMooring.getMooringID(), selectedInstrument.getInstrumentID(), 0.0);
             }
         }
             
@@ -376,7 +380,7 @@ public class InstrumentTable extends EditableBaseTable
             {
                 InstrumentDataFile row = linkedFiles.get(i);
                 
-                boolean OK = Mooring.assignAttachedInstrument(currentMooring.getMooringID(), row.getInstrumentID());
+                boolean OK = Mooring.assignAttachedInstrument(currentMooring.getMooringID(), row.getInstrumentID(), 0.0);
             }
         }
     }

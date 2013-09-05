@@ -24,13 +24,9 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
-import java.util.HashSet;
 import java.util.TimeZone;
 import java.util.Vector;
 import java.util.logging.Level;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import javax.swing.JComboBox;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
@@ -40,21 +36,19 @@ import org.imos.abos.dbms.Instrument;
 import org.imos.abos.dbms.InstrumentCalibrationValue;
 import org.imos.abos.dbms.Mooring;
 import org.imos.abos.dbms.ParameterCodes;
-import org.imos.abos.dbms.RawInstrumentData;
-import org.imos.abos.instrument.AanderraOptodeConstants;
 import org.wiley.core.Common;
 import org.wiley.core.forms.MemoryWindow;
 import org.wiley.util.SQLWrapper;
 import org.wiley.util.StringUtilities;
-import org.wiley.util.TextFileLogger;
 import ucar.ma2.ArrayByte;
 import ucar.ma2.ArrayFloat;
 import ucar.ma2.ArrayInt;
 import ucar.ma2.DataType;
-import ucar.ma2.Index;
 import ucar.ma2.InvalidRangeException;
+import ucar.nc2.Attribute;
 import ucar.nc2.Dimension;
-import ucar.nc2.NetcdfFileWriteable;
+import ucar.nc2.NetcdfFileWriter;
+import ucar.nc2.Variable;
 
 /**
  *
@@ -66,15 +60,13 @@ public class NetCDFcreateForm extends MemoryWindow
     protected static SQLWrapper query = new SQLWrapper();
     
     private Mooring selectedMooring = null;
-    private Instrument sourceInstrument = null;
     
     private String authority = "OS";
     private String site = "SOTS";
-    private String mooring = "PULSE";
+    private String mooring = "Pulse";
     private String deployment = "Pulse-8-2011";
-    private String parameter = "";
     
-    protected NetcdfFileWriteable dataFile = null;
+    protected NetcdfFileWriter dataFile = null;
     protected TimeZone tz = TimeZone.getTimeZone("UTC");
     
     /** Creates new form SBE16CalculationForm */
@@ -104,12 +96,13 @@ public class NetCDFcreateForm extends MemoryWindow
         jPanel1 = new javax.swing.JPanel();
         mooringCombo1 = new org.imos.abos.dbms.fields.MooringCombo();
         mooringDescriptionField = new org.wiley.util.basicField();
-        sourceInstrumentCombo = new org.imos.abos.dbms.fields.InstrumentSelectorCombo();
+        authorityCombo = new javax.swing.JComboBox();
+        jLabel1 = new javax.swing.JLabel();
         jPanel2 = new javax.swing.JPanel();
         runButton = new javax.swing.JButton();
         quitButton = new javax.swing.JButton();
 
-        setTitle("Aanderra Optode Data Processing Form");
+        setTitle("Create NetCDF Form");
         addWindowListener(new java.awt.event.WindowAdapter()
         {
             public void windowClosing(java.awt.event.WindowEvent evt)
@@ -132,7 +125,9 @@ public class NetCDFcreateForm extends MemoryWindow
 
         mooringDescriptionField.setEnabled(false);
 
-        sourceInstrumentCombo.setOrientation(0);
+        authorityCombo.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "OS", "IMOS" }));
+
+        jLabel1.setText("Authority");
 
         org.jdesktop.layout.GroupLayout jPanel1Layout = new org.jdesktop.layout.GroupLayout(jPanel1);
         jPanel1.setLayout(jPanel1Layout);
@@ -142,25 +137,28 @@ public class NetCDFcreateForm extends MemoryWindow
                 .addContainerGap()
                 .add(jPanel1Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
                     .add(jPanel1Layout.createSequentialGroup()
-                        .add(mooringCombo1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 169, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                        .add(jLabel1)
                         .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-                        .add(mooringDescriptionField, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 343, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                        .add(0, 0, Short.MAX_VALUE))
-                    .add(org.jdesktop.layout.GroupLayout.TRAILING, jPanel1Layout.createSequentialGroup()
-                        .add(0, 0, Short.MAX_VALUE)
-                        .add(sourceInstrumentCombo, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 562, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)))
-                .addContainerGap())
+                        .add(authorityCombo, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
+                    .add(jPanel1Layout.createSequentialGroup()
+                        .add(mooringCombo1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 169, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                        .add(18, 18, 18)
+                        .add(mooringDescriptionField, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 343, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)))
+                .addContainerGap(38, Short.MAX_VALUE))
         );
         jPanel1Layout.setVerticalGroup(
             jPanel1Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-            .add(jPanel1Layout.createSequentialGroup()
+            .add(org.jdesktop.layout.GroupLayout.TRAILING, jPanel1Layout.createSequentialGroup()
                 .addContainerGap(org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .add(jPanel1Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-                    .add(org.jdesktop.layout.GroupLayout.TRAILING, mooringCombo1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 21, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                    .add(org.jdesktop.layout.GroupLayout.TRAILING, mooringDescriptionField, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
-                .add(139, 139, 139)
-                .add(sourceInstrumentCombo, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 26, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                .add(288, 288, 288))
+                .add(jPanel1Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.TRAILING)
+                    .add(mooringDescriptionField, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                    .add(jPanel1Layout.createSequentialGroup()
+                        .add(jPanel1Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.BASELINE)
+                            .add(authorityCombo, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                            .add(jLabel1))
+                        .add(46, 46, 46)
+                        .add(mooringCombo1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 21, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)))
+                .add(306, 306, 306))
         );
 
         jPanel2.setBorder(javax.swing.BorderFactory.createEtchedBorder());
@@ -220,8 +218,6 @@ public class NetCDFcreateForm extends MemoryWindow
 
     private void runButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_runButtonActionPerformed
 
-        sourceInstrument = sourceInstrumentCombo.getSelectedInstrument();
-
         selectedMooring = mooringCombo1.getSelectedMooring();
 
         if(selectedMooring == null)
@@ -229,6 +225,11 @@ public class NetCDFcreateForm extends MemoryWindow
             Common.showMessage(this,"No Mooring Selected","You must select a mooring before running any calculations");
             return;
         }
+        
+        authority = (String)authorityCombo.getSelectedItem();
+        
+        deployment = selectedMooring.getMooringID();
+        mooring = deployment.substring(0, deployment.indexOf("-"));
 
         final Color bg = runButton.getBackground();
         runButton.setText("Running...");
@@ -264,15 +265,15 @@ public class NetCDFcreateForm extends MemoryWindow
     private void mooringCombo1PropertyChange(java.beans.PropertyChangeEvent evt) {//GEN-FIRST:event_mooringCombo1PropertyChange
         String propertyName = evt.getPropertyName();
         //logger.debug(evt.getPropertyName());
-        if(propertyName.equalsIgnoreCase("MOORING_SELECTED")) {
+        if(propertyName.equalsIgnoreCase("MOORING_SELECTED")) 
+        {
             Mooring selectedItem = (Mooring) evt.getNewValue();
-            sourceInstrumentCombo.setMooring(selectedItem);
         }
     }//GEN-LAST:event_mooringCombo1PropertyChange
 
     protected Timestamp endTime = null;
     protected Timestamp startTime = null;
-    protected ArrayList<Timestamp> timeArray = new ArrayList();
+    protected ArrayList<Timestamp> timeArray;
     
     protected String getFileName()
     {
@@ -283,15 +284,17 @@ public class NetCDFcreateForm extends MemoryWindow
         
         if (authority.equals("IMOS"))
         {
+            // IMOS_ABOS-SOTS_20110803T115900Z_PULSE_FV01_PULSE-8-2011_END-20120719T214600Z_C-20130724T051434Z.nc
             filename = //System.getProperty("user.home")
                             //+ "/"
                             authority 
-                            + "_" + deployment.toUpperCase()
-                            + "_START_"
+                            + "_ABOS-SOTS_"
                             + nameFormatter.format(startTime)
-                            + "_END_"
+                            + "_PULSE_FV01"
+                            + "_" + deployment.toUpperCase()
+                            + "_END-"
                             + nameFormatter.format(endTime)
-                            + "_CREATE_"               
+                            + "_C-"               
                             + nameFormatter.format(System.currentTimeMillis())
                             + ".nc"
                             ;
@@ -300,29 +303,17 @@ public class NetCDFcreateForm extends MemoryWindow
         {
             filename = "OS"
                         + "_SOTS"
-                        + "_PULSE-8-2011"
+                        + "_" + deployment.toUpperCase()
                         + "_D"
                         + ".nc"
                         ;
         }
 
         return filename;
-    }
+    }    
     
-    
-    protected void writeMooringSpecificAttributes()
+    private void addGlobal(String from, Vector attributeSet)
     {
-        SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd\'T\'HH:mm:ss\'Z\'");
-        df.setTimeZone(tz);
-
-        String SQL = "SELECT attribute_name, attribute_type, attribute_value FROM netcdf_attributes "
-                        + "WHERE deployment = " + StringUtilities.quoteString(deployment) 
-                        + " AND (naming_authority = " + StringUtilities.quoteString(authority) + " OR naming_authority ISNULL)"
-                        + " AND parameter ISNULL"
-                        + " ORDER BY attribute_name";
-        query.setConnection(Common.getConnection());
-        query.executeQuery(SQL);
-        Vector attributeSet = NetCDFcreateForm.query.getData();
         if (attributeSet != null && attributeSet.size() > 0)
         {
             for (int i = 0; i < attributeSet.size(); i++)
@@ -332,29 +323,158 @@ public class NetCDFcreateForm extends MemoryWindow
                 String type = (String)(row.get(1));
                 String value = (String)(row.get(2));
 
-                logger.debug("MOORING: " + name + " = " + value);
+                logger.debug(from + " : " + name + " = " + value);
 
-                dataFile.addGlobalAttribute(name.trim(), value.trim());                
+                if (type.startsWith("NUMBER"))
+                {
+                    dataFile.addGroupAttribute(null, new Attribute(name.trim(), new Double(value.trim())));
+                }
+                else
+                {
+                    dataFile.addGroupAttribute(null, new Attribute(name.trim(), value.trim()));
+                }
             }
         }
     }
 
-    private class DepthCoord
+    private class InstanceCoord
     {
         String[] params;
         Double[] depths;
         Integer[] instruments;
         Dimension dim;
-        String dimensionName;
         private ArrayFloat.D1 variable;
         private ArrayList<Dimension> timeAndDim;
-        String depthsString;
         String[] varName;
         String[] varNameQC;
         ArrayFloat.D2[] dataVar;
         ArrayByte.D2[] dataVarQC;
+        ArrayList<Dimension> dimList;        
+        private Variable dimVar;
+        private Variable[] var;
+        private Variable[] varQC;
+
+        private void createParams(String[] string)
+        {
+            params = string;
+            
+            int l = params.length;
+            dataVar = new ArrayFloat.D2[l];
+            dataVarQC = new ArrayByte.D2[l];
+            varName = new String[l];
+            varNameQC = new String[l];
+        }
+
+        private String getDimensionName()
+        {
+            String dimensionName;
+
+            dimensionName = "INSTANCE_";
+            for (int p = 0; p < params.length; p++)
+            {
+                dimensionName += params[p].substring(0, 2);
+                if (p < params.length - 1)
+                {
+                    dimensionName += "_";
+                }
+            }
+
+            return dimensionName;
+        }
+
+        private String getDepthsString()
+        {
+            String ds = "";
+            for (int d = 0; d < depths.length; d++)
+            {
+                ds += depths[d].doubleValue();
+                if (d < depths.length - 1)
+                {
+                    ds += "; ";
+                }
+            }
+
+            return ds;
+        }
+
+        private void createDepths(BigDecimal[] bigDecimal)
+        {
+            int l = bigDecimal.length;
+            Double[] dDepths = new Double[l];
+            int j = 0;
+            for (int d = 0; d < l; d++)
+            {
+                BigDecimal s = bigDecimal[d];
+                dDepths[j++] = s.doubleValue();
+            }
+            depths = dDepths;
+        }
+
+        private void createVariables()
+        {
+            var = new Variable[params.length];
+            varQC = new Variable[params.length];
+        }
+
+        private String createParams(int p, int RECORD_COUNT)
+        {
+            String pt = params[p].trim();
+            ArrayFloat.D2 dataTemp = new ArrayFloat.D2(RECORD_COUNT, depths.length);
+            ArrayByte.D2 dataTempQC = new ArrayByte.D2(RECORD_COUNT, depths.length);
+            byte b = 9;
+            for (int i = 0; i < RECORD_COUNT; i++)
+            {
+                for (int j = 0; j < depths.length; j++)
+                {
+                    dataTemp.set(i, j, Float.NaN);
+                    dataTempQC.set(i, j, b);
+                }
+            }
+            varName[p] = pt;
+            dataVar[p] = dataTemp;
+            dataVarQC[p] = dataTempQC;
+            var[p] = dataFile.addVariable(null, pt, DataType.FLOAT, timeAndDim);
+            var[p].addAttribute(new Attribute("sensor_depth", getDepthsString()));
+            addVariableAttributes(this, p);
+
+            String qc = pt + "_QC";
+            var[p].addAttribute(new Attribute("ancillary_variables", qc));
+            varNameQC[p] = qc;
+            varQC[p] = dataFile.addVariable(null, qc, DataType.BYTE, timeAndDim);
+            varQC[p].addAttribute(new Attribute("long_name", "quality flag"));
+            varQC[p].addAttribute(new Attribute("Conventions", "OceanSITES reference table 2"));
+            b = 9;
+            varQC[p].addAttribute(new Attribute("_FillValue", b));
+            b = 0;
+            varQC[p].addAttribute(new Attribute("valid_min", b));
+            b = 9;
+            varQC[p].addAttribute(new Attribute("valid_max", b));
+            
+            return pt;
+        }
+
+        private void createDimension()
+        {
+                dim = dataFile.addDimension(null, getDimensionName(), depths.length);
+                dimList = new ArrayList<Dimension>();
+                dimList.add(timeDim);
+                
+                dimVar = dataFile.addVariable(null, getDimensionName(), DataType.FLOAT, dimList);
+                variable = new ArrayFloat.D1(dim.getLength());
+                for (int j = 0; j < dim.getLength(); j++)
+                {
+                    Double currentDepth = depths[j];
+                    variable.set(j, currentDepth.floatValue());
+                }
+
+                System.out.println("Create Dimension " + getDimensionName() + " " + timeDim.getLength() + " x " + dim.getLength());
+                ArrayList dims = new ArrayList();
+                dims.add(timeDim);
+                dims.add(dim);
+                timeAndDim = dims;
+        }
     }
-    ArrayList<DepthCoord> depthCoords = new ArrayList<DepthCoord>();
+    ArrayList<InstanceCoord> instanceCoords;
 
     protected void createDepthArray(String mooringID)
     {
@@ -369,6 +489,7 @@ public class NetCDFcreateForm extends MemoryWindow
                     + ") AS b"
                     + " GROUP BY depths, instruments";
         
+        instanceCoords = new ArrayList<InstanceCoord>();
         logger.debug(SQL);
         query.setConnection(Common.getConnection());
         query.executeQuery(SQL);
@@ -378,20 +499,13 @@ public class NetCDFcreateForm extends MemoryWindow
         {
             for (int i = 0; i < depthSet.size(); i++)
             {
-                DepthCoord dc = new DepthCoord();
-                dc.dimensionName = "DEPTH_" + (i + 1);
-
                 Vector row = (Vector) depthSet.get(i);
                 Array params = (Array)row.get(0);
-
+                
+                InstanceCoord dc = new InstanceCoord();
                 try
                 {
-                    dc.params = (String[])params.getArray();;
-                    int l = dc.params.length;
-                    dc.dataVar = new ArrayFloat.D2[l];
-                    dc.dataVarQC = new ArrayByte.D2[l];
-                    dc.varName = new String[l];
-                    dc.varNameQC = new String[l];
+                    dc.createParams((String[])params.getArray());                                       
                 }
                 catch (SQLException ex)
                 {
@@ -412,31 +526,23 @@ public class NetCDFcreateForm extends MemoryWindow
                 System.out.println("depths " + depths);
                 try
                 {
-                    BigDecimal[] sDepths = (BigDecimal[])depths.getArray();
-                    Double[] dDepths = new Double[sDepths.length];
-                    int j = 0;
-                    String ds = "(";
-                    for (BigDecimal s : sDepths)
-                    {
-                        dDepths[j++] = s.doubleValue();
-                        ds += s.doubleValue() + " ";
-                    }
-                    ds += ")";
-                    dc.depths = dDepths;
-                    dc.depthsString = ds;
+                    dc.createDepths((BigDecimal[])depths.getArray());
+                    
                 }
                 catch (SQLException ex)
                 {
                     java.util.logging.Logger.getLogger(NetCDFcreateForm.class.getName()).log(Level.SEVERE, null, ex);
                 }
-                depthCoords.add(dc);
+                instanceCoords.add(dc);
             }
         }
-        logger.debug("Finished generating depth array, number of depths is " + depthCoords.size());
+        logger.debug("Finished generating depth array, number of depths is " + instanceCoords.size());
     }
 
     protected void createTimeArray(String mooringID)
     {
+        timeArray = new ArrayList();
+                
         TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
         selectedMooring = Mooring.selectByMooringID(mooringID);
         startTime = selectedMooring.getTimestampIn();
@@ -481,6 +587,7 @@ public class NetCDFcreateForm extends MemoryWindow
                 + StringUtilities.quoteString(Common.getRawSQLTimestamp(endTime))
                 + " ORDER BY data_timestamp"
                 ;
+        
         // logger.debug(SQL);
         NetCDFcreateForm.query.setConnection(Common.getConnection());
         NetCDFcreateForm.query.executeQuery(SQL);
@@ -510,25 +617,36 @@ public class NetCDFcreateForm extends MemoryWindow
 
     protected void writeCoordinateVariableAttributes()
     {
-        dataFile.addVariableAttribute("TIME", "name", "time");
-        dataFile.addVariableAttribute("TIME", "long_name", "time");
-        dataFile.addVariableAttribute("TIME", "units", "hours since 1950-01-01T00:00:00Z");
-        dataFile.addVariableAttribute("TIME", "axis", "T");
-        dataFile.addVariableAttribute("TIME", "valid_min", 0.0);
-        dataFile.addVariableAttribute("TIME", "valid_max", 999999999);
-        dataFile.addVariableAttribute("TIME", "calendar", "gregorian");
+        vTime.addAttribute(new Attribute("name", "time"));
+        vTime.addAttribute(new Attribute("long_name", "time"));
+        vTime.addAttribute(new Attribute("units", "hours since 1950-01-01T00:00:00Z"));
+        vTime.addAttribute(new Attribute("axis", "T"));
+        vTime.addAttribute(new Attribute("valid_min", 0.0));
+        vTime.addAttribute(new Attribute("valid_max", 999999999));
+        vTime.addAttribute(new Attribute("calendar", "gregorian"));
 
-        for(DepthCoord dc : depthCoords)
+        for(InstanceCoord ic : instanceCoords)
         {
-            dataFile.addVariableAttribute(dc.dimensionName, "name", "depth");
-            dataFile.addVariableAttribute(dc.dimensionName, "long_name", "Depth of each measurement");
-            dataFile.addVariableAttribute(dc.dimensionName, "units", "meters");
-            dataFile.addVariableAttribute(dc.dimensionName, "positive", "down");
-            dataFile.addVariableAttribute(dc.dimensionName, "axis", "Z");
-            dataFile.addVariableAttribute(dc.dimensionName, "comment", "These are nominal values. Use PRES to derive time-varying depths of instruments, as the mooring may tilt in ambient currents.");
-            dataFile.addVariableAttribute(dc.dimensionName, "reference", "sea_level");
-            dataFile.addVariableAttribute(dc.dimensionName, "valid_min", 0.0f);
-            dataFile.addVariableAttribute(dc.dimensionName, "valid_max", 1200.0f);
+            ic.dimVar.addAttribute(new Attribute("name", "nominal_depth"));
+            ic.dimVar.addAttribute(new Attribute("long_name", "nominal depth of each sensor"));
+            ic.dimVar.addAttribute(new Attribute("units", "meters"));
+            ic.dimVar.addAttribute(new Attribute("positive", "down"));
+            ic.dimVar.addAttribute(new Attribute("axis", "Z"));
+            ic.dimVar.addAttribute(new Attribute("comment", "These are nominal values. Use PRES to derive time-varying depths of instruments, as the mooring may tilt in ambient currents."));
+            ic.dimVar.addAttribute(new Attribute("reference", "sea_level"));
+            ic.dimVar.addAttribute(new Attribute("valid_min", 0.0f));
+            ic.dimVar.addAttribute(new Attribute("valid_max", 1200.0f));
+            String comment = "depths for parameters ";
+            for (int p = 0; p < ic.params.length; p++)
+            {
+                comment += ic.params[p].trim();
+                if (p < ic.params.length - 1)
+                {
+                    comment += "; ";
+                }
+            }
+            ic.dimVar.addAttribute(new Attribute("params", comment));
+
         }
     }
 
@@ -536,36 +654,57 @@ public class NetCDFcreateForm extends MemoryWindow
     {
         SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd\'T\'HH:mm:ss\'Z\'");
         df.setTimeZone(tz);
+
+        query.setConnection(Common.getConnection());
         
         String SQL = "SELECT attribute_name, attribute_type, attribute_value FROM netcdf_attributes "
-                + " WHERE (naming_authority = " + StringUtilities.quoteString(authority) + " OR naming_authority ISNULL)"
-                + " AND (site = " + StringUtilities.quoteString(site) + " OR "
-                + "      mooring = " + StringUtilities.quoteString(mooring) + ") "
-                + " AND deployment ISNULL AND instrument_id ISNULL AND parameter ISNULL" 
+                + " WHERE naming_authority = " + StringUtilities.quoteString(authority)
+                + " AND site ISNULL AND mooring ISNULL AND deployment ISNULL AND instrument_id ISNULL AND parameter ISNULL" 
                 + " ORDER BY attribute_name";
-        query.setConnection(Common.getConnection());
+        
         query.executeQuery(SQL);
         Vector attributeSet = NetCDFcreateForm.query.getData();
-        if (attributeSet != null && attributeSet.size() > 0)
-        {
-            for (int i = 0; i < attributeSet.size(); i++)
-            {
-                Vector row = (Vector) attributeSet.get(i);
-                String name = (String)(row.get(0));
-                String type = (String)(row.get(1));
-                String value = (String)(row.get(2));
+        addGlobal("AUTHORITY", attributeSet);
 
-                logger.debug("GLOBAL: " + name + " = " + value);                
+        SQL = "SELECT attribute_name, attribute_type, attribute_value FROM netcdf_attributes "
+                + " WHERE (naming_authority = " + StringUtilities.quoteString(authority) + " OR naming_authority ISNULL)"
+                + " AND site = " + StringUtilities.quoteString(site) 
+                + " AND mooring ISNULL AND deployment ISNULL AND instrument_id ISNULL AND parameter ISNULL" 
+                + " ORDER BY attribute_name";
+        
+        query.executeQuery(SQL);
+        attributeSet = NetCDFcreateForm.query.getData();
+        addGlobal("SITE", attributeSet);
 
-                dataFile.addGlobalAttribute(name.trim(), value.trim());
-            }
-        }        
+        SQL = "SELECT attribute_name, attribute_type, attribute_value FROM netcdf_attributes "
+                + " WHERE (naming_authority = " + StringUtilities.quoteString(authority) + " OR naming_authority ISNULL)"
+                + " AND (site = " + StringUtilities.quoteString(site) + " OR site ISNULL)"
+                + " AND mooring = " + StringUtilities.quoteString(mooring) 
+                + " AND deployment ISNULL AND instrument_id ISNULL AND parameter ISNULL" 
+                + " ORDER BY attribute_name";
+        
+        query.executeQuery(SQL);
+        attributeSet = NetCDFcreateForm.query.getData();
+        addGlobal("MOORING", attributeSet);
+
+        SQL = "SELECT attribute_name, attribute_type, attribute_value FROM netcdf_attributes "
+                + " WHERE (naming_authority = " + StringUtilities.quoteString(authority) + " OR naming_authority ISNULL)"
+                + " AND (site = " + StringUtilities.quoteString(site) + " OR site ISNULL)"
+                + " AND (mooring = " + StringUtilities.quoteString(mooring) + " OR mooring ISNULL)"
+                + " AND deployment = " + StringUtilities.quoteString(deployment) 
+                + " AND instrument_id ISNULL AND parameter ISNULL" 
+                + " ORDER BY attribute_name";
+        
+        query.executeQuery(SQL);
+        attributeSet = NetCDFcreateForm.query.getData();
+        addGlobal("DEPLOYMENT", attributeSet);
+
     }
 
-    protected void addVariableAttributes(DepthCoord dc, int p)
+    protected void addVariableAttributes(InstanceCoord dc, int p)
     {
         ParameterCodes param = ParameterCodes.selectByID(dc.params[p]);
-        String variable = dc.varName[p];
+        Variable variable = dc.var[p];
 
         String sensor = "";
         String serialNo = "";
@@ -577,10 +716,10 @@ public class NetCDFcreateForm extends MemoryWindow
             {
                 sensor += ins.getMake() + "-" + ins.getModel();
                 if (i < dc.instruments.length-1)
-                    sensor += ";";
+                    sensor += "; ";
                 serialNo += ins.getSerialNumber();
                 if (i < dc.instruments.length-1)
-                    serialNo += ";";
+                    serialNo += "; ";
                 
                 ArrayList<InstrumentCalibrationValue> values = InstrumentCalibrationValue.selectByInstrumentAndMooring(ins.getInstrumentID(), selectedMooring.getMooringID());            
 
@@ -589,50 +728,51 @@ public class NetCDFcreateForm extends MemoryWindow
                     // System.out.println("Calibration Value " + v.getParameterCode() + " " + v.getParameterValue());
                     if (v.getDataType().contains("NUMBER"))
                     {
-                        dataFile.addVariableAttribute(variable, "calibration_" + ins.getSerialNumber() + "_" + v.getParameterCode(), Double.parseDouble(v.getParameterValue()));
+                        variable.addAttribute(new Attribute("calibration_" + ins.getSerialNumber() + "_" + v.getParameterCode(), Double.parseDouble(v.getParameterValue())));
                     }
                     else
                     {
-                        dataFile.addVariableAttribute(dc.varName[p], "calibration_" + ins.getSerialNumber() + "_" + v.getParameterCode(), v.getParameterValue());
+                        variable.addAttribute(new Attribute("calibration_" + ins.getSerialNumber() + "_" + v.getParameterCode(), v.getParameterValue()));
                     }
                 }
             }
         }
-        dataFile.addVariableAttribute(variable, "sensor_name", sensor);
-        dataFile.addVariableAttribute(variable, "sensor_serial_number", serialNo);
+        variable.addAttribute(new Attribute("sensor_name", sensor));
+        variable.addAttribute(new Attribute("sensor_serial_number", serialNo));
             
         
         if(param != null)
         {
-            dataFile.addVariableAttribute(variable, "name", param.getDescription());
+            variable.addAttribute(new Attribute("name", param.getDescription()));
             if (param.getUnits() != null)
             {
-                dataFile.addVariableAttribute(variable, "units", param.getUnits());
+                variable.addAttribute(new Attribute("units", param.getUnits()));
             }
             
             if(param.getNetCDFStandardName() != null && !(param.getNetCDFStandardName().trim().isEmpty()))
-                dataFile.addVariableAttribute(variable, "standard_name", param.getNetCDFStandardName());
+                variable.addAttribute(new Attribute("standard_name", param.getNetCDFStandardName()));
             else if (param.getNetCDFStandardName() != null)
-                dataFile.addVariableAttribute(variable, "long_name", param.getNetCDFLongName());
+                variable.addAttribute(new Attribute("long_name", param.getNetCDFLongName()));
             
             if(param.getMinimumValidValue() != null)
-                dataFile.addVariableAttribute(variable, "valid_min", param.getMinimumValidValue());
+                variable.addAttribute(new Attribute("valid_min", param.getMinimumValidValue()));
             
             if(param.getMaximumValidValue() != null)
-                dataFile.addVariableAttribute(variable, "valid_max", param.getMaximumValidValue());
+                variable.addAttribute(new Attribute("valid_max", param.getMaximumValidValue()));
             
-            dataFile.addVariableAttribute(variable, "_FillValue", Float.NaN);
-            dataFile.addVariableAttribute(variable, "quality_control_set", 1.0f);
+            variable.addAttribute(new Attribute("_FillValue", Float.NaN));
+            variable.addAttribute(new Attribute("quality_control_set", 1.0f));
             //dataFile.addVariableAttribute(variable, "csiro_instrument_id", instrumentID);
         }
         
+        // TODO: Should include instrument_id select also
         String SQL = "SELECT attribute_name, attribute_type, attribute_value FROM netcdf_attributes "
                         + " WHERE (deployment = " + StringUtilities.quoteString(deployment) + " OR deployment ISNULL)"
-                        + " AND parameter = " + StringUtilities.quoteString(variable.trim()) + " ORDER BY attribute_name";
+                        + " AND parameter = " + StringUtilities.quoteString(dc.varName[p].trim()) + " ORDER BY attribute_name";
         
         query.setConnection(Common.getConnection());
         query.executeQuery(SQL);
-        Vector attributeSet = NetCDFcreateForm.query.getData();
+        Vector attributeSet = query.getData();
         if (attributeSet != null && attributeSet.size() > 0)
         {
             for (int i = 0; i < attributeSet.size(); i++)
@@ -644,12 +784,23 @@ public class NetCDFcreateForm extends MemoryWindow
 
                 logger.debug("PARAMETER: " + name + " " + value);
                 
-                dataFile.addVariableAttribute(variable, name.trim(), value.trim());
+                if (type.startsWith("NUMBER"))
+                {
+                    variable.addAttribute(new Attribute(name.trim(), new Double(value.trim())));                    
+                }
+                else
+                {
+                    variable.addAttribute(new Attribute(name.trim(), value.trim()));
+                }
+                
             }
         }
         
     }
 
+    Variable vTime;
+    Dimension timeDim;
+    
     protected void createCDFFile()
     {
         TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
@@ -669,13 +820,12 @@ public class NetCDFcreateForm extends MemoryWindow
         try
         {
             // Create new netcdf-3 file with the given filename
-            dataFile = NetcdfFileWriteable.createNew(filename, false);
+            dataFile = NetcdfFileWriter.createNew(NetcdfFileWriter.Version.netcdf3, filename);
             writeGlobalAttributes();
-            writeMooringSpecificAttributes();
 
             // Define the coordinate variables.
             // Add TIME coordinate
-            Dimension timeDim = dataFile.addDimension("TIME", RECORD_COUNT);
+            timeDim = dataFile.addDimension(null, "TIME", RECORD_COUNT);
             ArrayInt.D1 times = new ArrayInt.D1(timeDim.getLength());
             Calendar cal = Calendar.getInstance();
             cal.setTimeZone(tz);
@@ -686,26 +836,14 @@ public class NetCDFcreateForm extends MemoryWindow
                 int elapsedHours = (int) offsetTime / 3600;
                 times.set(i, elapsedHours);
             }            
-            dataFile.addVariable("TIME", DataType.INT, new Dimension[]{timeDim});
+            ArrayList<Dimension> tdlist = new ArrayList<Dimension>();
+            tdlist.add(timeDim);
+            vTime = dataFile.addVariable(null, "TIME", DataType.INT, tdlist);
 
             // Add Depth coords
-            for(DepthCoord dc : depthCoords)
+            for(InstanceCoord dc : instanceCoords)
             {
-                dc.dim = dataFile.addDimension(dc.dimensionName, dc.depths.length);
-                dataFile.addVariable(dc.dimensionName, DataType.FLOAT, new Dimension[]{dc.dim});
-                ArrayFloat.D1 depths = new ArrayFloat.D1(dc.dim.getLength());
-                for (int j = 0; j < dc.dim.getLength(); j++)
-                {
-                    Double currentDepth = dc.depths[j];
-                    depths.set(j, currentDepth.floatValue());
-                }
-                dc.variable = depths;
-
-                System.out.println("Create Dimension " + dc.dimensionName + " " + timeDim.getLength() + " x " + dc.dim.getLength());
-                ArrayList dims = new ArrayList();
-                dims.add(timeDim);
-                dims.add(dc.dim);
-                dc.timeAndDim = dims;
+                dc.createDimension();
             }
 
             //
@@ -713,52 +851,23 @@ public class NetCDFcreateForm extends MemoryWindow
             //
             writeCoordinateVariableAttributes();
             
-            for (DepthCoord dc : depthCoords)
+            for (InstanceCoord ic : instanceCoords)
             {                
-                for (int p=0;p<dc.params.length;p++)
+                ic.createVariables();
+                
+                for (int p=0;p<ic.params.length;p++)
                 {
-                    String pt = dc.params[p].trim();
-                    ArrayFloat.D2 dataTemp = new ArrayFloat.D2(RECORD_COUNT, dc.depths.length);
-                    ArrayByte.D2 dataTempQC = new ArrayByte.D2(RECORD_COUNT, dc.depths.length);
-                    byte b = 9;
-                    for(int i=0;i<RECORD_COUNT;i++)
+                    String pt = ic.createParams(p, RECORD_COUNT);
+                    for (int d=0;d<ic.instruments.length;d++)
                     {
-                        for(int j=0;j<dc.depths.length;j++)
-                        {
-                            dataTemp.set(i, j, Float.NaN);
-                            dataTempQC.set(i, j, b);
-                        }
-                    }
-                    dc.varName[p] = pt;
-                    dc.dataVar[p] = dataTemp;
-                    dc.dataVarQC[p] = dataTempQC;
-                    dataFile.addVariable(pt, DataType.FLOAT, dc.timeAndDim);
-                    dataFile.addVariableAttribute(pt, "sensor_depth", dc.depthsString);
-                    addVariableAttributes(dc, p);
-                                        
-                    String qc = pt + "_QC";
-                    dataFile.addVariableAttribute(pt, "ancillary_variables", qc);
-                    dc.varNameQC[p] = qc;
-                    dataFile.addVariable(qc, DataType.BYTE, dc.timeAndDim);
-                    dataFile.addVariableAttribute(qc, "long_name", "quality flag");
-                    dataFile.addVariableAttribute(qc, "Conventions", "OceanSITES reference table 2");
-                    b = 9;
-                    dataFile.addVariableAttribute(qc, "_FillValue", b);
-                    b = 0;
-                    dataFile.addVariableAttribute(qc, "valid_min", b);
-                    b = 9;
-                    dataFile.addVariableAttribute(qc, "valid_max", b);
-
-                    for (int d=0;d<dc.instruments.length;d++)
-                    {
-                        ArrayList<ParamDatum> masterSet = getDataForParameter(pt, dc.instruments[d]);
+                        ArrayList<ParamDatum> masterSet = getDataForParameter(pt, ic.instruments[d]);
                         if (masterSet != null && masterSet.size() > 0)
                         {
                             logger.debug("Processing instrument/parameter " + pt + " at depth " + masterSet.get(0).depth + " size " + masterSet.size());
 
                             int record = 0;
                             int matchedElements = 0;
-                            Double SST;
+                            Double value;
                             for (int setSize = 0; setSize < masterSet.size(); setSize++)
                             {
                                 Timestamp currentTime = timeArray.get(record);
@@ -770,14 +879,14 @@ public class NetCDFcreateForm extends MemoryWindow
                                 if (currentValue.ts.equals(currentTime))
                                 {
                                     matchedElements++;
-                                    SST = currentValue.val;
-                                    dataTemp.set(record, d, SST.floatValue());
-                                    b = 0;
+                                    value = currentValue.val;
+                                    ic.dataVar[p].set(record, d, value.floatValue());
+                                    byte b = 0;
                                     if (currentValue.quality.trim().equals("BAD"))
                                     {
                                         b = 4;
                                     }
-                                    dataTempQC.set(record, d, b);
+                                    ic.dataVarQC[p].set(record, d, b);
                                 }
                                 record++;                                                
                             }
@@ -788,17 +897,17 @@ public class NetCDFcreateForm extends MemoryWindow
             }
             //Create the file. At this point the (empty) file will be written to disk
             dataFile.create();
-            for(DepthCoord dc : depthCoords)
+            for(InstanceCoord dc : instanceCoords)
             {
-                dataFile.write(dc.dimensionName, dc.variable);
+                dataFile.write(dc.dimVar, dc.variable);
             }
-            dataFile.write("TIME", times);
-            for(DepthCoord dc : depthCoords)
+            dataFile.write(vTime, times);
+            for(InstanceCoord dc : instanceCoords)
             {
                 for(int p=0;p<dc.dataVar.length;p++)
                 {
-                    dataFile.write(dc.varName[p], dc.dataVar[p]);
-                    dataFile.write(dc.varNameQC[p], dc.dataVarQC[p]);
+                    dataFile.write(dc.var[p], dc.dataVar[p]);
+                    dataFile.write(dc.varQC[p], dc.dataVarQC[p]);
                 }
             }
         }
@@ -883,21 +992,23 @@ public class NetCDFcreateForm extends MemoryWindow
 
         String $HOME = System.getProperty("user.home");
         PropertyConfigurator.configure("log4j.properties");
-        Common.build("ABOS.conf");
-
+        Common.build($HOME + "/ABOS/ABOS.properties");
+        
         NetCDFcreateForm form = new NetCDFcreateForm();
+        form.setLocationRelativeTo(null);
         form.initialise();
     }
 
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
+    private javax.swing.JComboBox authorityCombo;
+    private javax.swing.JLabel jLabel1;
     private javax.swing.JPanel jPanel1;
     private javax.swing.JPanel jPanel2;
     private org.imos.abos.dbms.fields.MooringCombo mooringCombo1;
     private org.wiley.util.basicField mooringDescriptionField;
     private javax.swing.JButton quitButton;
     private javax.swing.JButton runButton;
-    private org.imos.abos.dbms.fields.InstrumentSelectorCombo sourceInstrumentCombo;
     // End of variables declaration//GEN-END:variables
 
 }

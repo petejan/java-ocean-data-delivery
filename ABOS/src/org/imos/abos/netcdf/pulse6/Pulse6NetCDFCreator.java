@@ -36,13 +36,13 @@ public class Pulse6NetCDFCreator extends BaseNetCDFCreator
         if(args.length == 0)
         {
             PropertyConfigurator.configure("log4j.properties");
-            Common.build("ABOS.conf");
+            Common.build($HOME + "/ABOS/ABOS.properties");
         }
 
         Pulse6NetCDFCreator cdf = new Pulse6NetCDFCreator();
 
-        cdf.createTimeArray("PULSE_6");
-        cdf.createDepthArray("PULSE_6");
+        cdf.createTimeArray("Pulse-6-2009");
+        cdf.createDepthArray("Pulse-6-2009");
         cdf.createCDFFile();
     }
 
@@ -61,7 +61,7 @@ public class Pulse6NetCDFCreator extends BaseNetCDFCreator
                         + nameFormatter.format(startTime)
                         + "_" + Pulse6Constants.platform_code + "_"
                         + Pulse6Constants.FILE_VERSION
-                        + Pulse6Constants.deployment_code
+                        + Pulse6Constants.deployment_code.toUpperCase()
                         + "_"
                         + Pulse6Constants.PRODUCT_TYPE
                         + Pulse6Constants.END_DATE
@@ -77,7 +77,7 @@ public class Pulse6NetCDFCreator extends BaseNetCDFCreator
     @Override
     protected void writeMooringSpecificAttributes()
     { 
-        dataFile.addGlobalAttribute("level", Pulse6Constants.level);
+        // dataFile.addGlobalAttribute("level", Pulse6Constants.level);
 
         dataFile.addGlobalAttribute("field_trip_id", Pulse6Constants.field_trip_id);
         dataFile.addGlobalAttribute("field_trip_description", Pulse6Constants.field_trip_description);

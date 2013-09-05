@@ -316,9 +316,7 @@ public class ProcessedDataCreationForm extends MemoryWindow implements DataProce
                 pid.setSourceFileID(row.getSourceFileID());
                 pid.setQualityCode("RAW");
 
-                boolean ok = pid.insert();
-                
-                
+                boolean ok = pid.insert();                                
             }
         }
         
@@ -404,7 +402,7 @@ public class ProcessedDataCreationForm extends MemoryWindow implements DataProce
         String $HOME = System.getProperty("user.home");
 
         PropertyConfigurator.configure("log4j.properties");
-        Common.build("ABOS.conf");
+        Common.build($HOME + "/ABOS/ABOS.properties");
 
         ProcessedDataCreationForm form = new ProcessedDataCreationForm();
         

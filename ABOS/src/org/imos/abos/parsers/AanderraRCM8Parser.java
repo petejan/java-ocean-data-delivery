@@ -88,7 +88,7 @@ public class AanderraRCM8Parser  extends AbstractDataParser
         
         String pressureString;
         String temperatureString;
-        String conductivityString;
+        String CNDCString;
         
         Timestamp currentDataTimestamp = null;
         Timestamp pressureDataTimestamp = null;
@@ -100,7 +100,7 @@ public class AanderraRCM8Parser  extends AbstractDataParser
         
         Double pressureValue = null;
         Double temperatureValue = null;
-        Double conductivityValue = null;
+        Double CNDCValue = null;
         
         String constructTimestamp;
 
@@ -130,7 +130,7 @@ public class AanderraRCM8Parser  extends AbstractDataParser
            
             pressureString  = st.nextToken();
             temperatureString = st.nextToken();
-            conductivityString = st.nextToken();
+            CNDCString = st.nextToken();
             
             constructTimestamp = speedYearString.trim() 
                                 + "/" 
@@ -270,19 +270,19 @@ public class AanderraRCM8Parser  extends AbstractDataParser
             
             try
             {
-                conductivityValue = new Double(conductivityString.trim());
+                CNDCValue = new Double(CNDCString.trim());
             }
 
             catch(NumberFormatException pex)
             {
                 try
                 {
-                    Number n = deciFormat.parse(conductivityString.trim());
-                    conductivityValue = n.doubleValue();
+                    Number n = deciFormat.parse(CNDCString.trim());
+                    CNDCValue = n.doubleValue();
                 }
                 catch(ParseException pexx)
                 {
-                    throw new ParseException("parse failed for text '" + conductivityString + "'",0);
+                    throw new ParseException("parse failed for text '" + CNDCString + "'",0);
                 }
             }
             
@@ -338,25 +338,25 @@ public class AanderraRCM8Parser  extends AbstractDataParser
             ok = row.insert();
             
             //
-            // now for the pressure/temperature/conductivity data
+            // now for the pressure/temperature/CNDC data
             // note this has a different timestamp and they are NOT aligned
             // with the current spped/direction data!!!!
             //
             
             row.setDataTimestamp(pressureDataTimestamp);
             
-            row.setParameterCode("WATER_PRESSURE");
+            row.setParameterCode("PRES");
             row.setParameterValue(pressureValue);
             
             ok = row.insert();
             
-            row.setParameterCode("WATER_TEMP");
+            row.setParameterCode("TEMP");
             row.setParameterValue(temperatureValue);
             
             ok = row.insert();
             
-            row.setParameterCode("CONDUCTIVITY");
-            row.setParameterValue(conductivityValue);
+            row.setParameterCode("CNDC");
+            row.setParameterValue(CNDCValue);
             
             ok = row.insert();
 

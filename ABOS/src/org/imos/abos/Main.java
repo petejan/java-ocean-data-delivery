@@ -12,10 +12,12 @@ package org.imos.abos;
 import java.awt.Dimension;
 import java.awt.Toolkit;
 import java.util.TimeZone;
+import javax.swing.JPanel;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
+import org.imos.abos.dbms.MooringTable;
 import org.wiley.core.Common;
 import org.wiley.core.dbms.Staff;
 import org.wiley.core.startMenu;
@@ -81,7 +83,7 @@ public class Main
         else
         {
             Common.closeConnection();
-            Common.build(home + "/ABOS/ABOS.conf");
+            Common.build(home + "/ABOS/ABOS.properties");
         }
 
         TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
@@ -99,7 +101,7 @@ public class Main
 
         mm.setTitle("ABOS Main Menu");
         mm.setVisible( true );
-
+        
         if( Common.getDBMSUser().equalsIgnoreCase("NOBODY") )
         {
             //

@@ -31,7 +31,7 @@ public class Pulse8Constants extends BaseNetCDFConstants
     public static String field_trip_description = "N/A" ;
     public static String site_code = "SOTS" ;
     public static String platform_code = "PULSE" ;
-    public static String deployment_code = "PULSE-8-2011" ;     // year of deployment not recovery
+    public static String deployment_code = "Pulse-8-2011" ;     // year of deployment not recovery
 
     public static String title = "Pulse 8 Mooring Data" ;
     

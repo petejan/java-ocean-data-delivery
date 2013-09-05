@@ -10,11 +10,18 @@
 package org.imos.abos.parsers;
 
 import java.io.*;
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.sql.Timestamp;
+import java.text.DecimalFormat;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.NoSuchElementException;
 import java.util.TimeZone;
+import java.util.logging.Level;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import org.apache.log4j.Logger;
@@ -22,6 +29,9 @@ import org.imos.abos.dbms.Instrument;
 import org.imos.abos.dbms.InstrumentDataFile;
 import org.imos.abos.dbms.Mooring;
 import org.imos.abos.forms.DataFileProcessorForm;
+import org.imos.abos.forms.MarkBadDataForMooringDeploymentForm;
+import org.wiley.core.Common;
+import org.wiley.util.StringUtilities;
 import org.wiley.util.TextFileLogger;
 
 /**
@@ -58,6 +68,33 @@ public abstract class AbstractDataParser
         TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
     }
 
+    protected DecimalFormat deciFormat = new DecimalFormat("-######.0#");
+
+    protected Double getDouble(String s) throws ParseException
+    {
+        Double d;
+
+        try
+        {
+            d = new Double(s.trim());
+        }
+        catch (NumberFormatException pex)
+        {
+            try
+            {
+                Number n = deciFormat.parse(s.trim());
+                d = n.doubleValue();
+            }
+            catch (ParseException pexx)
+            {
+                throw new ParseException("parse failed for text '" + s + "'", 0);
+            }
+        }
+
+        return d;
+    }
+
+    
     /**
      * get the number of parse failures
      * @return 
@@ -106,6 +143,13 @@ public abstract class AbstractDataParser
             return;
         }
 
+        logger.debug("Extracting file from database");
+        if (parentForm != null)
+        {
+            parentForm.updateMessageArea("Extracting file from database " + currentFile.getFileName() + "\n");
+        }
+        
+        
         File f = currentFile.getInstrumentDataFile();
         if( f != null)
         {
@@ -139,7 +183,7 @@ public abstract class AbstractDataParser
     
     public void setInstrument(Instrument ins)
     {
-        currentInstrument = ins;
+        currentInstrument = ins;        
     }
 
     public void setMooring(Mooring m)
@@ -300,6 +344,16 @@ public abstract class AbstractDataParser
                             System.out.println("Processing file " + ze.getName());
                             in = zf.getInputStream(ze);
                             BufferedReader input = new BufferedReader(new InputStreamReader(in));
+                            if(parentForm != null)
+                            {
+                                // output number of lines, just so we know how long to wait.
+                                int lines = 0;
+                                while (input.readLine() != null) lines++;
+                                input.close();
+                                parentForm.updateMessageArea("lines " + lines + "\n");
+                                input = new BufferedReader(new FileReader(dataFile));
+                            }
+                            
                             decodeFile(input, ze.getName());
                             input.close();
                         }
@@ -317,6 +371,16 @@ public abstract class AbstractDataParser
                 // straight ASCII file
                 //
                 BufferedReader input = new BufferedReader(new FileReader(dataFile));
+                if(parentForm != null)
+                {
+                    // output number of lines, just so we know how long to wait.
+                    int lines = 0;
+                    while (input.readLine() != null) lines++;
+                    input.close();
+                    parentForm.updateMessageArea("lines " + lines + "\n");
+                    input = new BufferedReader(new FileReader(dataFile));
+                }
+                                
                 decodeFile(input, dataFile.getName());
             }
         }

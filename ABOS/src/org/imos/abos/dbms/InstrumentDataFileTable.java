@@ -70,7 +70,7 @@ public class InstrumentDataFileTable extends EditableBaseTable
         if(args.length == 0)
         {
             PropertyConfigurator.configure("log4j.properties");
-            Common.build("ABOS.conf");
+            Common.build($HOME + "/ABOS/ABOS.properties");
         }
 
         InstrumentDataFileTable table = new InstrumentDataFileTable();
@@ -121,11 +121,12 @@ public class InstrumentDataFileTable extends EditableBaseTable
         collection.setParentFrame(this);
         setDataStore( collection );
 
-        StringEditor us = new StringEditor(new SettableCaseJTextField("UPPER"), collection);
+        StringEditor us = new StringEditor(new SettableCaseJTextField("MIXED"), collection);
 
         DateTimeEditor tsEdit = new DateTimeEditor(new DateTimeField(), collection);
 
-        getTable().setDefaultEditor(Timestamp.class, tsEdit);        TableColumnModel tm = getTable().getColumnModel();
+        getTable().setDefaultEditor(Timestamp.class, tsEdit);        
+        TableColumnModel tm = getTable().getColumnModel();
         //tm.getColumn(1).setCellEditor(compEditor);
         
         //
@@ -154,6 +155,10 @@ public class InstrumentDataFileTable extends EditableBaseTable
     @Override
     public void insertButton_actionPerformed(ActionEvent e)
     {
+        if (currentMooring != null)
+        {
+            collection.setMooring(currentMooring);
+        }
         collection.setParentFrame( this );
         collection.addRow(collection.getRowCount());
     }
@@ -284,6 +289,7 @@ public class InstrumentDataFileTable extends EditableBaseTable
             //
             //RawInstrumentData.deleteDataForFile(selectedRow.getInstrumentID());
             RawInstrumentData.deleteDataForFile(selectedRow.getDataFilePrimaryKey());
+            ArrayInstrumentData.deleteDataForFile(selectedRow.getDataFilePrimaryKey());
             //
             // now re-parse & load the data
             //

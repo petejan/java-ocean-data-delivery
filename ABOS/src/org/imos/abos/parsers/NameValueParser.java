@@ -63,9 +63,22 @@ public class NameValueParser extends AbstractDataParser
         String sName;
         String sValue;
         double value;
+        int paramsSent = 0;
         HashMap<String, String> hm = new HashMap(); 
-        hm.put("OBP", "OPTODE_BPHASE_VOLT");
-        hm.put("OT", "OPTODE_TEMP_VOLT");
+        hm.put("OBP", "OPTODE_BPHASE");
+        hm.put("OT", "OPTODE_TEMP");
+        hm.put("OptodeBPhase", "OPTODE_BPHASE");
+        hm.put("OptodeTemp", "OPTODE_TEMP");
+        hm.put("bp", "CAPH");
+        hm.put("sct", "TEMP");
+        hm.put("scc", "CNDC");
+        hm.put("swh", "SIG_WAVE_HEIGHT");
+        hm.put("th", "AIRT");
+        hm.put("rh", "RELH");
+        hm.put("we", "UWND");
+        hm.put("wn", "VWND");
+        hm.put("wsavg", "WSPD");
+        hm.put("wsdir", "WDIR");
 
         StringTokenizer st = new StringTokenizer(dataLine, ",");
         try
@@ -88,27 +101,33 @@ public class NameValueParser extends AbstractDataParser
                 sName = nv.nextToken();
                 if (hm.get(sName) != null)
                 {
-                    sValue = nv.nextToken();
-                    value = new Double(sValue.trim());
-                    //
-                    // ok, we have parsed out the values we need, can now construct the raw data class
-                    //
-                    RawInstrumentData row = new RawInstrumentData();
+                    if (nv.hasMoreTokens())
+                    {
+                        sValue = nv.nextToken();
 
-                    row.setDataTimestamp(dataTimestamp);
-                    row.setDepth(instrumentDepth);
-                    row.setInstrumentID(currentInstrument.getInstrumentID());
-                    row.setLatitude(currentMooring.getLatitudeIn());
-                    row.setLongitude(currentMooring.getLongitudeIn());
-                    row.setMooringID(currentMooring.getMooringID());
-                    row.setParameterCode(hm.get(sName));
-                    row.setParameterValue(value);
-                    row.setSourceFileID(currentFile.getDataFilePrimaryKey());
-                    row.setQualityCode("RAW");
+                        value = new Double(sValue.trim());
+                        //
+                        // ok, we have parsed out the values we need, can now construct the raw data class
+                        //
+                        RawInstrumentData row = new RawInstrumentData();
 
-                    boolean ok = row.insert();
+                        row.setDataTimestamp(dataTimestamp);
+                        row.setDepth(instrumentDepth);
+                        row.setInstrumentID(currentInstrument.getInstrumentID());
+                        row.setLatitude(currentMooring.getLatitudeIn());
+                        row.setLongitude(currentMooring.getLongitudeIn());
+                        row.setMooringID(currentMooring.getMooringID());
+                        row.setParameterCode(hm.get(sName));
+                        row.setParameterValue(value);
+                        row.setSourceFileID(currentFile.getDataFilePrimaryKey());
+                        row.setQualityCode("RAW");
+                        paramsSent++;
+
+                        boolean ok = row.insert();
+                    }
                 }
             }
+            // logger.debug("params" + paramsSent);
         }
         catch (NoSuchElementException nse)
         {

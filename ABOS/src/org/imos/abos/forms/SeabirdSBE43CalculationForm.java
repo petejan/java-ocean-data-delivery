@@ -69,7 +69,8 @@ public class SeabirdSBE43CalculationForm extends MemoryWindow implements DataPro
      */
     @SuppressWarnings("unchecked")
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
-    private void initComponents() {
+    private void initComponents()
+    {
 
         jPanel1 = new javax.swing.JPanel();
         sourceInstrumentCombo = new org.imos.abos.dbms.fields.InstrumentSelectorCombo();
@@ -83,8 +84,10 @@ public class SeabirdSBE43CalculationForm extends MemoryWindow implements DataPro
         quitButton = new javax.swing.JButton();
 
         setTitle("Seabird SBE43 Data Processor Form");
-        addWindowListener(new java.awt.event.WindowAdapter() {
-            public void windowClosing(java.awt.event.WindowEvent evt) {
+        addWindowListener(new java.awt.event.WindowAdapter()
+        {
+            public void windowClosing(java.awt.event.WindowEvent evt)
+            {
                 formWindowClosing(evt);
             }
         });
@@ -93,18 +96,29 @@ public class SeabirdSBE43CalculationForm extends MemoryWindow implements DataPro
 
         sourceInstrumentCombo.setLabel("Source Instrument");
         sourceInstrumentCombo.setOrientation(0);
+        sourceInstrumentCombo.addPropertyChangeListener(new java.beans.PropertyChangeListener()
+        {
+            public void propertyChange(java.beans.PropertyChangeEvent evt)
+            {
+                sourceInstrumentComboPropertyChange(evt);
+            }
+        });
 
         calibrationFileCombo1.setLabel("Values From Calibration File");
-        calibrationFileCombo1.addPropertyChangeListener(new java.beans.PropertyChangeListener() {
-            public void propertyChange(java.beans.PropertyChangeEvent evt) {
+        calibrationFileCombo1.addPropertyChangeListener(new java.beans.PropertyChangeListener()
+        {
+            public void propertyChange(java.beans.PropertyChangeEvent evt)
+            {
                 calibrationFileCombo1PropertyChange(evt);
             }
         });
 
         mooringCombo1.setDescriptionField(mooringDescriptionField);
         mooringCombo1.setOrientation(0);
-        mooringCombo1.addPropertyChangeListener(new java.beans.PropertyChangeListener() {
-            public void propertyChange(java.beans.PropertyChangeEvent evt) {
+        mooringCombo1.addPropertyChangeListener(new java.beans.PropertyChangeListener()
+        {
+            public void propertyChange(java.beans.PropertyChangeEvent evt)
+            {
                 mooringCombo1PropertyChange(evt);
             }
         });
@@ -116,8 +130,10 @@ public class SeabirdSBE43CalculationForm extends MemoryWindow implements DataPro
 
         deleteDataBox.setSelected(true);
         deleteDataBox.setText("Delete any existing processed data for target instrument");
-        deleteDataBox.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
+        deleteDataBox.addActionListener(new java.awt.event.ActionListener()
+        {
+            public void actionPerformed(java.awt.event.ActionEvent evt)
+            {
                 deleteDataBoxActionPerformed(evt);
             }
         });
@@ -159,16 +175,20 @@ public class SeabirdSBE43CalculationForm extends MemoryWindow implements DataPro
         jPanel2.setBorder(javax.swing.BorderFactory.createEtchedBorder());
 
         runButton.setText("Run");
-        runButton.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
+        runButton.addActionListener(new java.awt.event.ActionListener()
+        {
+            public void actionPerformed(java.awt.event.ActionEvent evt)
+            {
                 runButtonActionPerformed(evt);
             }
         });
         jPanel2.add(runButton);
 
         quitButton.setText("Quit");
-        quitButton.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
+        quitButton.addActionListener(new java.awt.event.ActionListener()
+        {
+            public void actionPerformed(java.awt.event.ActionEvent evt)
+            {
                 quitButtonActionPerformed(evt);
             }
         });
@@ -191,14 +211,14 @@ public class SeabirdSBE43CalculationForm extends MemoryWindow implements DataPro
         layout.setVerticalGroup(
             layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
             .add(org.jdesktop.layout.GroupLayout.TRAILING, layout.createSequentialGroup()
-                .addContainerGap(228, Short.MAX_VALUE)
+                .addContainerGap(244, Short.MAX_VALUE)
                 .add(jPanel2, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                 .addContainerGap())
             .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
                 .add(layout.createSequentialGroup()
                     .add(29, 29, 29)
                     .add(jPanel1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                    .addContainerGap(53, Short.MAX_VALUE)))
+                    .addContainerGap(69, Short.MAX_VALUE)))
         );
 
         pack();
@@ -239,9 +259,9 @@ public class SeabirdSBE43CalculationForm extends MemoryWindow implements DataPro
 
         if(deleteDataBox.isSelected())
         {
-            ProcessedInstrumentData.deleteDataForMooringAndInstrument(selectedMooring.getMooringID(),
-                                                                      targetInstrument.getInstrumentID())
-                                                                      ;
+            RawInstrumentData.deleteDataForMooringAndInstrumentAndParameter(selectedMooring.getMooringID(),
+                                                                            sourceInstrument.getInstrumentID(),
+                                                                            "DOX2");
         }
 
         final Color bg = runButton.getBackground();
@@ -299,36 +319,53 @@ public class SeabirdSBE43CalculationForm extends MemoryWindow implements DataPro
     public void calculateDataValues()
     {
         Connection conn = null;
-        CallableStatement proc = null;
+        Statement proc = null;
         ResultSet results = null;
 
         SeabirdSBE43Constants constants = new SeabirdSBE43Constants();
         constants.setInstrumentCalibrationFile(selectedFile);
 
         SeabirdSBE43OxygenCalculator.setSBE43Constants(constants);
+        int rowCount = 0;
 
         try
         {
-            String storedProc = "{ ? = call xtract_sbe43data_selector"
-                                 + "("
-                                 + sourceInstrument.getInstrumentID()
-                                 + " , "
-                                 + StringUtilities.quoteString(selectedMooring.getMooringID())
-                                 + ") }";
             conn = Common.getConnection();
             conn.setAutoCommit(false);
+            proc = conn.createStatement();
+            
+            String tab = "SELECT data_timestamp, source_file_id, depth, parameter_value as volt INTO TEMP sbe43 FROM raw_instrument_data WHERE parameter_code = 'SBE43_OXY_VOLTAGE' AND mooring_id = "+StringUtilities.quoteString(selectedMooring.getMooringID())+" AND instrument_id = "+ sourceInstrument.getInstrumentID()+" ORDER BY data_timestamp";           
+            proc.execute(tab);
+            
+            tab = "ALTER TABLE sbe43 ADD temp  numeric";
+            proc.execute(tab);
+            tab = "UPDATE sbe43 SET temp = d.parameter_value FROM raw_instrument_data d WHERE d.data_timestamp = sbe43.data_timestamp AND d.depth = sbe43.depth AND parameter_code = 'TEMP'";
+            proc.execute(tab);
+            
+            tab = "ALTER TABLE sbe43 ADD pressure  numeric";
+            proc.execute(tab);
+            tab = "UPDATE sbe43 SET pressure = d.parameter_value FROM raw_instrument_data d WHERE d.data_timestamp = sbe43.data_timestamp AND d.depth = sbe43.depth AND parameter_code = 'PRES'";
+            proc.execute(tab);
+            
+            tab = "ALTER TABLE sbe43 ADD psal  numeric";
+            proc.execute(tab);
+            tab = "UPDATE sbe43 SET psal = d.parameter_value FROM raw_instrument_data d WHERE d.data_timestamp = sbe43.data_timestamp AND d.depth = sbe43.depth AND parameter_code = 'PSAL'";
+            proc.execute(tab);
 
-            proc = conn.prepareCall(storedProc);
-            proc.registerOutParameter(1, Types.OTHER);
-            proc.execute();
-            results = (ResultSet) proc.getObject(1);
+            tab = "ALTER TABLE sbe43 ADD density  numeric";
+            proc.execute(tab);
+            tab = "UPDATE sbe43 SET density = d.parameter_value FROM raw_instrument_data d WHERE d.data_timestamp = sbe43.data_timestamp AND d.depth = sbe43.depth AND parameter_code = 'WATER_DENSITY'";
+            proc.execute(tab);
+
+            proc.execute("SELECT data_timestamp, source_file_id, depth, volt, temp, pressure, psal, density FROM sbe43");
+            results = (ResultSet) proc.getResultSet();
             ResultSetMetaData resultsMetaData = results.getMetaData();
             int colCount        = resultsMetaData.getColumnCount();
-            int rowCount = 0;
 
             while (results.next())
             {
                 Vector data = new Vector();
+                boolean hasNull = false;
 
                 for ( int numcol = 1; numcol <= colCount; numcol++ )
                 {
@@ -341,60 +378,42 @@ public class SeabirdSBE43CalculationForm extends MemoryWindow implements DataPro
                     else
                     {
                         data.addElement( null );
+                        hasNull = true;
                     }
                 }
 
-                SBE43Data sbe = new SBE43Data();
-                sbe.setData(data);
+                if (!hasNull)
+                {
+                    SBE43Data row = new SBE43Data();
+                    row.setData(data);
+                    rowCount++;
 
-                sbe.calculatedDissolvedOxygenMlPerLitre = SeabirdSBE43OxygenCalculator.calculateOxygenValueInMlPerLitre
-                                                                                ( sbe.salinityTemperature,
-                                                                                sbe.pressureValue,
-                                                                                sbe.calculatedSalinityValue,
-                                                                                sbe.sbe43Voltage);
-                
-                sbe.calculatedDissolvedOxygenMicroMolesPerKg = SeabirdSBE43OxygenCalculator.calculateOxygenValueInUMolesPerKg( sbe.salinityTemperature,
-                                                                                sbe.pressureValue,
-                                                                                sbe.calculatedSalinityValue,
-                                                                                sbe.sbe43Voltage);
-                /*
-                sbe.calculatedDissolvedOxygenMicroMolesPerKg = DO2 * (44600/(1000 + sigmaTheta(sbe.pressureValue,
-                                                                                    sbe.salinityTemperature,
-                                                                                    sbe.calculatedSalinityValue)
-                                                                                    ));
-                 * 
-                 */
-
-                dataSet.add(sbe);
-                rowCount++;                
+                    dataSet.add(row);
+                }
             }
-            results.close();
-            proc.close();
+
+            proc.execute("DROP TABLE sbe43");       
+
+            String update = "UPDATE instrument_data_processors SET " 
+                            + "processing_date = '" + Common.current() + "',"
+                            + "count = "+ rowCount
+                            + " WHERE "
+                            + "mooring_id = '" + selectedMooring.getMooringID() + "'"
+                            + " AND class_name = '" + this.getClass().getName() + "'"
+                            + " AND parameters = '" + paramToString()  + "'";
+
+            Statement stmt;
+            try
+            {
+                stmt = conn.createStatement();
+                stmt.executeUpdate(update);
+                logger.debug("Update processed table count " + rowCount);
+            }
+            catch (SQLException ex)
+            {
+                logger.error(ex);
+            }
             conn.setAutoCommit(true);
-            logger.info("Closed Results count " + rowCount);
-            
-        String update = "UPDATE instrument_data_processors SET " 
-                        + "processing_date = '" + Common.current() + "',"
-                        + "count = "+ rowCount
-                        + " WHERE "
-                        + "mooring_id = '" + selectedMooring.getMooringID() + "'"
-                        + " AND class_name = '" + this.getClass().getName() + "'"
-                        + " AND parameters = '" + paramToString()  + "'";
-
-        Statement stmt;
-        try
-        {
-            stmt = conn.createStatement();
-            stmt.executeUpdate(update);
-            logger.debug("Update processed table count " + rowCount);
-        }
-        catch (SQLException ex)
-        {
-            logger.error(ex);
-        }
-
-            
-
         }
         catch(SQLException sex)
         {
@@ -438,7 +457,7 @@ public class SeabirdSBE43CalculationForm extends MemoryWindow implements DataPro
         for(int i = 0; i < dataSet.size(); i++)
         {
             SBE43Data sbe = dataSet.get(i);
-            ProcessedInstrumentData row = new ProcessedInstrumentData();
+            RawInstrumentData row = new RawInstrumentData();
 
             row.setDataTimestamp(sbe.dataTimestamp);
             row.setDepth(sbe.instrumentDepth);
@@ -447,9 +466,9 @@ public class SeabirdSBE43CalculationForm extends MemoryWindow implements DataPro
             row.setLongitude(selectedMooring.getLongitudeIn());
             row.setMooringID(selectedMooring.getMooringID());
             row.setParameterCode("DOX2");
-            row.setParameterValue(sbe.calculatedDissolvedOxygenMicroMolesPerKg);
+            row.setParameterValue(sbe.dox2);
             row.setSourceFileID(sbe.sourceFileID);
-            row.setQualityCode("RAW");
+            row.setQualityCode("DERIVED");
 
             ok = row.insert();
 
@@ -474,17 +493,7 @@ public class SeabirdSBE43CalculationForm extends MemoryWindow implements DataPro
 
         try
         {
-            String header = "Timestamp,"
-                            + "SBE43 Volts,"
-                            + " Salinity Temp,"
-                            + " Salinity Conduct,"
-                            + " Salinity Press,"
-                            + " Calc Salinity,"
-                            + " Calc Oxygen (ml/l),"
-                            + " Calc Oxygen (uM/kg),"
-                            + " Calc Oxy Sol (ml/l),"
-                            + " Calc density"
-                            ;
+            String header = SBE43Data.header;
 
             file.open();
 
@@ -496,49 +505,9 @@ public class SeabirdSBE43CalculationForm extends MemoryWindow implements DataPro
             {
                 SBE43Data row = dataSet.get(i);
 
-                System.out.println(
-                        row.dataTimestamp
-                        + ","
-                        + row.sbe43Voltage
-                        + ","
-                        + row.salinityTemperature
-                        + ","
-                        + row.conductivityValue
-                        + ","
-                        + row.pressureValue
-                        + ","
-                        + row.calculatedSalinityValue
-                        + ","
-                        + row.calculatedDissolvedOxygenMlPerLitre
-                        + ","
-                        + row.calculatedDissolvedOxygenMicroMolesPerKg
-                        + ","
-                        + row.calculatedOxygenSolubility
-                        + ","
-                        + row.calculatedSeawaterDensity
-                        );
+                System.out.println(row.toString());
 
-                file.receiveLine(
-                        row.dataTimestamp
-                        + ","
-                        + row.sbe43Voltage
-                        + ","
-                        + row.salinityTemperature
-                        + ","
-                        + row.conductivityValue
-                        + ","
-                        + row.pressureValue
-                        + ","
-                        + row.calculatedSalinityValue
-                        + ","
-                        + row.calculatedDissolvedOxygenMlPerLitre
-                        + ","
-                        + row.calculatedDissolvedOxygenMicroMolesPerKg
-                        + ","
-                        + row.calculatedOxygenSolubility
-                        + ","
-                        + row.calculatedSeawaterDensity
-                        );
+                file.receiveLine(row.toString());
             }
 
             file.close();
@@ -568,7 +537,7 @@ public class SeabirdSBE43CalculationForm extends MemoryWindow implements DataPro
         if(propertyName.equalsIgnoreCase("MOORING_SELECTED"))
         {
             Mooring selectedItem = (Mooring) evt.getNewValue();
-            sourceInstrumentCombo.setMooring(selectedItem);
+            sourceInstrumentCombo.setMooringParam(selectedItem, "SBE43_OXY_VOLTAGE");
             targetInstrumentCombo.setMooring(selectedItem);
             calibrationFileCombo1.setMooring(selectedItem);
         }
@@ -577,6 +546,14 @@ public class SeabirdSBE43CalculationForm extends MemoryWindow implements DataPro
     private void deleteDataBoxActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_deleteDataBoxActionPerformed
         // TODO add your handling code here:
 }//GEN-LAST:event_deleteDataBoxActionPerformed
+
+    private void sourceInstrumentComboPropertyChange(java.beans.PropertyChangeEvent evt) {//GEN-FIRST:event_sourceInstrumentComboPropertyChange
+        sourceInstrument = sourceInstrumentCombo.getSelectedInstrument();        
+        if (sourceInstrumentCombo.getSelectedItem() != null)
+        {
+            targetInstrumentCombo.setSelectedItem(sourceInstrumentCombo.getSelectedItem().toString());
+        }        
+    }//GEN-LAST:event_sourceInstrumentComboPropertyChange
     public String paramToString()
     {
         return "MOORING="+selectedMooring.getMooringID() + 
@@ -647,7 +624,7 @@ public class SeabirdSBE43CalculationForm extends MemoryWindow implements DataPro
         String $HOME = System.getProperty("user.home");
         
         PropertyConfigurator.configure("log4j.properties");
-        Common.build("ABOS.conf");        
+        Common.build($HOME + "/ABOS/ABOS.properties");        
         
         SeabirdSBE43CalculationForm form = new SeabirdSBE43CalculationForm();
 
@@ -683,16 +660,15 @@ public class SeabirdSBE43CalculationForm extends MemoryWindow implements DataPro
         public Double instrumentDepth;
 
         public Double sbe43Voltage;
-        public Double salinityTemperature;
+        public Double waterTemperature;
         
+        public Double psal;
         public Double pressureValue;
-        public Double conductivityValue;
 
-        public Double calculatedSalinityValue;
-        public Double calculatedDissolvedOxygenMlPerLitre;
-        public Double calculatedDissolvedOxygenMicroMolesPerKg;
-        public Double calculatedSeawaterDensity;
+        public Double density;
         public Double calculatedOxygenSolubility;
+        
+        public Double dox2;
 
         public void setData(Vector row)
         {
@@ -703,25 +679,38 @@ public class SeabirdSBE43CalculationForm extends MemoryWindow implements DataPro
             instrumentDepth = ((Number)row.elementAt(i++)).doubleValue();
 
             sbe43Voltage = ((Number)row.elementAt(i++)).doubleValue();
-
-            salinityTemperature = ((Number)row.elementAt(i++)).doubleValue();
+            waterTemperature = ((Number)row.elementAt(i++)).doubleValue();
             pressureValue = ((Number)row.elementAt(i++)).doubleValue();
-            conductivityValue = ((Number)row.elementAt(i++)).doubleValue();
-            //
-            // conductivity is recorded in different units to what the salinity calculator requires
-            // so has to be multiplied by 10
-            //
-            calculatedSalinityValue = SalinityCalculator.calculateSalinityForITS90Temperature(salinityTemperature,
-                                                                                            conductivityValue * 10,
-                                                                                            pressureValue
-                                                                                            );
-            calculatedSeawaterDensity = SeawaterParameterCalculator.calculateSeawaterDensityAtDepth(calculatedSalinityValue,
-                                                                                                    salinityTemperature,
-                                                                                                    pressureValue);
-
-            calculatedOxygenSolubility = OxygenSolubilityCalculator.calculateOxygenSolubilityInMlPerLitre(salinityTemperature,
-                                                                                                          calculatedSalinityValue);
-
+            psal = ((Number)row.elementAt(i++)).doubleValue();
+            density = ((Number)row.elementAt(i++)).doubleValue();
+            
+            calculatedOxygenSolubility = OxygenSolubilityCalculator.calculateOxygenSolubilityInMlPerLitre(waterTemperature,
+                                                                                                          psal);
+            
+            calculatedOxygenSolubility = calculatedOxygenSolubility * 44660 / density;
+            
+            dox2 = SeabirdSBE43OxygenCalculator.calculateOxygenValueInUMolesPerKg(waterTemperature, psal, pressureValue, sbe43Voltage);
+        }
+        
+        public final static String header = "Timestamp, Volt, Temp, pressure, psal, OXSOL, density, dox2";
+        
+        public String toString()
+        {            
+           return new String(dataTimestamp
+                        + ","
+                        + sbe43Voltage
+                        + ","
+                        + waterTemperature
+                        + ","
+                        + pressureValue
+                        + ","
+                        + psal
+                        + ","
+                        + calculatedOxygenSolubility
+                        + ","
+                        + density
+                        + "," 
+                        + dox2);
         }
     }
 }

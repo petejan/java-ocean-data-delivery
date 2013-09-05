@@ -60,7 +60,7 @@ public class Pulse7TemperatureProcessor
         if(args.length == 0)
         {
             PropertyConfigurator.configure("log4j.properties");
-            Common.build("ABOS.conf");
+            Common.build($HOME + "/ABOS/ABOS.properties");
         }
 
         Pulse7TemperatureProcessor cdf = new Pulse7TemperatureProcessor();
@@ -109,7 +109,7 @@ public class Pulse7TemperatureProcessor
     {
         String SQL = "select distinct depth from raw_instrument_data"
                     + " where mooring_id = 'PULSE_7'"
-                    + " and parameter_code = 'WATER_TEMP'"
+                    + " and parameter_code = 'TEMP'"
                     + " order by depth"
                     ;
         query.setConnection( Common.getConnection() );
@@ -360,10 +360,10 @@ public class Pulse7TemperatureProcessor
 
         String SQL = " select distinct on (date_trunc('hour',data_timestamp))"
                     + " date_trunc('hour',data_timestamp) as Obs_Time,"
-                    + " parameter_value as Water_Temp"
+                    + " parameter_value as TEMP"
                     + " from raw_instrument_data"
                     + " where mooring_id = 'PULSE_7'"
-                    + " and (parameter_code = 'WATER_TEMP')"
+                    + " and (parameter_code = 'TEMP')"
                     + " and depth = "
                     + depth
                     + " and data_timestamp between "
@@ -404,10 +404,10 @@ public class Pulse7TemperatureProcessor
 
         String SQL = " select distinct on (date_trunc('hour',data_timestamp))"
                     + " date_trunc('hour',data_timestamp) as Obs_Time,"
-                    + " parameter_value as Water_pressure"
+                    + " parameter_value as PRES"
                     + " from raw_instrument_data"
                     + " where mooring_id = 'PULSE_7'"
-                    + " and (parameter_code = 'WATER_PRESSURE')"
+                    + " and (parameter_code = 'PRES')"
                     + " and depth = "
                     + depth
                     + " and data_timestamp between "
@@ -526,14 +526,14 @@ public class Pulse7TemperatureProcessor
         // Define units attributes for data variables.
         dataFile.addVariableAttribute("pressure", "name", "PRES");
         dataFile.addVariableAttribute("pressure", "units", "dbar");
-        dataFile.addVariableAttribute("pressure", "standard_name", "sea_water_pressure");
+        dataFile.addVariableAttribute("pressure", "standard_name", "sea_PRES");
         dataFile.addVariableAttribute("pressure", "valid_min", -999999);
         dataFile.addVariableAttribute("pressure", "valid_max", 999999);
         dataFile.addVariableAttribute("pressure", "quality_control_set", 1.0);
 
 
         dataFile.addVariableAttribute("temperature", "name", "TEMP");
-        dataFile.addVariableAttribute("temperature", "standard_name", "sea_water_temperature");
+        dataFile.addVariableAttribute("temperature", "standard_name", "sea_TEMPerature");
         dataFile.addVariableAttribute("temperature", "units", "Celsius");
         dataFile.addVariableAttribute("temperature", "valid_min", 0.0);
         dataFile.addVariableAttribute("temperature", "valid_max", 99.9);

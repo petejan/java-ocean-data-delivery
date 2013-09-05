@@ -41,6 +41,10 @@ public class AanderraOptodeParser extends AbstractDataParser
 
     protected boolean insertData(Timestamp dataTimestamp, Double dPhaseVal, Double tempVal)
     {
+        return insertData(dataTimestamp, dPhaseVal, tempVal, "OPTODE_BPHASE_VOLT");
+    }
+    protected boolean insertData(Timestamp dataTimestamp, Double dPhaseVal, Double tempVal, String param)
+    {
         RawInstrumentData row = new RawInstrumentData();
 
         row.setDataTimestamp(dataTimestamp);
@@ -49,7 +53,7 @@ public class AanderraOptodeParser extends AbstractDataParser
         row.setLatitude(currentMooring.getLatitudeIn());
         row.setLongitude(currentMooring.getLongitudeIn());
         row.setMooringID(currentMooring.getMooringID());
-        row.setParameterCode("OPTODE_BPHASE_VOLT");
+        row.setParameterCode(param);
         row.setParameterValue(dPhaseVal);
         row.setSourceFileID(currentFile.getDataFilePrimaryKey());
         row.setQualityCode("RAW");

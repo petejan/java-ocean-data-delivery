@@ -29,7 +29,9 @@ import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
+import org.imos.abos.calc.OxygenSolubilityCalculator;
 import org.imos.abos.calc.SalinityCalculator;
+import org.imos.abos.calc.SeawaterParameterCalculator;
 import org.imos.abos.dbms.Instrument;
 import org.imos.abos.dbms.Mooring;
 import org.imos.abos.dbms.ProcessedInstrumentData;
@@ -295,22 +297,22 @@ public class SeabirdSBE37CalculationForm  extends MemoryWindow implements DataPr
             conn.setAutoCommit(false);
             proc = conn.createStatement();
             
-            tab = "SELECT distinct on(date_trunc('hour', data_timestamp)) date_trunc('hour', data_timestamp) AS out_timestamp, data_timestamp, source_file_id, depth, parameter_value AS water_temperature INTO TEMP sbe37 FROM raw_instrument_data WHERE parameter_code = 'WATER_TEMP' AND mooring_id = "+StringUtilities.quoteString(selectedMooring.getMooringID())+" AND instrument_id = "+ sourceInstrument.getInstrumentID();                       
+            tab = "SELECT distinct on(date_trunc('hour', data_timestamp)) date_trunc('hour', data_timestamp) AS out_timestamp, data_timestamp, source_file_id, depth, parameter_value AS TEMPerature INTO TEMP sbe37 FROM raw_instrument_data WHERE parameter_code = 'TEMP' AND mooring_id = "+StringUtilities.quoteString(selectedMooring.getMooringID())+" AND instrument_id = "+ sourceInstrument.getInstrumentID();                       
             proc.execute(tab);
 
             tab = "ALTER TABLE sbe37 ADD pressure  numeric";
             proc.execute(tab);
             tab = "UPDATE sbe37 SET pressure = depth; -- just in case we don't have a pressure obs at this depth";
             proc.execute(tab);
-            tab = "UPDATE sbe37 SET pressure = d.parameter_value FROM raw_instrument_data d WHERE d.data_timestamp = sbe37.data_timestamp AND parameter_code = 'WATER_PRESSURE' AND d.depth = sbe37.depth";
+            tab = "UPDATE sbe37 SET pressure = d.parameter_value FROM raw_instrument_data d WHERE d.data_timestamp = sbe37.data_timestamp AND parameter_code = 'PRES' AND d.depth = sbe37.depth";
             proc.execute(tab);
             
-            tab = "ALTER TABLE sbe37 ADD conductivity  numeric";
+            tab = "ALTER TABLE sbe37 ADD CNDC  numeric";
             proc.execute(tab);
-            tab = "UPDATE sbe37 SET conductivity = d.parameter_value FROM raw_instrument_data d WHERE d.data_timestamp = sbe37.data_timestamp AND parameter_code = 'CONDUCTIVITY' AND d.depth = sbe37.depth";
+            tab = "UPDATE sbe37 SET CNDC = d.parameter_value FROM raw_instrument_data d WHERE d.data_timestamp = sbe37.data_timestamp AND parameter_code = 'CNDC' AND d.depth = sbe37.depth";
             proc.execute(tab);
 
-            proc.execute("SELECT out_timestamp, source_file_id, depth, water_temperature, pressure, conductivity FROM sbe37");
+            proc.execute("SELECT out_timestamp, source_file_id, depth, TEMPerature, pressure, CNDC FROM sbe37");
             results = (ResultSet) proc.getResultSet();
 
             ResultSetMetaData resultsMetaData = results.getMetaData();
@@ -405,7 +407,7 @@ public class SeabirdSBE37CalculationForm  extends MemoryWindow implements DataPr
             ok = row.insert();
 
             row.setParameterCode("CNDC");
-            row.setParameterValue(sbe.conductivityValue);
+            row.setParameterValue(sbe.CNDCValue);
 
             ok = row.insert();
             
@@ -414,6 +416,26 @@ public class SeabirdSBE37CalculationForm  extends MemoryWindow implements DataPr
             row.setQualityCode("DERIVED");
 
             ok = row.insert();
+
+            double density = sbe.calculatedDensityValue;
+            double oxsol = sbe.calculatedOxygenSolubilityValue;
+            
+            row.setParameterCode("WATER_DENSITY");
+            row.setParameterValue(density);
+            row.setQualityCode("DERIVED");
+
+            ok = row.insert();
+
+            row.setParameterCode("DOX2_SOL");
+            row.setParameterValue(oxsol);
+            row.setQualityCode("DERIVED");
+
+            ok = row.insert();
+            row.setParameterCode("DOX2_SOL_uM");
+            row.setParameterValue(oxsol * 44660 / density);
+            row.setQualityCode("DERIVED");
+
+            ok = row.insert();            
 
         }
     }
@@ -451,7 +473,7 @@ public class SeabirdSBE37CalculationForm  extends MemoryWindow implements DataPr
                         + ","
                         + row.temperatureValue
                         + ","
-                        + row.conductivityValue
+                        + row.CNDCValue
                         + ","
                         + row.pressureValue
                         + ","
@@ -463,7 +485,7 @@ public class SeabirdSBE37CalculationForm  extends MemoryWindow implements DataPr
                         + ","
                         + row.temperatureValue
                         + ","
-                        + row.conductivityValue
+                        + row.CNDCValue
                         + ","
                         + row.pressureValue
                         + ","
@@ -523,7 +545,7 @@ public class SeabirdSBE37CalculationForm  extends MemoryWindow implements DataPr
         String $HOME = System.getProperty("user.home");
 
         PropertyConfigurator.configure("log4j.properties");
-        Common.build("ABOS.conf");
+        Common.build($HOME + "/ABOS/ABOS.properties");
 
         SeabirdSBE37CalculationForm form = new SeabirdSBE37CalculationForm();
 
@@ -578,10 +600,11 @@ public class SeabirdSBE37CalculationForm  extends MemoryWindow implements DataPr
 
         public Double temperatureValue;
         public Double pressureValue;
-        public Double conductivityValue;
+        public Double CNDCValue;
 
         public Double calculatedSalinityValue;
-
+        public Double calculatedDensityValue;
+        public Double calculatedOxygenSolubilityValue;
 
         public void setData(Vector row)
         {
@@ -593,15 +616,18 @@ public class SeabirdSBE37CalculationForm  extends MemoryWindow implements DataPr
 
             temperatureValue = ((Number)row.elementAt(i++)).doubleValue();
             pressureValue = ((Number)row.elementAt(i++)).doubleValue();
-            conductivityValue = ((Number)row.elementAt(i++)).doubleValue();
+            CNDCValue = ((Number)row.elementAt(i++)).doubleValue();
             //
-            // conductivity is recorded in different units to what the salinity calculator requires
+            // CNDC is recorded in different units to what the salinity calculator requires
             // so has to be multiplied by 10
             //
             calculatedSalinityValue = SalinityCalculator.calculateSalinityForITS90Temperature(temperatureValue,
-                                                                                            conductivityValue * 10,
+                                                                                            CNDCValue * 10,
                                                                                             pressureValue
                                                                                             );
+            calculatedDensityValue = SeawaterParameterCalculator.calculateSeawaterDensityAtDepth(calculatedSalinityValue, temperatureValue, pressureValue);
+
+            calculatedOxygenSolubilityValue = OxygenSolubilityCalculator.calculateOxygenSolubilityInMlPerLitre(temperatureValue, calculatedSalinityValue);
 
         }
     }

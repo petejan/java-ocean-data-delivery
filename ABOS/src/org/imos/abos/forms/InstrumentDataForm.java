@@ -17,6 +17,15 @@ package org.imos.abos.forms;
 
 import java.awt.Frame;
 import java.awt.event.ActionEvent;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileFilter;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.util.Properties;
 import java.util.TimeZone;
 import javax.swing.JFrame;
 import org.apache.log4j.Logger;
@@ -46,6 +55,8 @@ public class InstrumentDataForm extends MemoryWindow
 
     boolean isUpdateMode = false;
 
+    File optionsFile = null;
+    
     /** Creates new form InstrumentDataForm */
     public InstrumentDataForm()
     {
@@ -53,6 +64,19 @@ public class InstrumentDataForm extends MemoryWindow
         TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
     }
 
+    public class myFilter implements FileFilter
+    {
+        String filter;
+        public myFilter(String s)
+        {
+            filter = s;
+        }
+        @Override
+        public boolean accept(File pathname)
+        {
+            return pathname.getName().contains(filter);
+        }        
+    }
     @Override
     public void initialise()
     {
@@ -67,6 +91,47 @@ public class InstrumentDataForm extends MemoryWindow
            saveButton.setVisible(isDataEditable);
            cancelButton.setVisible(isDataEditable);
        }
+        String $HOME = System.getProperty("user.home");
+
+        optionsFile = new File($HOME + "/ABOS/ABOS.properties");
+        
+        BufferedReader br = null;
+        try
+        {
+            Properties p = new Properties();
+            br = new BufferedReader(new FileReader(optionsFile));
+            p.load(br);
+            String dir = p.getProperty("datafile-dir");
+            File[] files = (new File(dir)).listFiles(new myFilter(parentInstrument.getSerialNumber()));
+            if ((files == null) || (files.length < 1))
+            {
+                dataFileField.setDefaultDirectory(dir + "/*.*");                
+            }
+            else
+            {
+                dataFileField.setDefaultDirectory(files[0].getAbsolutePath());
+            }
+        }
+        catch (FileNotFoundException ex)
+        {
+            logger.warn(ex);
+        }
+        catch (IOException ex)
+        {
+            logger.warn(ex);
+        }
+        finally
+        {
+            try
+            {
+                br.close();
+            }
+            catch (IOException ex)
+            {
+                logger.warn(ex);
+            }
+        }
+       
     }
 
     public void setDataEditable(boolean b)
@@ -93,6 +158,11 @@ public class InstrumentDataForm extends MemoryWindow
     {
         parentInstrument = ins;
         instrumentIDPanel.setInstrument(ins);
+    }
+    
+    public void setMooring(Mooring mooring)
+    {
+        mooringCombo.setSelectedItem(mooring.getMooringID());        
     }
 
     public void setNew()
@@ -276,7 +346,7 @@ public class InstrumentDataForm extends MemoryWindow
                 // add this instrument to the list of attached instruments for the mooring
                 //
                 Mooring.assignAttachedInstrument(mooringCombo.getSelectedMooring().getMooringID(), 
-                                                 parentInstrument.getInstrumentID());
+                                                 parentInstrument.getInstrumentID(), 0.0);
                 
                 quitButtonActionPerformed( new ActionEvent(this, 0, "SUCCESS") );
             } 
@@ -302,6 +372,39 @@ public class InstrumentDataForm extends MemoryWindow
                 Common.showMessage("SQL Error on Update", editableItem.getLastErrorMessage());
             }
         }
+        if ( OK )
+        {
+            BufferedReader br = null;
+            try
+            {
+                Properties p = new Properties();
+                br = new BufferedReader(new FileReader(optionsFile));
+                p.load(br);
+                p.setProperty("datafile-dir", "" + dataFileField.getSelectedFile().getParent());
+                BufferedWriter bw = new BufferedWriter(new FileWriter(optionsFile));
+                p.store(bw, "ABOS user config");
+            }
+            catch (FileNotFoundException ex)
+            {
+                logger.warn(ex);
+            }
+            catch (IOException ex)
+            {
+                logger.warn(ex);
+            }
+            finally
+            {
+                try
+                {
+                    br.close();
+                }
+                catch (IOException ex)
+                {
+                    logger.warn(ex);
+                }
+            }
+        }
+        
 }//GEN-LAST:event_saveButtonActionPerformed
 
     private void cancelButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_cancelButtonActionPerformed

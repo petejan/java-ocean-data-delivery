@@ -28,9 +28,32 @@ import org.wiley.util.StringUtilities;
 public class ProcessedInstrumentData  implements Cloneable
 {
 
+    public static boolean deleteDataForMooring(String mooringID)
+    {
+        String deleteSQL = "delete from processed_instrument_data"
+                + " where mooring_id = "
+                + StringUtilities.quoteString(mooringID)
+                ;
+
+        boolean success = Common.executeSQL(deleteSQL);
+        return success;
+    }
+
     public ProcessedInstrumentData()
     {
         TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
+    }
+
+    public static boolean deleteDataForMooringAndParameter(String mooringID, String param)
+    {
+        String deleteSQL = "delete from processed_instrument_data"
+                + " where mooring_id = "
+                + StringUtilities.quoteString(mooringID)
+                + " AND parameter_code = " + StringUtilities.quoteString(param)
+                ;
+
+        boolean success = Common.executeSQL(deleteSQL);
+        return success;
     }
 
     /**

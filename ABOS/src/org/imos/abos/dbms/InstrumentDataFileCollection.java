@@ -45,7 +45,10 @@ public class InstrumentDataFileCollection extends AbstractTableModel
     public void setMooring(Mooring m)
     {
         parentMooring = m;
-        rows = InstrumentDataFile.selectDataFilesForMooring(parentMooring.getMooringID());
+        if (parentInstrument == null)
+        {
+            rows = InstrumentDataFile.selectDataFilesForMooring(parentMooring.getMooringID());
+        }
     }
 
     public void loadFromPersistentStore()
@@ -137,6 +140,10 @@ public class InstrumentDataFileCollection extends AbstractTableModel
         form.setParent(parentFrame);
         form.setLocationRelativeTo(parentFrame);
         form.setRunStatus(false);
+        if (parentMooring != null)
+        {
+            form.setMooring(parentMooring);
+        }
         form.setInstrument(parentInstrument);
         form.setNew(newRow);
         form.initialise();

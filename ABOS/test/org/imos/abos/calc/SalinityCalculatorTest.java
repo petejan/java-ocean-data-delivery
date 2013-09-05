@@ -55,7 +55,7 @@ public class SalinityCalculatorTest
     {
         System.out.println("calculateSalinityForITS90Temperature");
         
-        //double result = SalinityCalculator.calculateSalinityForITS68Temperature(temperature, conductivity, pressure);
+        //double result = SalinityCalculator.calculateSalinityForITS68Temperature(temperature, CNDC, pressure);
         //assertEquals(expResult, result, 0.0);
         // TODO review the generated test code and remove the default call to fail.
         //fail("The test case is a prototype.");
@@ -63,7 +63,7 @@ public class SalinityCalculatorTest
         // some real data....
         //
         double[] Pressure = new double[] {     10,      50,     125,     250,    600,   1000};
-        double[] Conductivity = new double[] {34.5487, 34.7275, 34.8605, 34.6810, 34.5680, 34.5600};
+        double[] CNDC = new double[] {34.5487, 34.7275, 34.8605, 34.6810, 34.5680, 34.5600};
         double[] Temperature = new double[] {28.7856, 28.4329, 22.8103, 10.2600, 6.8863, 4.4036};
 
         double[] expectedResult = new double[] { 20.009869599086951,
@@ -76,7 +76,7 @@ public class SalinityCalculatorTest
 
         for (int i = 0; i < 6; i++)
         {
-            double result = SalinityCalculator.calculateSalinityForITS90Temperature(Temperature[i], Conductivity[i], Pressure[i]);
+            double result = SalinityCalculator.calculateSalinityForITS90Temperature(Temperature[i], CNDC[i], Pressure[i]);
             assertEquals(expectedResult[i], result, 0.00000001);
         }
     }

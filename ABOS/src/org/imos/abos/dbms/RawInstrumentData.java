@@ -33,6 +33,47 @@ import org.wiley.util.StringUtilities;
 public class RawInstrumentData  implements Cloneable
 {
 
+    public static boolean deleteDataForMooringAndInstrument(String mooringID, Integer instrumentID)
+    {
+        String deleteSQL = "delete from raw_instrument_data"
+                + " where mooring_id = "
+                + StringUtilities.quoteString(mooringID)
+                + " AND instrument_id = "
+                + instrumentID
+                ;
+
+        boolean success = Common.executeSQL(deleteSQL);
+        return success;
+    }
+
+    public static boolean deleteDataForMooringAndInstrumentAndParameter(String mooringID, Integer instrumentID, String parameterCode)
+    {
+        String deleteSQL = "delete from raw_instrument_data"
+                + " where mooring_id = "
+                + StringUtilities.quoteString(mooringID)
+                + " AND instrument_id = "
+                + instrumentID
+                + " AND parameter_code = "
+                + StringUtilities.quoteString(parameterCode)
+                ;
+
+        boolean success = Common.executeSQL(deleteSQL);
+        return success;
+    }
+
+    public static boolean deleteDataForMooringAndParameter(String mooringID, String parameterCode)
+    {
+        String deleteSQL = "delete from raw_instrument_data"
+                + " where mooring_id = "
+                + StringUtilities.quoteString(mooringID)
+                + " AND parameter_code = "
+                + StringUtilities.quoteString(parameterCode)
+                ;
+
+        boolean success = Common.executeSQL(deleteSQL);
+        return success;
+    }
+
     public RawInstrumentData()
     {
         TimeZone.setDefault(TimeZone.getTimeZone("GMT"));

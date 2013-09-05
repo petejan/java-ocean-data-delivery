@@ -8,10 +8,21 @@
  */
 package org.imos.abos.netcdf;
 
+import java.awt.Component;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import javax.swing.JFileChooser;
 import ucar.ma2.Array;
+import ucar.ma2.Index;
 import ucar.nc2.Attribute;
 import ucar.nc2.Dimension;
 import ucar.nc2.Variable;
@@ -26,7 +37,7 @@ import ucar.nc2.dataset.VariableDS;
  * this is not a general netCDF reader, but intended only to read the generated NetCDF 
  * 
  */
-public class ReadCDF
+public class ReadCDF extends Component
 {
     SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
     ArrayList timeArrays = new ArrayList();
@@ -108,10 +119,19 @@ public class ReadCDF
             for (ListIterator<Array> it = timeArrays.listIterator(); it.hasNext();)
             {
                 Array v = it.next();
-                System.out.print(v.getDouble(i));
-                if (it.hasNext())
+                
+                Index ix = v.getIndex();
+                int shape[] = ix.getShape();
+                int rank = ix.getRank();
+
+                for(int s=0;s<rank;s++)
                 {
-                    System.out.print(",");
+                    ix.set(i, s);
+                    System.out.print(v.getDouble(ix));
+                    if (it.hasNext())
+                    {
+                        System.out.print(",");
+                    }
                 }
             }
             System.out.println();
@@ -161,13 +181,67 @@ public class ReadCDF
         boolean header = false;
         int file = 0;
 
-        if (args[0].startsWith("-h"))
+        if (args.length == 0)
         {
-            header = true;
-            file++;
+            //Create a file chooser
+            final JFileChooser fc = new JFileChooser();
+            
+            String $HOME = System.getProperty("user.home");
+            
+            File optionsFile = new File($HOME + "/ABOS/ABOS.properties");
+            Properties p = new Properties();
+            
+            if (optionsFile.exists())
+            {
+                BufferedReader br;
+                try
+                {
+                    br = new BufferedReader(new FileReader(optionsFile));
+                    p.load(br);
+                    
+                    fc.setCurrentDirectory(new File(p.getProperty("dir")));
+                }
+                catch (FileNotFoundException ex)
+                {
+                    Logger.getLogger(ReadCDF.class.getName()).log(Level.SEVERE, null, ex);
+                }
+                catch (IOException ex)
+                {
+                    Logger.getLogger(ReadCDF.class.getName()).log(Level.SEVERE, null, ex);
+                }                   
+            }
+            
+            int returnVal = fc.showOpenDialog(r);
+            if (returnVal == JFileChooser.APPROVE_OPTION) 
+            {
+                File f = fc.getSelectedFile();
+                try
+                {
+                    r.read(f.getCanonicalPath(), true);
+                    
+                    p.setProperty("cdf-dir", "" + f.getParent());
+                    BufferedWriter br = new BufferedWriter(new FileWriter(optionsFile));
+                    p.store(br, "ABOS user config");
+                                        
+                    r.csvOutput();
+                }
+                catch (IOException ex)
+                {
+                    Logger.getLogger(ReadCDF.class.getName()).log(Level.SEVERE, null, ex);
+                }
+            }
         }
-        r.read(args[file], header);
+        else
+        {
+            if (args[0].startsWith("-h"))
+            {
+                header = true;
+                file++;
+            }
+            r.read(args[file], header);
+    
+            r.csvOutput();
+        }
         
-        r.csvOutput();
     }
 }

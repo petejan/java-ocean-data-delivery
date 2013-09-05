@@ -70,7 +70,7 @@ public class MooringTable extends EditableBaseTable
         if(args.length == 0)
         {
             PropertyConfigurator.configure("log4j.properties");
-            Common.build("ABOS.conf");
+            Common.build($HOME + "/ABOS/ABOS.properties");
         }
 
         MooringTable table = new MooringTable();
@@ -90,7 +90,7 @@ public class MooringTable extends EditableBaseTable
         setDataStore( collection );
 
         
-        StringEditor ucEditor = new StringEditor(new SettableCaseJTextField("UPPER"), collection);
+        StringEditor ucEditor = new StringEditor(new SettableCaseJTextField("MIXED"), collection);
         DateTimeEditor tsEdit = new DateTimeEditor(new DateTimeField(), collection);
 
         getTable().setDefaultEditor(Timestamp.class, tsEdit);
@@ -395,7 +395,7 @@ public class MooringTable extends EditableBaseTable
             return;
         }
 
-        String SQL = "select instrument_id, depth, parameter_code, avg(parameter_value), max(parameter_value), min(parameter_value), count(*)"
+        String SQL = "select instrument_id, depth, parameter_code, avg(parameter_value), max(parameter_value), min(parameter_value), count(*), min(data_timestamp) AS first, max(data_timestamp) AS last, to_char(age(max(data_timestamp), min(data_timestamp)), 'DDD \"days\" HH24 \"hours\"') AS duration"
                     + " from raw_instrument_data"
                     + " where mooring_id = "
                     + StringUtilities.quoteString(selectedRow.getMooringID())
@@ -437,12 +437,13 @@ public class MooringTable extends EditableBaseTable
                     + " avg(parameter_value)as avg_value,"
                     + " max(parameter_value) as max_value,"
                     + " min(parameter_value) as min_value,"
-                    + " count(*) as total_count\n"
+                    + " count(*) as total_count, min(data_timestamp) AS first, max(data_timestamp) AS last, to_char(age(max(data_timestamp), min(data_timestamp)), 'DDD \"days\" HH24 \"hours\"') AS duration\n"
                     + " from processed_instrument_data pid, instrument ins\n"
                     + " where mooring_id = "
                     + StringUtilities.quoteString(selectedRow.getMooringID())
                     + "\n"
                     + "and ins.instrument_id = pid.instrument_id\n"
+                    + "AND quality_code != 'BAD'"
                     + " group by 1,2,3,4"
                     + " order by depth, instrument_id, parameter_code\n"
                     + ";\n"

@@ -17,15 +17,22 @@ package org.imos.abos.forms;
 
 import java.awt.Color;
 import java.awt.Frame;
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.TimeZone;
+import java.util.logging.Level;
 import javax.swing.JFrame;
 import javax.swing.SwingUtilities;
+import javax.swing.text.DefaultCaret;
 import org.apache.log4j.Logger;
 import org.imos.abos.dbms.*;
 import org.imos.abos.parsers.AbstractDataParser;
 import org.wiley.core.Common;
 import org.wiley.core.forms.MemoryWindow;
 import org.wiley.util.FileViewerDialog;
+import org.wiley.util.StringUtilities;
 
 /**
  *
@@ -53,6 +60,33 @@ public class DataFileProcessorForm extends MemoryWindow
     {
         parseFailureLimitField.setValue(AbstractDataParser.PARSE_FAILURE_LIMIT);
         super.initialise();
+        // get the target instrument parameter to select the time stamps on
+        String SQL = "SELECT depth FROM mooring_attached_instruments WHERE mooring_id = "
+                        + StringUtilities.quoteString(currentMooring.getMooringID())
+                        + " AND instrument_id = " + currentInstrument.getInstrumentID();
+        
+        Connection conn = Common.getConnection();
+        Statement proc;
+        try
+        {
+            proc = conn.createStatement();
+            proc.execute(SQL);  
+            ResultSet results = (ResultSet) proc.getResultSet();
+            results.next();
+            Double depth = results.getBigDecimal(1).doubleValue();
+            logger.info("Depth from database " + depth);
+            
+            overrideDepthField.setValue(depth);
+    
+            proc.close();
+        }
+        catch (SQLException ex)
+        {
+            java.util.logging.Logger.getLogger(AbstractDataParser.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        
+        DefaultCaret caret = (DefaultCaret) messageArea.getCaret();
+        caret.setUpdatePolicy(DefaultCaret.ALWAYS_UPDATE);
     }
 
     public void setParent(Frame parent)
@@ -169,6 +203,7 @@ public class DataFileProcessorForm extends MemoryWindow
     public void updateMessageArea(String info)
     {
         messageArea.append(info);
+        // messageArea.setCaretPosition(messageArea.getDocument().getLength());
     }
 
     private void runButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_runButtonActionPerformed
