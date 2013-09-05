@@ -22,8 +22,7 @@ import org.imos.abos.dbms.RawInstrumentData;
  */
 public class SeabirdSBE16Pulse9Parser extends SeabirdSBE16Pulse7Parser
 {
-
-    /**
+     /**
      * we need to create this subclass because some clever person added an extra column to the ASCII data file
      * the pity is, we don't actually care at all what that column contains as it's the internally calculated salinity
      * 
@@ -37,18 +36,17 @@ public class SeabirdSBE16Pulse9Parser extends SeabirdSBE16Pulse7Parser
     protected void parseData(String dataLine) throws ParseException, NoSuchElementException
     {
         SimpleDateFormat dateParser = new SimpleDateFormat("dd MMM yyyy HH:mm:ss");
-        DecimalFormat deciFormat = new DecimalFormat("-######.0#");
 
         String temperatureString;
-        String conductivityString;
+        String CNDCString;
         String pressureString;
 
-        String SBE43OxyString;
-        String parString;
-        String ecoFlntsCHLString;
-        String ecoFlntsTURBString;
-        String optodeDPhaseString;
-        String optodeTempString;
+        String volt1String;
+        String volt2String;
+        String volt3String;
+        String volt4String;
+        String volt5String;
+        String volt6String;
         String GTDPressureString;
         String GTDTemperatureString;
 
@@ -62,13 +60,13 @@ public class SeabirdSBE16Pulse9Parser extends SeabirdSBE16Pulse7Parser
         Timestamp dataTimestamp = null;
         Double waterTemp = null;
         Double pressure = null;
-        Double conductivity = null;
-        Double SBE43OxyVal = null;
-        Double PARVal = null;
-        Double ecoFlntsCHLVal = null;
-        Double ecoFlntsTURBVal = null;
-        Double optodeDPhaseVal = null;
-        Double optodeTempVal = null;
+        Double CNDC = null;
+        Double volt1 = null;
+        Double volt2 = null;
+        Double volt3 = null;
+        Double volt4 = null;
+        Double volt5 = null;
+        Double volt6 = null;
         Double GTDPressureVal = null;
         Double GTDTemperatureVal = null;
 
@@ -78,15 +76,15 @@ public class SeabirdSBE16Pulse9Parser extends SeabirdSBE16Pulse7Parser
         try
         {
             temperatureString = st.nextToken();
-            conductivityString  = st.nextToken();
+            CNDCString  = st.nextToken();
             pressureString  = st.nextToken();
 
-            SBE43OxyString = st.nextToken();
-            parString = st.nextToken();
-            ecoFlntsCHLString = st.nextToken();
-            ecoFlntsTURBString = st.nextToken();
-            optodeDPhaseString = st.nextToken();
-            optodeTempString = st.nextToken();
+            volt1String = st.nextToken();
+            volt2String = st.nextToken();
+            volt3String = st.nextToken();
+            volt4String = st.nextToken();
+            volt5String = st.nextToken();
+            volt6String = st.nextToken();
             GTDPressureString = st.nextToken();
             GTDTemperatureString = st.nextToken();
 
@@ -111,188 +109,19 @@ public class SeabirdSBE16Pulse9Parser extends SeabirdSBE16Pulse7Parser
                 throw new ParseException("Timestamp parse failed for text '" + constructTimestamp + "'",0);
             }
 
-            try
-            {
-                waterTemp = new Double(temperatureString.trim());
-            }
-            catch(NumberFormatException pex)
-            {
-                try
-                {
-                    Number n = deciFormat.parse(temperatureString.trim());
-                    waterTemp = n.doubleValue();
-                }
-                catch(ParseException pexx)
-                {
-                    throw new ParseException("parse failed for text '" + temperatureString + "'",0);
-                }
-            }
-
-            try
-            {
-                pressure = new Double(pressureString.trim());
-            }
-            catch(NumberFormatException pex)
-            {
-                try
-                {
-                    Number n = deciFormat.parse(pressureString.trim());
-                    pressure = n.doubleValue();
-                }
-                catch(ParseException pexx)
-                {
-                    throw new ParseException("parse failed for text '" + pressureString + "'",0);
-                }
-            }
-
-            try
-            {
-                conductivity = new Double(conductivityString.trim());
-            }
-            catch(NumberFormatException pex)
-            {
-                try
-                {
-                    Number n = deciFormat.parse(conductivityString.trim());
-                    conductivity = n.doubleValue();
-                }
-                catch(ParseException pexx)
-                {
-                    throw new ParseException("parse failed for text '" + conductivityString + "'",0);
-                }
-            }
-
-            try
-            {
-                SBE43OxyVal = new Double(SBE43OxyString.trim());
-            }
-            catch(NumberFormatException pex)
-            {
-                try
-                {
-                    Number n = deciFormat.parse(SBE43OxyString.trim());
-                    SBE43OxyVal = n.doubleValue();
-                }
-                catch(ParseException pexx)
-                {
-                    throw new ParseException("parse failed for text '" + SBE43OxyString + "'",0);
-                }
-            }
-
-            try
-            {
-                PARVal = new Double(parString.trim());
-            }
-            catch(NumberFormatException pex)
-            {
-                try
-                {
-                    Number n = deciFormat.parse(parString.trim());
-                    PARVal = n.doubleValue();
-                }
-                catch(ParseException pexx)
-                {
-                    throw new ParseException("parse failed for text '" + parString + "'",0);
-                }
-            }
-            try
-            {
-                ecoFlntsCHLVal = new Double(ecoFlntsCHLString.trim());
-            }
-            catch(NumberFormatException pex)
-            {
-                try
-                {
-                    Number n = deciFormat.parse(ecoFlntsCHLString.trim());
-                    ecoFlntsCHLVal = n.doubleValue();
-                }
-                catch(ParseException pexx)
-                {
-                    throw new ParseException("parse failed for text '" + ecoFlntsCHLString + "'",0);
-                }
-            }
-            try
-            {
-                ecoFlntsTURBVal = new Double(ecoFlntsTURBString.trim());
-            }
-            catch(NumberFormatException pex)
-            {
-                try
-                {
-                    Number n = deciFormat.parse(ecoFlntsTURBString.trim());
-                    ecoFlntsTURBVal = n.doubleValue();
-                }
-                catch(ParseException pexx)
-                {
-                    throw new ParseException("parse failed for text '" + ecoFlntsTURBString + "'",0);
-                }
-            }
-
-            try
-            {
-                optodeDPhaseVal = new Double(optodeDPhaseString.trim());
-            }
-            catch(NumberFormatException pex)
-            {
-                try
-                {
-                    Number n = deciFormat.parse(optodeDPhaseString.trim());
-                    optodeDPhaseVal = n.doubleValue();
-                }
-                catch(ParseException pexx)
-                {
-                    throw new ParseException("parse failed for text '" + optodeDPhaseString + "'",0);
-                }
-            }
-            try
-            {
-                optodeTempVal = new Double(optodeTempString.trim());
-            }
-            catch(NumberFormatException pex)
-            {
-                try
-                {
-                    Number n = deciFormat.parse(optodeTempString.trim());
-                    optodeTempVal = n.doubleValue();
-                }
-                catch(ParseException pexx)
-                {
-                    throw new ParseException("parse failed for text '" + optodeTempString + "'",0);
-                }
-            }
-
-            try
-            {
-                GTDPressureVal = new Double(GTDPressureString.trim());
-            }
-            catch(NumberFormatException pex)
-            {
-                try
-                {
-                    Number n = deciFormat.parse(GTDPressureString.trim());
-                    GTDPressureVal = n.doubleValue();
-                }
-                catch(ParseException pexx)
-                {
-                    throw new ParseException("parse failed for text '" + GTDPressureString + "'",0);
-                }
-            }
-            try
-            {
-                GTDTemperatureVal = new Double(GTDTemperatureString.trim());
-            }
-            catch(NumberFormatException pex)
-            {
-                try
-                {
-                    Number n = deciFormat.parse(GTDTemperatureString.trim());
-                    GTDTemperatureVal = n.doubleValue();
-                }
-                catch(ParseException pexx)
-                {
-                    throw new ParseException("parse failed for text '" + GTDTemperatureString + "'",0);
-                }
-            }
+            waterTemp = getDouble(temperatureString);
+            pressure = getDouble(pressureString);
+            CNDC = getDouble(CNDCString);
+            
+            volt1 = getDouble(volt1String);
+            volt2 = getDouble(volt2String);
+            volt3 = getDouble(volt3String);
+            volt4 = getDouble(volt4String);
+            volt5 = getDouble(volt5String);
+            volt6 = getDouble(volt6String);
+            GTDPressureVal = getDouble(GTDPressureString);
+            GTDTemperatureVal = getDouble(GTDTemperatureString);
+            
             //
             // ok, we have parsed out the values we need, can now construct the raw data class
             //
@@ -304,22 +133,22 @@ public class SeabirdSBE16Pulse9Parser extends SeabirdSBE16Pulse7Parser
             row.setLatitude(currentMooring.getLatitudeIn());
             row.setLongitude(currentMooring.getLongitudeIn());
             row.setMooringID(currentMooring.getMooringID());
-            row.setParameterCode("WATER_TEMP");
+            row.setParameterCode("TEMP");
             row.setParameterValue(waterTemp);
             row.setSourceFileID(currentFile.getDataFilePrimaryKey());
             row.setQualityCode("RAW");
 
             boolean ok = row.insert();
 
-            row.setParameterCode("WATER_PRESSURE");
+            row.setParameterCode("PRES");
             row.setParameterValue(pressure);
             row.setSourceFileID(currentFile.getDataFilePrimaryKey());
             row.setQualityCode("RAW");
 
             ok = row.insert();
 
-            row.setParameterCode("CONDUCTIVITY");
-            row.setParameterValue(conductivity);
+            row.setParameterCode("CNDC");
+            row.setParameterValue(CNDC);
             row.setSourceFileID(currentFile.getDataFilePrimaryKey());
             row.setQualityCode("RAW");
 
@@ -327,21 +156,43 @@ public class SeabirdSBE16Pulse9Parser extends SeabirdSBE16Pulse7Parser
             //
             // now for the other stuff.....
             //
-            row.setParameterCode("SBE43_OXY_VOLTAGE");
-            row.setParameterValue(SBE43OxyVal);
+           row.setParameterCode("VOLT1");
+            row.setParameterValue(volt1);
             row.setSourceFileID(currentFile.getDataFilePrimaryKey());
             row.setQualityCode("RAW");
-
             ok = row.insert();
 
-            row.setParameterCode("PAR_VOLT");
-            row.setParameterValue(PARVal);
+            row.setParameterCode("VOLT2");
+            row.setParameterValue(volt2);
             row.setSourceFileID(currentFile.getDataFilePrimaryKey());
             row.setQualityCode("RAW");
-
             ok = row.insert();
 
-            row.setParameterCode("GTD_PRESSURE");
+            row.setParameterCode("VOLT3");
+            row.setParameterValue(volt3);
+            row.setSourceFileID(currentFile.getDataFilePrimaryKey());
+            row.setQualityCode("RAW");
+            ok = row.insert();
+
+            row.setParameterCode("VOLT4");
+            row.setParameterValue(volt4);
+            row.setSourceFileID(currentFile.getDataFilePrimaryKey());
+            row.setQualityCode("RAW");
+            ok = row.insert();
+
+            row.setParameterCode("VOLT5");
+            row.setParameterValue(volt5);
+            row.setSourceFileID(currentFile.getDataFilePrimaryKey());
+            row.setQualityCode("RAW");
+            ok = row.insert();
+
+            row.setParameterCode("VOLT6");
+            row.setParameterValue(volt6);
+            row.setSourceFileID(currentFile.getDataFilePrimaryKey());
+            row.setQualityCode("RAW");
+            ok = row.insert();
+
+            row.setParameterCode("DISSOLVED_AIR_PRESS");
             row.setParameterValue(GTDPressureVal);
             row.setSourceFileID(currentFile.getDataFilePrimaryKey());
             row.setQualityCode("RAW");
@@ -354,21 +205,6 @@ public class SeabirdSBE16Pulse9Parser extends SeabirdSBE16Pulse7Parser
             row.setQualityCode("RAW");
 
             ok = row.insert();
-
-            AanderraOptodeParser aap = new AanderraOptodeParser();
-            aap.setInstrumentDataFile(currentFile);
-            aap.setInstrument(currentInstrument);
-            aap.setInstrumentDepth(instrumentDepth);
-            aap.setMooring(currentMooring);
-            aap.insertData(dataTimestamp, optodeDPhaseVal, optodeTempVal);
-
-            EcoFLNTUSParser efp = new EcoFLNTUSParser();
-            efp.setInstrumentDataFile(currentFile);
-            efp.setInstrument(currentInstrument);
-            efp.setInstrumentDepth(instrumentDepth);
-            efp.setMooring(currentMooring);
-            efp.insertData(dataTimestamp, ecoFlntsCHLVal, ecoFlntsTURBVal);
-
 
         }
         catch (NoSuchElementException nse)

@@ -123,7 +123,7 @@ public class SeabirdSBE56Parser extends AbstractDataParser
             row.setLatitude(currentMooring.getLatitudeIn());
             row.setLongitude(currentMooring.getLongitudeIn());
             row.setMooringID(currentMooring.getMooringID());
-            row.setParameterCode("WATER_TEMP");
+            row.setParameterCode("TEMP");
             row.setParameterValue(waterTemp);
             row.setSourceFileID(currentFile.getDataFilePrimaryKey());
             row.setQualityCode("RAW");

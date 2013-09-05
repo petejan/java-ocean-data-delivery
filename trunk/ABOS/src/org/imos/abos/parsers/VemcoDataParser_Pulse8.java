@@ -118,7 +118,7 @@ public class VemcoDataParser_Pulse8 extends VemcoDataParser
             row.setLatitude(currentMooring.getLatitudeIn());
             row.setLongitude(currentMooring.getLongitudeIn());
             row.setMooringID(currentMooring.getMooringID());
-            row.setParameterCode("WATER_TEMP");
+            row.setParameterCode("TEMP");
             row.setParameterValue(waterTemp);
             row.setSourceFileID(currentFile.getDataFilePrimaryKey());
             row.setQualityCode("RAW");

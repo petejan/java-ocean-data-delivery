@@ -22,7 +22,9 @@ import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
+import org.imos.abos.calc.OxygenSolubilityCalculator;
 import org.imos.abos.calc.SalinityCalculator;
+import org.imos.abos.calc.SeawaterParameterCalculator;
 import org.imos.abos.dbms.Instrument;
 import org.imos.abos.dbms.InstrumentCalibrationFile;
 import org.imos.abos.dbms.Mooring;
@@ -323,7 +325,7 @@ public class SeabirdSBE16CalculationForm extends MemoryWindow implements DataPro
                         + ","
                         + row.temperatureValue
                         + ","
-                        + row.conductivityValue
+                        + row.CNDCValue
                         + ","
                         + row.pressureValue
                         + ","
@@ -335,7 +337,7 @@ public class SeabirdSBE16CalculationForm extends MemoryWindow implements DataPro
                         + ","
                         + row.temperatureValue
                         + ","
-                        + row.conductivityValue
+                        + row.CNDCValue
                         + ","
                         + row.pressureValue
                         + ","
@@ -392,7 +394,7 @@ public class SeabirdSBE16CalculationForm extends MemoryWindow implements DataPro
         String $HOME = System.getProperty("user.home");
 
         PropertyConfigurator.configure("log4j.properties");
-        Common.build("ABOS.conf");
+        Common.build($HOME + "/ABOS/ABOS.properties");
 
         SeabirdSBE16CalculationForm form = new SeabirdSBE16CalculationForm();
 
@@ -546,7 +548,7 @@ public class SeabirdSBE16CalculationForm extends MemoryWindow implements DataPro
             ok = row.insert();
 
             row.setParameterCode("CNDC");
-            row.setParameterValue(sbe.conductivityValue);
+            row.setParameterValue(sbe.CNDCValue);
 
             ok = row.insert();
             
@@ -556,6 +558,25 @@ public class SeabirdSBE16CalculationForm extends MemoryWindow implements DataPro
 
             ok = row.insert();
 
+            double density = sbe.calculatedDensityValue;
+            double oxsol = sbe.calculatedOxygenSolubilityValue;
+            
+            row.setParameterCode("WATER_DENSITY");
+            row.setParameterValue(density);
+            row.setQualityCode("DERIVED");
+
+            ok = row.insert();
+
+            row.setParameterCode("DOX2_SOL");
+            row.setParameterValue(oxsol);
+            row.setQualityCode("DERIVED");
+
+            ok = row.insert();
+            row.setParameterCode("DOX2_SOL_uM");
+            row.setParameterValue(oxsol * 44660 / density);
+            row.setQualityCode("DERIVED");
+
+            ok = row.insert();
         }
     }
     
@@ -567,9 +588,11 @@ public class SeabirdSBE16CalculationForm extends MemoryWindow implements DataPro
 
         public Double temperatureValue;
         public Double pressureValue;
-        public Double conductivityValue;
+        public Double CNDCValue;
 
         public Double calculatedSalinityValue;
+        public Double calculatedDensityValue;
+        public Double calculatedOxygenSolubilityValue;
 
 
         public void setData(Vector row)
@@ -582,16 +605,19 @@ public class SeabirdSBE16CalculationForm extends MemoryWindow implements DataPro
 
             temperatureValue = ((Number)row.elementAt(i++)).doubleValue();
             pressureValue = ((Number)row.elementAt(i++)).doubleValue();
-            conductivityValue = ((Number)row.elementAt(i++)).doubleValue();
+            CNDCValue = ((Number)row.elementAt(i++)).doubleValue();
             //
-            // conductivity is recorded in different units to what the salinity calculator requires
+            // CNDC is recorded in different units to what the salinity calculator requires
             // so has to be multiplied by 10
             //
             calculatedSalinityValue = SalinityCalculator.calculateSalinityForITS90Temperature(temperatureValue,
-                                                                                            conductivityValue * 10,
+                                                                                            CNDCValue * 10,
                                                                                             pressureValue
                                                                                             );
+            
+            calculatedDensityValue = SeawaterParameterCalculator.calculateSeawaterDensityAtDepth(calculatedSalinityValue, temperatureValue, pressureValue);
 
+            calculatedOxygenSolubilityValue = OxygenSolubilityCalculator.calculateOxygenSolubilityInMlPerLitre(temperatureValue, calculatedSalinityValue);
         }
     }
     

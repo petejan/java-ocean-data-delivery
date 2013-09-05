@@ -27,11 +27,14 @@ public class Matcher
     {
         Pattern p = Pattern.compile(patten);
         java.util.regex.Matcher m = p.matcher(s);
-
-        System.out.println("find " + m.find() + " count " + m.groupCount());
-        for(int i=0;i<m.groupCount();i++)
+        
+        if (m.find())
         {
-            System.out.println("Found " + m.group(i));
+            System.out.println(" count " + m.groupCount() + " startIndex " + m.start());
+            for(int i=0;i<m.groupCount();i++)
+            {
+                System.out.println("Found " + m.group(i));
+            }
         }
     }
     

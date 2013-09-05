@@ -858,15 +858,17 @@ public class Mooring  implements Cloneable
      * @return true if successful, false otherwise. Most likely failure cause would be a PK
      *          error if the instrument is already assigned - possible.
      */
-    public static boolean assignAttachedInstrument(String MID, Integer instrumentID)
+    public static boolean assignAttachedInstrument(String MID, Integer instrumentID, Double depth)
     {
         String SQL = "insert into mooring_attached_instruments"
-                + "(mooring_id, instrument_id)"
+                + "(mooring_id, instrument_id, depth)"
                 + " values "
                 + "("
                 + StringUtilities.quoteString(MID)
                 + ","
                 + instrumentID
+                + ","
+                + depth
                 + ")"
                 ;
         

@@ -98,7 +98,7 @@ public class RawToProcessed
         String $HOME = System.getProperty("user.home");
 
         PropertyConfigurator.configure("log4j.properties");
-        Common.build("ABOS.conf");
+        Common.build($HOME + "/ABOS/ABOS.properties");
         
         RawToProcessed rtp = new RawToProcessed();
         

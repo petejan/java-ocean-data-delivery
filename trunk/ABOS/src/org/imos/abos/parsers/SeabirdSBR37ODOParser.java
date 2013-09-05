@@ -41,7 +41,7 @@ public class SeabirdSBR37ODOParser extends SeabirdSBE37Parser
         DecimalFormat deciFormat = new DecimalFormat("-######.0#");
 
         String temperatureString;
-        String conductivityString;
+        String CNDCString;
         String pressureString;
         String dissolvedOxyString;
         String salinityString;
@@ -53,7 +53,7 @@ public class SeabirdSBR37ODOParser extends SeabirdSBE37Parser
         Timestamp dataTimestamp = null;
         Double waterTemp = null;
         Double pressure = null;
-        Double conductivity = null;
+        Double CNDC = null;
 
         String constructTimestamp;
 
@@ -61,7 +61,7 @@ public class SeabirdSBR37ODOParser extends SeabirdSBE37Parser
         try
         {
             temperatureString = st.nextToken();
-            conductivityString  = st.nextToken();
+            CNDCString  = st.nextToken();
             pressureString  = st.nextToken();
             
             dissolvedOxyString = st.nextToken();
@@ -120,19 +120,19 @@ public class SeabirdSBR37ODOParser extends SeabirdSBE37Parser
 
             try
             {
-                conductivity = new Double(conductivityString.trim());
+                CNDC = new Double(CNDCString.trim());
             }
 
             catch(NumberFormatException pex)
             {
                 try
                 {
-                    Number n = deciFormat.parse(conductivityString.trim());
-                    conductivity = n.doubleValue();
+                    Number n = deciFormat.parse(CNDCString.trim());
+                    CNDC = n.doubleValue();
                 }
                 catch(ParseException pexx)
                 {
-                    throw new ParseException("parse failed for text '" + conductivityString + "'",0);
+                    throw new ParseException("parse failed for text '" + CNDCString + "'",0);
                 }
             }
             //
@@ -146,22 +146,22 @@ public class SeabirdSBR37ODOParser extends SeabirdSBE37Parser
             row.setLatitude(currentMooring.getLatitudeIn());
             row.setLongitude(currentMooring.getLongitudeIn());
             row.setMooringID(currentMooring.getMooringID());
-            row.setParameterCode("WATER_TEMP");
+            row.setParameterCode("TEMP");
             row.setParameterValue(waterTemp);
             row.setSourceFileID(currentFile.getDataFilePrimaryKey());
             row.setQualityCode("RAW");
 
             boolean ok = row.insert();
 
-            row.setParameterCode("WATER_PRESSURE");
+            row.setParameterCode("PRES");
             row.setParameterValue(pressure);
             row.setSourceFileID(currentFile.getDataFilePrimaryKey());
             row.setQualityCode("RAW");
 
             ok = row.insert();
 
-            row.setParameterCode("CONDUCTIVITY");
-            row.setParameterValue(conductivity);
+            row.setParameterCode("CNDC");
+            row.setParameterValue(CNDC);
             row.setSourceFileID(currentFile.getDataFilePrimaryKey());
             row.setQualityCode("RAW");
 

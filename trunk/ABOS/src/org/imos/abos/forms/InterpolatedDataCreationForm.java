@@ -135,6 +135,13 @@ public class InterpolatedDataCreationForm extends MemoryWindow implements DataPr
 
         sourceInstrumentCombo.setLabel("Source Instrument");
         sourceInstrumentCombo.setOrientation(0);
+        sourceInstrumentCombo.addPropertyChangeListener(new java.beans.PropertyChangeListener()
+        {
+            public void propertyChange(java.beans.PropertyChangeEvent evt)
+            {
+                sourceInstrumentComboPropertyChange(evt);
+            }
+        });
 
         targetInstrumentCombo.setLabel("Target Instrument");
         targetInstrumentCombo.setOrientation(0);
@@ -144,6 +151,13 @@ public class InterpolatedDataCreationForm extends MemoryWindow implements DataPr
 
         sourceParameterSelector.setLabel("Source Parameter");
         sourceParameterSelector.setOrientation(0);
+        sourceParameterSelector.addPropertyChangeListener(new java.beans.PropertyChangeListener()
+        {
+            public void propertyChange(java.beans.PropertyChangeEvent evt)
+            {
+                sourceParameterSelectorPropertyChange(evt);
+            }
+        });
 
         org.jdesktop.layout.GroupLayout jPanel1Layout = new org.jdesktop.layout.GroupLayout(jPanel1);
         jPanel1.setLayout(jPanel1Layout);
@@ -152,13 +166,12 @@ public class InterpolatedDataCreationForm extends MemoryWindow implements DataPr
             .add(jPanel1Layout.createSequentialGroup()
                 .addContainerGap()
                 .add(jPanel1Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-                    .add(jPanel1Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING, false)
-                        .add(jPanel1Layout.createSequentialGroup()
-                            .add(mooringCombo1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 169, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                            .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-                            .add(mooringDescriptionField, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 343, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
-                        .add(sourceInstrumentCombo, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 562, Short.MAX_VALUE)
-                        .add(targetInstrumentCombo, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 562, Short.MAX_VALUE))
+                    .add(jPanel1Layout.createSequentialGroup()
+                        .add(mooringCombo1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 169, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                        .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
+                        .add(mooringDescriptionField, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 343, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
+                    .add(sourceInstrumentCombo, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 562, Short.MAX_VALUE)
+                    .add(targetInstrumentCombo, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 562, Short.MAX_VALUE)
                     .add(sourceParameterSelector, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 562, Short.MAX_VALUE)
                     .add(targetParameterSelector, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 562, Short.MAX_VALUE)
                     .add(deleteDataBox, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 488, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
@@ -328,8 +341,8 @@ public class InterpolatedDataCreationForm extends MemoryWindow implements DataPr
             UnivariateInterpolator interpolator = new SplineInterpolator();
             UnivariateFunction function = interpolator.interpolate(x, y);
         
-            long s = start.getTime() / (60 * 60 * 1000);
-            s = (s + 1) * (60 * 60 * 1000);
+            long s = start.getTime() / (60 * 60 * 1000); // truncate first sample hour
+            s = (s + 1) * (60 * 60 * 1000); // start on the hour after the first sample
             for(long t = s; t < end.getTime(); t += (60 * 60 * 1000))
             {
                 ProcessedInstrumentData pid = new ProcessedInstrumentData();
@@ -345,7 +358,7 @@ public class InterpolatedDataCreationForm extends MemoryWindow implements DataPr
                 pid.setSourceFileID(row.getSourceFileID());
                 pid.setQualityCode("RAW");
 
-                boolean ok = pid.insert();                                
+                boolean ok = pid.insert();  
             }
         }
         
@@ -392,6 +405,23 @@ public class InterpolatedDataCreationForm extends MemoryWindow implements DataPr
         // TODO add your handling code here:
 }//GEN-LAST:event_deleteDataBoxActionPerformed
 
+    private void sourceInstrumentComboPropertyChange(java.beans.PropertyChangeEvent evt) {//GEN-FIRST:event_sourceInstrumentComboPropertyChange
+        sourceInstrument = sourceInstrumentCombo.getSelectedInstrument();        
+        if (sourceInstrumentCombo.getSelectedItem() != null)
+        {
+            targetInstrumentCombo.setSelectedItem(sourceInstrumentCombo.getSelectedItem().toString());
+        }        
+    }//GEN-LAST:event_sourceInstrumentComboPropertyChange
+
+    private void sourceParameterSelectorPropertyChange(java.beans.PropertyChangeEvent evt)//GEN-FIRST:event_sourceParameterSelectorPropertyChange
+    {//GEN-HEADEREND:event_sourceParameterSelectorPropertyChange
+        sourceParameter = sourceParameterSelector.getSelectedParameter();
+        if (sourceParameterSelector.getSelectedItem() != null)
+        {
+            targetParameterSelector.setSelectedItem(sourceParameterSelector.getSelectedItem().toString());
+        }
+    }//GEN-LAST:event_sourceParameterSelectorPropertyChange
+
     @Override
     public void initialise()
     {
@@ -431,7 +461,7 @@ public class InterpolatedDataCreationForm extends MemoryWindow implements DataPr
         String $HOME = System.getProperty("user.home");
 
         PropertyConfigurator.configure("log4j.properties");
-        Common.build("ABOS.conf");
+        Common.build($HOME + "/ABOS/ABOS.properties");
 
         InterpolatedDataCreationForm form = new InterpolatedDataCreationForm();
         

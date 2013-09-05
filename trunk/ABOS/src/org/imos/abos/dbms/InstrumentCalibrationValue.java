@@ -538,6 +538,15 @@ public class InstrumentCalibrationValue implements Cloneable
                 ;
         return doSelect(sql);
     }
+    public static ArrayList<InstrumentCalibrationValue> selectByInstrument(Integer instrumentID)
+    {
+        String sql = selectSQL
+                + " where instrument_id = "
+                + instrumentID
+                + getDefaultSortOrder()
+                ;
+        return doSelect(sql);
+    }
     /**
      * select all data for the specified cal file
      *

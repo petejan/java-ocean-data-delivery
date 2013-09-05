@@ -17,7 +17,16 @@ package org.imos.abos.forms;
 
 import java.awt.Frame;
 import java.awt.event.ActionEvent;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.util.Properties;
 import java.util.TimeZone;
+import java.util.logging.Level;
 import javax.swing.JFrame;
 import org.apache.log4j.Logger;
 import org.imos.abos.dbms.Instrument;
@@ -44,12 +53,46 @@ public class InstrumentCalibrationFileForm extends MemoryWindow
     private boolean updateMode          = false;
 
     boolean isUpdateMode = false;
+    
+    File optionsFile = null;
 
     /** Creates new form InstrumentCalibrationFileForm */
     public InstrumentCalibrationFileForm()
     {
         initComponents();
         TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
+        BufferedReader br = null;
+        String $HOME = System.getProperty("user.home");
+
+        optionsFile = new File($HOME + "/ABOS/ABOS.properties");
+        
+        try
+        {
+            Properties p = new Properties();
+            br = new BufferedReader(new FileReader(optionsFile));
+            p.load(br);
+            dataFileField.setDefaultDirectory(p.getProperty("calfile-dir"));
+        }
+        catch (FileNotFoundException ex)
+        {
+            logger.warn(ex);
+        }
+        catch (IOException ex)
+        {
+            logger.warn(ex);
+        }
+        finally
+        {
+            try
+            {
+                br.close();
+            }
+            catch (IOException ex)
+            {
+                logger.warn(ex);
+            }
+        }
+        
     }
 
     public void clearForm()
@@ -248,6 +291,39 @@ public class InstrumentCalibrationFileForm extends MemoryWindow
             else
             {
                 Common.showMessage("SQL Error on Update", editableItem.getLastErrorMessage());
+            }
+        }
+        
+        if ( OK )
+        {
+            BufferedReader br = null;
+            try
+            {
+                Properties p = new Properties();
+                br = new BufferedReader(new FileReader(optionsFile));
+                p.load(br);
+                p.setProperty("calfile-dir", "" + dataFileField.getSelectedFile().getParent());
+                BufferedWriter bw = new BufferedWriter(new FileWriter(optionsFile));
+                p.store(bw, "ABOS user config");
+            }
+            catch (FileNotFoundException ex)
+            {
+                logger.warn(ex);
+            }
+            catch (IOException ex)
+            {
+                logger.warn(ex);
+            }
+            finally
+            {
+                try
+                {
+                    br.close();
+                }
+                catch (IOException ex)
+                {
+                    logger.warn(ex);
+                }
             }
         }
 }//GEN-LAST:event_saveButtonActionPerformed

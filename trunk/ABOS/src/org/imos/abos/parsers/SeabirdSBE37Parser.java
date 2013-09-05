@@ -15,6 +15,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.NoSuchElementException;
 import java.util.StringTokenizer;
+import org.apache.log4j.Logger;
 import org.imos.abos.dbms.RawInstrumentData;
 
 /**
@@ -23,7 +24,8 @@ import org.imos.abos.dbms.RawInstrumentData;
  */
 public class SeabirdSBE37Parser extends AbstractDataParser
 {
-
+    protected static Logger logger = Logger.getLogger(SeabirdSBE37Parser.class.getName());
+    
     @Override
     protected boolean isHeader(String dataLine)
     {
@@ -59,7 +61,7 @@ public class SeabirdSBE37Parser extends AbstractDataParser
         DecimalFormat deciFormat = new DecimalFormat("-######.0#");
 
         String temperatureString;
-        String conductivityString;
+        String CNDCString;
         String pressureString;
 
 
@@ -70,7 +72,7 @@ public class SeabirdSBE37Parser extends AbstractDataParser
         Timestamp dataTimestamp = null;
         Double waterTemp = null;
         Double pressure = null;
-        Double conductivity = null;
+        Double CNDC = null;
 
         String constructTimestamp;
 
@@ -78,7 +80,7 @@ public class SeabirdSBE37Parser extends AbstractDataParser
         try
         {
             temperatureString = st.nextToken();
-            conductivityString  = st.nextToken();
+            CNDCString  = st.nextToken();
             pressureString  = st.nextToken();
             dateString = st.nextToken();
             timeString = st.nextToken();
@@ -133,19 +135,19 @@ public class SeabirdSBE37Parser extends AbstractDataParser
 
             try
             {
-                conductivity = new Double(conductivityString.trim());
+                CNDC = new Double(CNDCString.trim());
             }
 
             catch(NumberFormatException pex)
             {
                 try
                 {
-                    Number n = deciFormat.parse(conductivityString.trim());
-                    conductivity = n.doubleValue();
+                    Number n = deciFormat.parse(CNDCString.trim());
+                    CNDC = n.doubleValue();
                 }
                 catch(ParseException pexx)
                 {
-                    throw new ParseException("parse failed for text '" + conductivityString + "'",0);
+                    throw new ParseException("parse failed for text '" + CNDCString + "'",0);
                 }
             }
             //
@@ -159,22 +161,22 @@ public class SeabirdSBE37Parser extends AbstractDataParser
             row.setLatitude(currentMooring.getLatitudeIn());
             row.setLongitude(currentMooring.getLongitudeIn());
             row.setMooringID(currentMooring.getMooringID());
-            row.setParameterCode("WATER_TEMP");
+            row.setParameterCode("TEMP");
             row.setParameterValue(waterTemp);
             row.setSourceFileID(currentFile.getDataFilePrimaryKey());
             row.setQualityCode("RAW");
 
             boolean ok = row.insert();
 
-            row.setParameterCode("WATER_PRESSURE");
+            row.setParameterCode("PRES");
             row.setParameterValue(pressure);
             row.setSourceFileID(currentFile.getDataFilePrimaryKey());
             row.setQualityCode("RAW");
 
             ok = row.insert();
 
-            row.setParameterCode("CONDUCTIVITY");
-            row.setParameterValue(conductivity);
+            row.setParameterCode("CNDC");
+            row.setParameterValue(CNDC);
             row.setSourceFileID(currentFile.getDataFilePrimaryKey());
             row.setQualityCode("RAW");
 

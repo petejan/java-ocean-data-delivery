@@ -86,41 +86,9 @@ public class VemcoDataParser_Pulse6 extends AbstractDataParser
                 throw new ParseException("Timestamp parse failed for text '" + timestampString + "'",0);
             }
 
-            try
-            {
-                waterTemp = new Double(temperature.trim());
-            }
+            waterTemp = getDouble(temperature);
+            AtoDWaterTemp = getDouble(AtoDTemperature);
 
-            catch(NumberFormatException pex)
-            {
-                try
-                {
-                    Number n = deciFormat.parse(temperature.trim());
-                    waterTemp = n.doubleValue();
-                }
-                catch(ParseException pexx)
-                {
-                    throw new ParseException("parse failed for text '" + temperature + "'",0);
-                }
-            }
-
-            try
-            {
-                AtoDWaterTemp = new Double(AtoDTemperature.trim());
-            }
-
-            catch(NumberFormatException pex)
-            {
-                try
-                {
-                    Number n = deciFormat.parse(AtoDTemperature.trim());
-                    AtoDWaterTemp = n.doubleValue();
-                }
-                catch(ParseException pexx)
-                {
-                    throw new ParseException("parse failed for text '" + AtoDTemperature + "'",0);
-                }
-            }
             //
             // ok, we have parsed out the values we need, can now construct the raw data class
             //
@@ -132,7 +100,7 @@ public class VemcoDataParser_Pulse6 extends AbstractDataParser
             row.setLatitude(currentMooring.getLatitudeIn());
             row.setLongitude(currentMooring.getLongitudeIn());
             row.setMooringID(currentMooring.getMooringID());
-            row.setParameterCode("WATER_TEMP");
+            row.setParameterCode("TEMP");
             row.setParameterValue(waterTemp);
             row.setSourceFileID(currentFile.getDataFilePrimaryKey());
             row.setQualityCode("RAW");

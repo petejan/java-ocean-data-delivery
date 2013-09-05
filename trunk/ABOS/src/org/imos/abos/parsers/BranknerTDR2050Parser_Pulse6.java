@@ -161,14 +161,14 @@ public class BranknerTDR2050Parser_Pulse6 extends AbstractDataParser
             row.setLatitude(currentMooring.getLatitudeIn());
             row.setLongitude(currentMooring.getLongitudeIn());
             row.setMooringID(currentMooring.getMooringID());
-            row.setParameterCode("WATER_TEMP");
+            row.setParameterCode("TEMP");
             row.setParameterValue(waterTemp);
             row.setSourceFileID(currentFile.getDataFilePrimaryKey());
             row.setQualityCode("RAW");
 
             boolean ok = row.insert();
 
-            row.setParameterCode("WATER_PRESSURE");
+            row.setParameterCode("PRES");
             row.setParameterValue(pressure);
             row.setSourceFileID(currentFile.getDataFilePrimaryKey());
             row.setQualityCode("RAW");

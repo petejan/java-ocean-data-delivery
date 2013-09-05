@@ -170,7 +170,7 @@ public class InstrumentCalibrationFileCollection extends AbstractTableModel
             }
             return ok;
         }
-        catch(ArrayIndexOutOfBoundsException aix)
+        catch(IndexOutOfBoundsException aix)
         {
             //
             // this happens when you delete the last row in the table and someday

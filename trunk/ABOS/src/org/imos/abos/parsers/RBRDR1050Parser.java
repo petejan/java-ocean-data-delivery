@@ -147,14 +147,14 @@ public class RBRDR1050Parser extends AbstractDataParser
             row.setLatitude(currentMooring.getLatitudeIn());
             row.setLongitude(currentMooring.getLongitudeIn());
             row.setMooringID(currentMooring.getMooringID());
-            row.setParameterCode("WATER_PRESSURE");
+            row.setParameterCode("PRES");
             row.setParameterValue(pressure);
             row.setSourceFileID(currentFile.getDataFilePrimaryKey());
             row.setQualityCode("RAW");
 
             boolean ok = row.insert();
 
-            row.setParameterCode("WATER_DEPTH");
+            row.setParameterCode("DEPTH");
             row.setParameterValue(depth);
             
             ok = row.insert();

@@ -43,7 +43,7 @@ public class ISUSDataParser extends AbstractDataParser
     @Override
     protected void parseData(String dataLine) throws ParseException, NoSuchElementException
     {
-        if( ! dataLine.startsWith("SATNLF"))
+        if( ! (dataLine.startsWith("SATNLF") || dataLine.startsWith("SATNDF")))
             return;
 
         TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
@@ -149,12 +149,17 @@ public class ISUSDataParser extends AbstractDataParser
         row.setLatitude(currentMooring.getLatitudeIn());
         row.setLongitude(currentMooring.getLongitudeIn());
         row.setMooringID(currentMooring.getMooringID());
-        row.setParameterCode("NTR_CONC");
+        row.setParameterCode("NTRI");
         row.setParameterValue(NTR_CONC);
         row.setSourceFileID(currentFile.getDataFilePrimaryKey());
         row.setQualityCode("RAW");
         
         boolean ok = row.insert();
+        
+        row.setParameterCode("ISUS_REF");
+        row.setParameterValue(new Double(REF_AVGString));
+        
+        ok |= row.insert();
                 
         BigDecimal spec[] = new BigDecimal[256];
         
@@ -170,7 +175,14 @@ public class ISUSDataParser extends AbstractDataParser
         array.setLatitude(currentMooring.getLatitudeIn());
         array.setLongitude(currentMooring.getLongitudeIn());
         array.setMooringID(currentMooring.getMooringID());
-        array.setParameterCode("NTR_SPEC");
+        if (dataLine.startsWith("SATNDF"))
+        {
+            array.setParameterCode("UV_DARK");            
+        }
+        else
+        {
+            array.setParameterCode("UV_SPEC");
+        }
         array.setParameterValue(spec);
         array.setSourceFileID(currentFile.getDataFilePrimaryKey());
         array.setQualityCode("RAW");

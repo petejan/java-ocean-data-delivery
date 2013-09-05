@@ -44,12 +44,38 @@ public class SeabirdSBE37ParserASC extends AbstractDataParser
             return false;
     }
 
+    int tempIndex = -1;
+    int condIndex = -1;
+    int presIndex = -1;
+    int salIndex = -1;
+    int tsIndex = -1;
+    
     @Override
     protected void parseHeader(String dataLine) throws ParseException, NoSuchElementException
     {
-        //
-        // don't care about the headers
-        //
+        StringTokenizer st = new StringTokenizer(dataLine, "\t");
+        int tokenCount = st.countTokens();
+        
+        for(int i=0;i<tokenCount;i++)
+        {
+            String token = st.nextToken().trim();
+            if (token.compareTo("Tv290C") == 0)
+            {
+                tempIndex = i;
+            }
+            else if (token.compareTo("Cond0S/m") == 0)
+            {
+                condIndex = i;
+            }
+            else if (token.compareTo("Sal00") == 0)
+            {
+                salIndex = i;
+            }
+            else if (token.compareTo("DD MMM YYYY HH:MM:SS") == 0)
+            {
+                tsIndex = i;
+            }
+        }
     }
 
     @Override
@@ -58,68 +84,59 @@ public class SeabirdSBE37ParserASC extends AbstractDataParser
         SimpleDateFormat dateParser = new SimpleDateFormat("dd MMM yyyy HH:mm:ss");
         DecimalFormat deciFormat = new DecimalFormat("-######.0#");
 
-        String temperatureString;
-        String conductivityString;
-        String salinityString;
+        String temperatureString = null;
+        String CNDCString = null;
+        String salinityString = null;
+        String pressureString = null;
 
-        String dateString;
+        String dateString = null;
 
         Timestamp dataTimestamp = null;
         Double waterTemp = null;
-        Double conductivity = null;
+        Double CNDC = null;
+        Double pres = null;
 
-        StringTokenizer st = new StringTokenizer(dataLine,"\t");
+        StringTokenizer st = new StringTokenizer(dataLine, "\t");
+        int tokenCount = st.countTokens();
         try
         {
-            temperatureString = st.nextToken();
-            conductivityString  = st.nextToken();
-            salinityString  = st.nextToken();
-            dateString = st.nextToken();
-            try
+            for(int i=0;i<tokenCount;i++)
             {
-                java.util.Date d = dateParser.parse(dateString);
-                dataTimestamp = new Timestamp(d.getTime());
-            }
-            catch(ParseException pex)
-            {
-                throw new ParseException("Timestamp parse failed for text '" + dateString + "'",0);
-            }
-
-            try
-            {
-                waterTemp = new Double(temperatureString.trim());
-            }
-
-            catch(NumberFormatException pex)
-            {
-                try
+                String token = st.nextToken().trim();
+                if (i == tempIndex)
                 {
-                    Number n = deciFormat.parse(temperatureString.trim());
-                    waterTemp = n.doubleValue();
+                    temperatureString = token;
+                    waterTemp = getDouble(temperatureString);
                 }
-                catch(ParseException pexx)
+                else if (i == condIndex)
                 {
-                    throw new ParseException("parse failed for text '" + temperatureString + "'",0);
+                    CNDCString = token;
+                    CNDC = getDouble(CNDCString);
                 }
-            }
-
-            try
-            {
-                conductivity = new Double(conductivityString.trim());
-            }
-
-            catch(NumberFormatException pex)
-            {
-                try
+                else if (i == presIndex)
                 {
-                    Number n = deciFormat.parse(conductivityString.trim());
-                    conductivity = n.doubleValue();
+                    pressureString = token;
+                    pres = getDouble(pressureString);
                 }
-                catch(ParseException pexx)
+                else if (i == salIndex)
                 {
-                    throw new ParseException("parse failed for text '" + conductivityString + "'",0);
+                    salinityString = token;
+                }
+                else if (i == tsIndex)
+                {
+                    dateString = token;
+                    try
+                    {
+                        java.util.Date d = dateParser.parse(dateString);
+                        dataTimestamp = new Timestamp(d.getTime());
+                    }
+                    catch(ParseException pex)
+                    {
+                        throw new ParseException("Timestamp parse failed for text '" + dateString + "'",0);
+                    }
                 }
             }
+
             //
             // ok, we have parsed out the values we need, can now construct the raw data class
             //
@@ -131,19 +148,29 @@ public class SeabirdSBE37ParserASC extends AbstractDataParser
             row.setLatitude(currentMooring.getLatitudeIn());
             row.setLongitude(currentMooring.getLongitudeIn());
             row.setMooringID(currentMooring.getMooringID());
-            row.setParameterCode("WATER_TEMP");
+            row.setParameterCode("TEMP");
             row.setParameterValue(waterTemp);
             row.setSourceFileID(currentFile.getDataFilePrimaryKey());
             row.setQualityCode("RAW");
 
             boolean ok = row.insert();
 
-            row.setParameterCode("CONDUCTIVITY");
-            row.setParameterValue(conductivity);
+            row.setParameterCode("CNDC");
+            row.setParameterValue(CNDC);
             row.setSourceFileID(currentFile.getDataFilePrimaryKey());
             row.setQualityCode("RAW");
 
             ok = row.insert();
+            
+            if (presIndex != -1)
+            {
+                row.setParameterCode("PRES");
+                row.setParameterValue(CNDC);
+                row.setSourceFileID(currentFile.getDataFilePrimaryKey());
+                row.setQualityCode("RAW");
+
+                ok = row.insert();
+            }
         }
         catch (NoSuchElementException nse)
         {

@@ -14,7 +14,11 @@ import java.text.DecimalFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.NoSuchElementException;
+import java.util.TimeZone;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import org.imos.abos.dbms.RawInstrumentData;
+import static org.imos.abos.parsers.AbstractDataParser.logger;
 import org.wiley.util.NullStringTokenizer;
 
 /**
@@ -28,74 +32,121 @@ public class VemcoDataParser extends AbstractDataParser
     {
         super();
     }
+    
+    int tsFormat = 0;
+    
+    public Timestamp parseTs(String date) throws ParseException
+    {
+        SimpleDateFormat dateParser;
+        String[] formats = {"yyyy,MM,dd,HH,mm,ss", "yyyy-MM-dd HH:mm:ss", "yyyy-MM-dd,HH:mm:ss"};
+        java.util.Date d;        
+        Timestamp t = null;
+        
+        for(int i=tsFormat;i<formats.length;i++)
+        {
+            try
+            {
+                dateParser = new SimpleDateFormat(formats[i]);
+                dateParser.setTimeZone(TimeZone.getTimeZone("UTC"));
+                //System.out.println("Trying " + formats[i]);
+                
+                d = dateParser.parse(date);
 
+                t = new Timestamp(d.getTime());
+                tsFormat = i;
+
+                return t;
+            }
+            catch (ParseException pe)
+            {
+
+            }
+        }
+                
+        throw new ParseException("Timestamp parse failed for text '" + date + "'", 0);        
+    }
+   
     @Override
     protected void parseData(String dataLine)
            throws ParseException, NoSuchElementException
     {
-        SimpleDateFormat dateParser = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         DecimalFormat deciFormat = new DecimalFormat("-######.0#");
 
         String timestamp;
-        String temperature;
-        String AtoDTemperature;
+        String sTemperature;
+        String sAtoDTemperature;
+        String sPress; // vemco call it depth, but its most certainly pressure relative to the surface
+        String sAtoDpress;        
 
         Timestamp dataTimestamp = null;
-        Double waterTemp = null;
-        Double AtoDWaterTemp = null;
+        Double temperature = null;
+        Double AtoDTemperature = null;
+        Double press = null;
+        Double AtoDpress = null;        
 
+        // Pulse 6 T  ( 8): 2009,09,22,12,00,00,12.0,89
+        // Pulse 6 TD (10): 2009,09,22,12,00,00,12.1,88,0.0,11
+        // Pulse 7 T  ( 3): 2010-09-08 00:00:00,17.63,30
+        // Pulse 7 TD ( 5): 2010-09-08 00:00:00,17.34,33,-1.8,10
+        // Pulse 8 T  ( 3): 2011-08-27,04:18:00,11.22
+        // Pulse 8 TD ( 4): 2011-08-02,04:41:40,15.59,-1.76
+        // Pulse 9 T  ( 3): 2012-07-12,00:00:00,13.89
+
+        dataTimestamp = parseTs(dataLine);
+                
+        boolean hasPress = false;
+        boolean hasRaw = false;
         NullStringTokenizer st = new NullStringTokenizer(dataLine,",");
+        //System.out.println("Tokens " + st.countTokens());
         try
         {
-            timestamp = st.nextToken();
-            temperature = st.nextToken();
-            AtoDTemperature  = st.nextToken();
+            switch (tsFormat)
+            {
+                case 0: 
+                    st.nextToken();
+                    st.nextToken();
+                    st.nextToken();
+                    st.nextToken();
+                    st.nextToken();
+                    st.nextToken();
+                    if (st.countTokens() >= 4)
+                    {
+                        hasPress = true;
+                    }
+                    hasRaw = true;
+                    break;                
+                case 1: 
+                    st.nextToken();
+                    if (st.countTokens() >= 4)
+                    {
+                        hasPress = true;
+                    }
+                    hasRaw = true;
+                    break;                
+                case 2: 
+                    st.nextToken();
+                    st.nextToken();
+                    if (st.countTokens() >= 2)
+                    {
+                        hasPress = true;
+                    }
+                    break;                
+            }
+            //System.out.println("Tokens remaining " + st.countTokens());
+            
+            sTemperature = st.nextToken();
+            temperature = getDouble(sTemperature);
+            if (hasRaw)
+            {
+                sAtoDTemperature  = st.nextToken();
+                AtoDTemperature = getDouble(sAtoDTemperature);
+            }
+            if (hasPress)
+            {
+                sPress = st.nextToken();
+                press = getDouble(sPress);
+            }
 
-            try
-            {
-                java.util.Date d = dateParser.parse(timestamp);
-                dataTimestamp = new Timestamp(d.getTime());
-            }
-            catch(ParseException pex)
-            {
-                throw new ParseException("Timestamp parse failed for text '" + timestamp + "'",0);
-            }
-
-            try
-            {
-                waterTemp = new Double(temperature.trim());
-            }
-
-            catch(NumberFormatException pex)
-            {
-                try
-                {
-                    Number n = deciFormat.parse(temperature.trim());
-                    waterTemp = n.doubleValue();
-                }
-                catch(ParseException pexx)
-                {
-                    throw new ParseException("parse failed for text '" + temperature + "'",0);
-                }
-            }
-
-            try
-            {
-                AtoDWaterTemp = new Double(AtoDTemperature.trim());
-            }
-
-            catch(NumberFormatException pex)
-            {
-                try
-                {
-                    Number n = deciFormat.parse(AtoDTemperature.trim());
-                    AtoDWaterTemp = n.doubleValue();
-                }
-                catch(ParseException pexx)
-                {
-                    throw new ParseException("parse failed for text '" + AtoDTemperature + "'",0);
-                }
-            }
             //
             // ok, we have parsed out the values we need, can now construct the raw data class
             //
@@ -107,13 +158,28 @@ public class VemcoDataParser extends AbstractDataParser
             row.setLatitude(currentMooring.getLatitudeIn());
             row.setLongitude(currentMooring.getLongitudeIn());
             row.setMooringID(currentMooring.getMooringID());
-            row.setParameterCode("WATER_TEMP");
-            row.setParameterValue(waterTemp);
+            row.setParameterCode("TEMP");
+            row.setParameterValue(temperature);
             row.setSourceFileID(currentFile.getDataFilePrimaryKey());
             row.setQualityCode("RAW");
 
             boolean ok = row.insert();
+            
+            if (hasPress)
+            {
+                row.setDataTimestamp(dataTimestamp);
+                row.setDepth(instrumentDepth);
+                row.setInstrumentID(currentInstrument.getInstrumentID());
+                row.setLatitude(currentMooring.getLatitudeIn());
+                row.setLongitude(currentMooring.getLongitudeIn());
+                row.setMooringID(currentMooring.getMooringID());
+                row.setParameterCode("PRES");
+                row.setParameterValue(press);
+                row.setSourceFileID(currentFile.getDataFilePrimaryKey());
+                row.setQualityCode("RAW");
 
+                ok = row.insert();
+            }           
         }
         catch (NoSuchElementException nse)
         {
@@ -124,56 +190,56 @@ public class VemcoDataParser extends AbstractDataParser
     @Override
     protected void parseHeader(String dataLine) throws ParseException, NoSuchElementException
     {
-        //
-        // the headers for this instrument are NOT well formed for parsing
-        //
-        NullStringTokenizer st = new NullStringTokenizer(dataLine," ");
-        try
+        if (dataLine.contains("Study"))
         {
-            //
-            // not all these tokens will be there....
-            //
-            String star = st.nextToken();
-            String code = st.nextToken();
-            String value = st.nextToken();
-            String depthString = st.nextToken();
-
-            if(depthString.endsWith("m"))
+            Pattern pattern = Pattern.compile("\\d+m");
+            Matcher m = pattern.matcher(dataLine);
+            if (m.find())
             {
-                //
-                // hopefully it's the depth of the instrument
-                //
-                char[] contents = depthString.trim().toCharArray();
-                StringBuffer x = new StringBuffer();
-
-                for( int i = 0; i < contents.length; i++)
+                instrumentDepth = new Double(dataLine.substring(m.start(), m.end()-1));
+                if (parentForm != null)
                 {
-                    if(Character.isDigit(contents[i]))
-                        x.append(contents[i]);
+                    parentForm.updateMessageArea("File Depth " + instrumentDepth + "\n");
                 }
-
-                String test = x.toString();
-                instrumentDepth = new Double(test);
+                
+            }
+        }
+        else if (dataLine.contains("Serial Number"))
+        {
+            String info = "File Serial Number " + dataLine.substring(dataLine.indexOf("=")+1);
+            logger.info(info);
+            if (parentForm != null)
+            {
+                parentForm.updateMessageArea(info + "\n");
             }
 
         }
-        catch (NoSuchElementException nse)
+        else if (dataLine.contains("Source Device: "))
         {
-          throw nse;
+            String info = "File Source Device " + dataLine.substring(dataLine.indexOf(":")+2);
+            logger.info(info);
+            if (parentForm != null)
+            {
+                parentForm.updateMessageArea(info + "\n");
+            }
+
         }
     }
 
     @Override
     protected boolean isHeader(String dataLine)
     {
+        char c = dataLine.charAt(0);
+        
         if (dataLine.startsWith("*"))
         {
-            //
-            // it's a header row
-            //
-            return true;
+            return true; // it's a header row
         }
-        else
+        else if(! Character.isDigit(c) )
+        {
+            return true; // it's a header row
+        }
+        else 
             return false;
     }
 }

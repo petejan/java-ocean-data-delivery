@@ -32,7 +32,7 @@ public class SeabirdSBE43OxygenCalculatorTest
         String $HOME = System.getProperty("user.home");
 
         PropertyConfigurator.configure($HOME + "/ABOS/log4j.properties");
-        Common.build($HOME + "/ABOS/ABOS.conf");
+        Common.build($HOME + "/ABOS/ABOS.properties");
     }
 
     @BeforeClass

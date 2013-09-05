@@ -14,45 +14,45 @@ package org.imos.abos.calc;
  *
  * essentially a copy of original code by Gordon Kieth, AAD, 1997.
  *
- *	Caculate salinity from temperature, conductivity and pressure.
+ *	Caculate salinity from temperature, CNDC and pressure.
  *	Based on UNESCO fortran routine SAL78.
  *
  * @param  temperature      Temperature in degrees C (T68).
- * @param  conductivity      Conductivity in mmho/cm (1 mmho/cm = 10 Siemens/m)
+ * @param  CNDC      CNDC in mmho/cm (1 mmho/cm = 10 Siemens/m)
  * @param  pressure  Pressure in decibars (0 = 1 atmosphere)
  * @return           Salinity (PSS-78)
  */
 public class SalinityCalculator
 {
 
-    /**  Conductivity standard for PSS-78 for salinity 35 at temperature 15 at 1 atmosphere. */
+    /**  CNDC standard for PSS-78 for salinity 35 at temperature 15 at 1 atmosphere. */
     private final static double C35150 = 42.914;
 
     /**
      *
      * @param temperature       Temperature in degrees C (ITS90).
-     * @param conductivity      Conductivity in mmho/cm (1 mmho/cm = 10 Siemens/m)
+     * @param CNDC      CNDC in mmho/cm (1 mmho/cm = 10 Siemens/m)
      * @param pressure          Pressure in decibars (0 = 1 atmosphere)
      * @return                  Salinity (PSS-78)
      */
-    public static double calculateSalinityForITS90Temperature(double temperature, double conductivity, double pressure)
+    public static double calculateSalinityForITS90Temperature(double temperature, double CNDC, double pressure)
     {
         double correctedTemperature = temperature * 1.00024;
-        return calculateSalinityForITS68Temperature(correctedTemperature, conductivity, pressure);
+        return calculateSalinityForITS68Temperature(correctedTemperature, CNDC, pressure);
     }
     
     /**
      *
      * @param temperature       Temperature in degrees C (ITS68).
-     * @param conductivity      Conductivity in mmho/cm (1 mmho/cm = 10 Siemens/m)
+     * @param CNDC      CNDC in mmho/cm (1 mmho/cm = 10 Siemens/m)
      * @param pressure          Pressure in decibars (0 = 1 atmosphere)
      * @return                  Salinity (PSS-78)
      */
-    public static double calculateSalinityForITS68Temperature(double temperature, double conductivity, double pressure)
+    public static double calculateSalinityForITS68Temperature(double temperature, double CNDC, double pressure)
     {
         // Convert parameters to horrible fortran names.
         double T = temperature;
-        double R = conductivity / C35150;
+        double R = CNDC / C35150;
         double DT = temperature - 15.0;
         double P = pressure;
         // Calculate Salinity using converted copies of the Fortran subroutines.

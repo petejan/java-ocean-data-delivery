@@ -54,7 +54,7 @@ public class TestCDF3
         if(args.length == 0)
         {
             PropertyConfigurator.configure("log4j.properties");
-            Common.build("ABOS.conf");
+            Common.build($HOME + "/ABOS/ABOS.properties");
         }
 
         TestCDF3 cdf = new TestCDF3();
@@ -70,17 +70,17 @@ public class TestCDF3
                     + ";\n"
                     + " create temp table foobar as "
                     + " select distinct date_trunc('hour',data_timestamp) as Obs_Time,"
-                    + " latitude, longitude, parameter_value as Water_Temp"
+                    + " latitude, longitude, parameter_value as TEMP"
                     + " from raw_instrument_data"
                     + " where instrument_id = 4"
-                    + " and (parameter_code = 'WATER_TEMP')"
+                    + " and (parameter_code = 'TEMP')"
                     + " ;\n"
                     + "create temp table foobar2 as "
                     + " select distinct date_trunc('hour',data_timestamp) as Obs_Time,"
-                    + " latitude, longitude, parameter_value as Water_Pressure"
+                    + " latitude, longitude, parameter_value as PRES"
                     + " from raw_instrument_data"
                     + " where instrument_id = 4"
-                    + " and (parameter_code = 'WATER_PRESSURE')"
+                    + " and (parameter_code = 'PRES')"
                     + " ;\n"
                     ;
 
@@ -88,8 +88,8 @@ public class TestCDF3
                     + " foobar.Obs_Time,"
                     + " foobar.latitude,"
                     + " foobar.longitude,"
-                    + " foobar.Water_Temp,"
-                    + " foobar2.Water_Pressure"
+                    + " foobar.TEMP,"
+                    + " foobar2.PRES"
                     + " from foobar, foobar2"
                     + " where foobar.Obs_Time = foobar2.Obs_Time"
                     + " order by 1\n"
@@ -205,7 +205,7 @@ public class TestCDF3
 
             // Define units attributes for data variables.
             dataFile.addVariableAttribute("pressure", "units", "dbar");
-            dataFile.addVariableAttribute("pressure", "standard_name", "sea_water_pressure");
+            dataFile.addVariableAttribute("pressure", "standard_name", "sea_PRES");
             dataFile.addVariableAttribute("temperature", "units", "celsius");
 
 
