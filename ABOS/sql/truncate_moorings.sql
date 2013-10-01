@@ -1,0 +1,2 @@
+﻿truncate mooring, mooring_attached_instruments CASCADE;
+truncate instrument_calibration_files, instrument_calibration_values;
