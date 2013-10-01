@@ -36,6 +36,7 @@ import org.imos.abos.dbms.Instrument;
 import org.imos.abos.dbms.InstrumentCalibrationFile;
 import org.imos.abos.dbms.Mooring;
 import org.imos.abos.dbms.ProcessedInstrumentData;
+import org.imos.abos.dbms.RawInstrumentData;
 import org.imos.abos.instrument.WETLabsPARConstants;
 import org.wiley.core.Common;
 import org.wiley.core.forms.MemoryWindow;
@@ -79,7 +80,8 @@ public class WETLabsPARCalculationForm extends MemoryWindow implements DataProce
      */
     @SuppressWarnings("unchecked")
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
-    private void initComponents() {
+    private void initComponents()
+    {
 
         jPanel1 = new javax.swing.JPanel();
         mooringCombo1 = new org.imos.abos.dbms.fields.MooringCombo();
@@ -93,8 +95,10 @@ public class WETLabsPARCalculationForm extends MemoryWindow implements DataProce
         quitButton = new javax.swing.JButton();
 
         setTitle("WETLabs PAR Calculation Form");
-        addWindowListener(new java.awt.event.WindowAdapter() {
-            public void windowClosing(java.awt.event.WindowEvent evt) {
+        addWindowListener(new java.awt.event.WindowAdapter()
+        {
+            public void windowClosing(java.awt.event.WindowEvent evt)
+            {
                 formWindowClosing(evt);
             }
         });
@@ -102,8 +106,10 @@ public class WETLabsPARCalculationForm extends MemoryWindow implements DataProce
         jPanel1.setBorder(javax.swing.BorderFactory.createEtchedBorder());
 
         mooringCombo1.setOrientation(0);
-        mooringCombo1.addPropertyChangeListener(new java.beans.PropertyChangeListener() {
-            public void propertyChange(java.beans.PropertyChangeEvent evt) {
+        mooringCombo1.addPropertyChangeListener(new java.beans.PropertyChangeListener()
+        {
+            public void propertyChange(java.beans.PropertyChangeEvent evt)
+            {
                 mooringCombo1PropertyChange(evt);
             }
         });
@@ -111,22 +117,33 @@ public class WETLabsPARCalculationForm extends MemoryWindow implements DataProce
         mooringDescriptionField.setEnabled(false);
 
         calibrationFileCombo1.setLabel("Values From Calibration File");
-        calibrationFileCombo1.addPropertyChangeListener(new java.beans.PropertyChangeListener() {
-            public void propertyChange(java.beans.PropertyChangeEvent evt) {
+        calibrationFileCombo1.addPropertyChangeListener(new java.beans.PropertyChangeListener()
+        {
+            public void propertyChange(java.beans.PropertyChangeEvent evt)
+            {
                 calibrationFileCombo1PropertyChange(evt);
             }
         });
 
         sourceInstrumentCombo.setLabel("Source Instrument");
         sourceInstrumentCombo.setOrientation(0);
+        sourceInstrumentCombo.addPropertyChangeListener(new java.beans.PropertyChangeListener()
+        {
+            public void propertyChange(java.beans.PropertyChangeEvent evt)
+            {
+                sourceInstrumentComboPropertyChange(evt);
+            }
+        });
 
         targetInstrumentCombo.setLabel("Target Instrument");
         targetInstrumentCombo.setOrientation(0);
 
         deleteDataBox.setSelected(true);
         deleteDataBox.setText("Delete any existing processed data for target instrument");
-        deleteDataBox.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
+        deleteDataBox.addActionListener(new java.awt.event.ActionListener()
+        {
+            public void actionPerformed(java.awt.event.ActionEvent evt)
+            {
                 deleteDataBoxActionPerformed(evt);
             }
         });
@@ -153,7 +170,7 @@ public class WETLabsPARCalculationForm extends MemoryWindow implements DataProce
         jPanel1Layout.setVerticalGroup(
             jPanel1Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
             .add(jPanel1Layout.createSequentialGroup()
-                .addContainerGap(20, Short.MAX_VALUE)
+                .addContainerGap(org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .add(jPanel1Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
                     .add(org.jdesktop.layout.GroupLayout.TRAILING, mooringCombo1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 21, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                     .add(org.jdesktop.layout.GroupLayout.TRAILING, mooringDescriptionField, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
@@ -171,16 +188,20 @@ public class WETLabsPARCalculationForm extends MemoryWindow implements DataProce
         jPanel2.setBorder(javax.swing.BorderFactory.createEtchedBorder());
 
         runButton.setText("Run");
-        runButton.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
+        runButton.addActionListener(new java.awt.event.ActionListener()
+        {
+            public void actionPerformed(java.awt.event.ActionEvent evt)
+            {
                 runButtonActionPerformed(evt);
             }
         });
         jPanel2.add(runButton);
 
         quitButton.setText("Quit");
-        quitButton.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
+        quitButton.addActionListener(new java.awt.event.ActionListener()
+        {
+            public void actionPerformed(java.awt.event.ActionEvent evt)
+            {
                 quitButtonActionPerformed(evt);
             }
         });
@@ -218,7 +239,7 @@ public class WETLabsPARCalculationForm extends MemoryWindow implements DataProce
         //logger.debug(evt.getPropertyName());
         if(propertyName.equalsIgnoreCase("MOORING_SELECTED")) {
             Mooring selectedItem = (Mooring) evt.getNewValue();
-            sourceInstrumentCombo.setMooring(selectedItem);
+            sourceInstrumentCombo.setMooringParam(selectedItem, "PAR_VOLT");
             targetInstrumentCombo.setMooring(selectedItem);
             calibrationFileCombo1.setMooring(selectedItem);
         }
@@ -254,8 +275,9 @@ public class WETLabsPARCalculationForm extends MemoryWindow implements DataProce
 
         if(deleteDataBox.isSelected())
         {
-            ProcessedInstrumentData.deleteDataForMooringAndInstrument(selectedMooring.getMooringID(),
-                                                                      targetInstrument.getInstrumentID())
+            RawInstrumentData.deleteDataForMooringAndInstrumentAndParameter(selectedMooring.getMooringID(),
+                                                                                  targetInstrument.getInstrumentID(),
+                                                                                  "PAR")
                                                                       ;
         }
         String insProc = new String("INSERT INTO instrument_data_processors (processors_pk, mooring_id, class_name, parameters, processing_date, display_code) VALUES ("
@@ -314,14 +336,13 @@ public class WETLabsPARCalculationForm extends MemoryWindow implements DataProce
 
     public void calculateDataValues()
     {
-        String sql = "select distinct on (date_trunc('hour',data_timestamp) )"
-                    + " date_trunc('hour',data_timestamp)as obs_time, source_file_id, depth, parameter_value "
-                    + " from raw_instrument_data"
-                    + " where instrument_id = "
+        String sql = "select data_timestamp, source_file_id, depth, parameter_value"
+                    + " FROM raw_instrument_data"
+                    + " WHERE instrument_id = "
                     + sourceInstrument.getInstrumentID()
-                    + " and mooring_id = "
+                    + " AND mooring_id = "
                     + StringUtilities.quoteString(selectedMooring.getMooringID())
-                    + " and parameter_code = 'PAR_VOLT'"
+                    + " AND parameter_code = 'PAR_VOLT'"
                     ;
 
         WETLabsPARConstants constants = new WETLabsPARConstants();
@@ -385,7 +406,7 @@ public class WETLabsPARCalculationForm extends MemoryWindow implements DataProce
         {
             PARData sbe = dataSet.get(i);
 
-            ProcessedInstrumentData row = new ProcessedInstrumentData();
+            RawInstrumentData row = new RawInstrumentData();
 
             row.setDataTimestamp(sbe.dataTimestamp);
             row.setDepth(sbe.instrumentDepth);
@@ -461,6 +482,14 @@ public class WETLabsPARCalculationForm extends MemoryWindow implements DataProce
     private void deleteDataBoxActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_deleteDataBoxActionPerformed
         // TODO add your handling code here:
 }//GEN-LAST:event_deleteDataBoxActionPerformed
+
+    private void sourceInstrumentComboPropertyChange(java.beans.PropertyChangeEvent evt) {//GEN-FIRST:event_sourceInstrumentComboPropertyChange
+        sourceInstrument = sourceInstrumentCombo.getSelectedInstrument();        
+        if (sourceInstrumentCombo.getSelectedItem() != null)
+        {
+            targetInstrumentCombo.setSelectedItem(sourceInstrumentCombo.getSelectedItem().toString());
+        }
+    }//GEN-LAST:event_sourceInstrumentComboPropertyChange
     public String paramToString()
     {
         return "MOORING="+selectedMooring.getMooringID() + 

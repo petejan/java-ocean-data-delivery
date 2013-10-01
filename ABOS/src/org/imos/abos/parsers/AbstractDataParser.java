@@ -351,7 +351,7 @@ public abstract class AbstractDataParser
                                 while (input.readLine() != null) lines++;
                                 input.close();
                                 parentForm.updateMessageArea("lines " + lines + "\n");
-                                input = new BufferedReader(new FileReader(dataFile));
+                                input = new BufferedReader(new InputStreamReader(zf.getInputStream(ze)));
                             }
                             
                             decodeFile(input, ze.getName());

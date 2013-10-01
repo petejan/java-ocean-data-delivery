@@ -243,8 +243,12 @@ public class InterpolatedWaterParamsDataCreationForm extends MemoryWindow implem
                                                                       ;
             RawInstrumentData.deleteDataForMooringAndInstrumentAndParameter(selectedMooring.getMooringID(),
                                                                                   targetInstrument.getInstrumentID(),
-                                                                                  "WATER_DENSITY")
+                                                                                  "DENSITY")
                                                                       ;
+//            RawInstrumentData.deleteDataForMooringAndInstrumentAndParameter(selectedMooring.getMooringID(),
+//                                                                                  targetInstrument.getInstrumentID(),
+//                                                                                  "DEPTH")
+//                                                                      ;
         }
 
         final Color bg = runButton.getBackground();
@@ -327,33 +331,30 @@ public class InterpolatedWaterParamsDataCreationForm extends MemoryWindow implem
         Connection conn = Common.getConnection();
         Statement proc;
         String param = "";
+        int count = 0;
         try
         {
             proc = conn.createStatement();
+            conn.setAutoCommit(false);
             proc.execute(SQL);  
             ResultSet results = (ResultSet) proc.getResultSet();
             results.next();
             param = results.getString(1);
-        }
-        catch (SQLException ex)
-        {
-            java.util.logging.Logger.getLogger(InterpolatedWaterParamsDataCreationForm.class.getName()).log(Level.SEVERE, null, ex);
-        }
         
-        ArrayList<RawInstrumentData> optode = RawInstrumentData.selectInstrumentAndMooringAndParameter
+        ArrayList<RawInstrumentData> data = RawInstrumentData.selectInstrumentAndMooringAndParameter
                                                     (
                                                     targetInstrument.getInstrumentID(),
                                                     selectedMooring.getMooringID(),
                                                     param
                                                     );
         
-        if (optode != null && optode.size() > 0)
+        if (data != null && data.size() > 0)
         {
             long startTs = 0, endTs = 0;
             
             RawInstrumentData srcInst = waterTemp.get(0);
 
-            logger.info("Data points " + optode.size());
+            logger.info("Data points " + data.size());
             double xTemp[] = new double[waterTemp.size()];
             double yTemp[] = new double[waterTemp.size()];
 
@@ -396,11 +397,11 @@ public class InterpolatedWaterParamsDataCreationForm extends MemoryWindow implem
             }
             UnivariateFunction fCond = iCond.interpolate(xCond, yCond);
         
-            for(int i = 0; i < optode.size(); i++)
+            for(int i = 0; i < data.size(); i++)
             {
                 RawInstrumentData rid = new RawInstrumentData();
 
-                RawInstrumentData o = optode.get(i);
+                RawInstrumentData o = data.get(i);
                 long ts = o.getDataTimestamp().getTime();
                 
                 if ((ts > startTs) && (ts < endTs))
@@ -412,7 +413,7 @@ public class InterpolatedWaterParamsDataCreationForm extends MemoryWindow implem
                     rid.setLongitude(srcInst.getLongitude());
                     rid.setMooringID(srcInst.getMooringID());
                     rid.setSourceFileID(srcInst.getSourceFileID());
-                    rid.setQualityCode("DERIVED");
+                    rid.setQualityCode("INTERPOLATED");
 
                     double dWaterTemp = fTemp.value((double)ts);
                     double dWaterCond = fCond.value((double)ts);
@@ -439,23 +440,37 @@ public class InterpolatedWaterParamsDataCreationForm extends MemoryWindow implem
                     rid.setParameterValue(calculatedSalinityValue);
                     ok = rid.insert();                                
 
-                    double calculatedDensityValue = SeawaterParameterCalculator.calculateSeawaterDensityAtDepth(calculatedSalinityValue, dWaterTemp, dWaterPres);                
-                    rid.setParameterCode("WATER_DENSITY");
+                    System.out.println(rid.getDataTimestamp() + " ," + rid.getParameterCode() + " ," + rid.getParameterValue());
+                    
+                    double calculatedDensityValue = SeawaterParameterCalculator.calculateSeawaterDensityAtPressure(calculatedSalinityValue, dWaterTemp, dWaterPres);                
+                    rid.setParameterCode("DENSITY");
                     rid.setParameterValue(calculatedDensityValue);
                     ok = rid.insert();                                
 
-                    double calculatedOxygenSolubilityValue = OxygenSolubilityCalculator.calculateOxygenSolubilityInMlPerLitre(dWaterTemp, calculatedSalinityValue);
-                    rid.setParameterCode("OXSOL");
-                    rid.setParameterValue(44660 * calculatedOxygenSolubilityValue/calculatedDensityValue);
-                    ok = rid.insert();   
-                }
+//                    double calculatedDepth = SeawaterParameterCalculator.depth(dWaterPres, selectedMooring.getLatitudeIn());
+//                    rid.setParameterCode("DEPTH");
+//                    rid.setParameterValue(calculatedDepth);
+//                    ok = rid.insert();                                
 
-            }
+                    double calculatedOxygenSolubilityValue = OxygenSolubilityCalculator.calculateOxygenSolubilityInUMolesPerKg(dWaterTemp, calculatedSalinityValue);
+                    rid.setParameterCode("OXSOL");
+                    rid.setParameterValue(calculatedOxygenSolubilityValue);
+                    ok = rid.insert();   
+                    
+//                    conn.commit();
+                    count++;
+                }
+            }   
+        }
+        }
+        catch (SQLException ex)
+        {
+            java.util.logging.Logger.getLogger(InterpolatedWaterParamsDataCreationForm.class.getName()).log(Level.SEVERE, null, ex);
         }
         
         String update = "UPDATE instrument_data_processors SET " 
                             + "processing_date = '" + Common.current() + "',"
-                            + "count = "+ optode.size()
+                            + "count = "+ count
                             + " WHERE "
                             + "mooring_id = '" + selectedMooring.getMooringID() + "'"
                             + " AND class_name = '" + this.getClass().getName() + "'"
@@ -468,7 +483,7 @@ public class InterpolatedWaterParamsDataCreationForm extends MemoryWindow implem
         {
             stmt = conn.createStatement();
             stmt.executeUpdate(update);
-            logger.debug("Update processed table count " + optode.size());
+            logger.debug("Update raw table count " + count);
         }
         catch (SQLException ex)
         {

@@ -16,7 +16,9 @@
 package org.imos.abos.forms;
 
 import java.awt.Frame;
+import java.sql.SQLException;
 import java.util.TimeZone;
+import java.util.logging.Level;
 import javax.swing.*;
 import javax.swing.table.TableColumnModel;
 import org.apache.log4j.Logger;
@@ -333,10 +335,15 @@ public class CalibrationValuesEntryForm extends MemoryWindow
                         InstrumentCalibrationValue v2 = (InstrumentCalibrationValue) v.clone();
                         v2.setMooringID(targetMooring.getMooringID());
                         v2.insert();
+                        Common.getConnection().commit();
                     }
                     catch(CloneNotSupportedException cne)
                     {
                         logger.error(cne);
+                    }
+                    catch (SQLException ex)
+                    {
+                        logger.error(ex);
                     }
                 }
             }

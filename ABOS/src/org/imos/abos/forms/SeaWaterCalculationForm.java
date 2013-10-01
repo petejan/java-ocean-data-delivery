@@ -49,7 +49,7 @@ public class SeaWaterCalculationForm extends MemoryWindow implements DataProcess
     private Instrument sourceInstrument = null;
     private Instrument targetInstrument = null;
 
-    private ArrayList<SeaWaterData> dataSet = new ArrayList();
+//    private ArrayList<SeaWaterData> dataSet = new ArrayList();
     /**
      * Creates new form SeabirdSBE16CalculationForm
      */
@@ -215,7 +215,7 @@ public class SeaWaterCalculationForm extends MemoryWindow implements DataProcess
         if (propertyName.equalsIgnoreCase("MOORING_SELECTED"))
         {
             Mooring selectedItem = (Mooring) evt.getNewValue();
-            sourceInstrumentCombo.setMooringParam(selectedItem, "CNDC");
+            sourceInstrumentCombo.setMooringParam(selectedItem, "PRES");
             targetInstrumentCombo.setMooring(selectedItem);
         }
     }//GEN-LAST:event_mooringCombo1PropertyChange
@@ -235,7 +235,7 @@ public class SeaWaterCalculationForm extends MemoryWindow implements DataProcess
         }
         if (targetInstrument != null)
         {
-            s += ",SRC="+targetInstrument.getInstrumentID();
+            s += ",TARGET="+targetInstrument.getInstrumentID();
         }
         return s;
     }
@@ -268,16 +268,20 @@ public class SeaWaterCalculationForm extends MemoryWindow implements DataProcess
                                                                           "PSAL");
                 RawInstrumentData.deleteDataForMooringAndInstrumentAndParameter(selectedMooring.getMooringID(),
                                                                           targetInstrument.getInstrumentID(),
-                                                                          "WATER_DENSITY");
+                                                                          "DENSITY");
                 RawInstrumentData.deleteDataForMooringAndInstrumentAndParameter(selectedMooring.getMooringID(),
                                                                           targetInstrument.getInstrumentID(),
                                                                           "OXSOL");
+//                RawInstrumentData.deleteDataForMooringAndInstrumentAndParameter(selectedMooring.getMooringID(),
+//                                                                          targetInstrument.getInstrumentID(),
+//                                                                          "DEPTH");
             }
             else
             {
                 RawInstrumentData.deleteDataForMooringAndParameter(selectedMooring.getMooringID(), "PSAL");
-                RawInstrumentData.deleteDataForMooringAndParameter(selectedMooring.getMooringID(), "WATER_DENSITY");
+                RawInstrumentData.deleteDataForMooringAndParameter(selectedMooring.getMooringID(), "DENSITY");
                 RawInstrumentData.deleteDataForMooringAndParameter(selectedMooring.getMooringID(), "OXSOL");
+//                RawInstrumentData.deleteDataForMooringAndParameter(selectedMooring.getMooringID(), "DEPTH");
                 
             }
         }
@@ -340,63 +344,6 @@ public class SeaWaterCalculationForm extends MemoryWindow implements DataProcess
 
     public void displayData()
     {
-        SimpleDateFormat df = new SimpleDateFormat("yyyyMMddHHmmss");
-        String $HOME = System.getProperty("user.home");
-
-        //String filename = $HOME + "/sbe37_data_" + df.format(Common.current());
-        String filename = "sw_data_" + df.format(Common.current());
-        TextFileLogger file = new TextFileLogger(filename,"csv");
-
-        try
-        {
-            String header = "Timestamp,"
-                            + " Temp,"
-                            + " Conduct,"
-                            + " Press,"
-                            + " Calc Salinity,"
-                            ;
-
-            file.open();
-
-            file.receiveLine(header);
-
-            System.out.println(header);
-
-            for(int i = 0; i < dataSet.size(); i++)
-            {
-                SeaWaterData row = dataSet.get(i);
-
-                System.out.println(
-                        row.dataTimestamp
-                        + ","
-                        + row.temperatureValue
-                        + ","
-                        + row.CNDCValue
-                        + ","
-                        + row.pressureValue
-                        + ","
-                        + row.calculatedSalinityValue
-                        );
-
-                file.receiveLine(
-                        row.dataTimestamp
-                        + ","
-                        + row.temperatureValue
-                        + ","
-                        + row.CNDCValue
-                        + ","
-                        + row.pressureValue
-                        + ","
-                        + row.calculatedSalinityValue
-                        );
-            }
-
-            file.close();
-        }
-        catch(IOException ioex)
-        {
-            logger.error(ioex);
-        }
     }
     
     private void quitButtonActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_quitButtonActionPerformed
@@ -491,7 +438,7 @@ public class SeaWaterCalculationForm extends MemoryWindow implements DataProcess
 
     public void calculateDataValues()
     {
-        logger.info("Calculate " + selectedMooring.getMooringID() + " " + sourceInstrument.toString() + " " + targetInstrument.toString());
+        logger.info("Calculate " + selectedMooring.getMooringID() + " " + sourceInstrument + " " + targetInstrument);
         
         Connection conn = null;
         Statement proc = null;
@@ -506,17 +453,17 @@ public class SeaWaterCalculationForm extends MemoryWindow implements DataProcess
             
             if (sourceInstrument != null)
             {
-                tab = "SELECT data_timestamp, source_file_id, instrument_id, depth, parameter_value AS temp INTO TEMP sw FROM raw_instrument_data WHERE parameter_code = 'TEMP' AND mooring_id = "+StringUtilities.quoteString(selectedMooring.getMooringID())+" AND instrument_id = "+ sourceInstrument.getInstrumentID()+" ORDER BY data_timestamp";
+                tab = "SELECT data_timestamp, source_file_id, instrument_id, depth, parameter_value AS pres INTO TEMP sw FROM raw_instrument_data WHERE parameter_code = 'PRES' AND mooring_id = "+StringUtilities.quoteString(selectedMooring.getMooringID())+" AND instrument_id = "+ sourceInstrument.getInstrumentID()+" ORDER BY data_timestamp";
             }
             else
             {
-                tab = "SELECT data_timestamp, source_file_id, instrument_id, depth, parameter_value AS temp INTO TEMP sw FROM raw_instrument_data WHERE parameter_code = 'TEMP' AND mooring_id = "+StringUtilities.quoteString(selectedMooring.getMooringID()) +" ORDER BY data_timestamp";
+                tab = "SELECT data_timestamp, source_file_id, instrument_id, depth, parameter_value AS pres INTO TEMP sw FROM raw_instrument_data WHERE parameter_code = 'PRES' AND mooring_id = "+StringUtilities.quoteString(selectedMooring.getMooringID()) +" ORDER BY data_timestamp";
             }
             proc.execute(tab);
             
-            tab = "ALTER TABLE sw ADD pres  numeric";
+            tab = "ALTER TABLE sw ADD temp  numeric";
             proc.execute(tab);            
-            tab = "UPDATE sw SET pres = d.parameter_value FROM raw_instrument_data d WHERE d.data_timestamp = sw.data_timestamp AND parameter_code = 'PRES' AND d.instrument_id = sw.instrument_id";                
+            tab = "UPDATE sw SET temp = d.parameter_value FROM raw_instrument_data d WHERE d.data_timestamp = sw.data_timestamp AND parameter_code = 'TEMP' AND d.instrument_id = sw.instrument_id";                
             proc.execute(tab);
 
             tab = "ALTER TABLE sw ADD cndc  numeric";
@@ -529,46 +476,177 @@ public class SeaWaterCalculationForm extends MemoryWindow implements DataProcess
             ResultSetMetaData resultsMetaData = results.getMetaData();
             int colCount        = resultsMetaData.getColumnCount();
 
-            while (results.next())
-            {
-                Vector data = new Vector();
-
-                boolean dataMissing = false;
-                for ( int numcol = 1; numcol <= colCount; numcol++ )
-                {
-                    Object o = new Object();
-                    o        = results.getObject(numcol);
-                    if ( ! results.wasNull() )
-                    {
-                        data.addElement( o );
-                    }
-                    else
-                    {
-                        data.addElement( null );
-                        dataMissing = true;
-                    }
-                }
-
-                if (!dataMissing)
-                {
-                    SeaWaterData sbe = new SeaWaterData();
-                    sbe.setData(data);
-
-                    dataSet.add(sbe);
-                }
-            }
-
-            results.close();
+            conn.setAutoCommit(false);
+            results.setFetchSize(50);
             
+            Vector data = new Vector();
+            
+            RawInstrumentData row = new RawInstrumentData();  
+            row.setLatitude(selectedMooring.getLatitudeIn());
+            row.setLongitude(selectedMooring.getLongitudeIn());
+            row.setMooringID(selectedMooring.getMooringID());
+
+            SeaWaterData sbe = new SeaWaterData();
+
+            SimpleDateFormat df = new SimpleDateFormat("yyyyMMddHHmmss");
+            String $HOME = System.getProperty("user.home");
+
+            //String filename = $HOME + "/sbe37_data_" + df.format(Common.current());
+            String filename = "sw_data_" + df.format(Common.current());
+            TextFileLogger file = new TextFileLogger(filename,"csv");
+
+            try
+            {
+                String header = "Timestamp,"
+                                + " Temp,"
+                                + " Conduct,"
+                                + " Press,"
+                                + " Calc Salinity,"
+                                ;
+
+                file.open();
+
+                file.receiveLine(header);
+
+                System.out.println(header);
+            
+//            for(int i = 0; i < dataSet.size(); i++)
+//            {
+//                SeaWaterData row = dataSet.get(i);
+//
+//            }
+//
+
+
+                boolean ok;
+                boolean dataMissing;
+                int count = 0;
+
+                int numcol;
+                Object o;
+                while (results.next())
+                {
+                    dataMissing = false;
+                    data.clear();
+                    for (numcol = 1; numcol <= colCount; numcol++)
+                    {
+                        o = results.getObject(numcol);
+                        if (!results.wasNull())
+                        {
+                            data.addElement(o);
+                        }
+                        else
+                        {
+                            data.addElement(null);
+                            dataMissing = true;
+                        }
+                    }
+                    //if (!dataMissing)
+                    {
+                        sbe.setData(data);
+
+                        row.setDataTimestamp(sbe.dataTimestamp);
+                        row.setDepth(sbe.instrumentDepth);
+                        row.setSourceFileID(sbe.sourceFileID);
+                        row.setQualityCode("RAW");
+                        if (targetInstrument != null)
+                        {
+                            row.setInstrumentID(targetInstrument.getInstrumentID());
+                        }
+                        else
+                        {
+                            row.setInstrumentID(sbe.instrument_id);
+                        }
+
+                        System.out.println(sbe.dataTimestamp + ","
+                                + sbe.temperatureValue + ","
+                                + sbe.CNDCValue + ","
+                                + sbe.pressureValue + ","
+                                + sbe.calculatedSalinityValue);
+
+                        file.receiveLine(sbe.dataTimestamp + ","
+                                + sbe.temperatureValue + ","
+                                + sbe.CNDCValue + ","
+                                + sbe.pressureValue + ","
+                                + sbe.calculatedSalinityValue);
+                                                
+                        if (sbe.calculatedSalinityValue != null)
+                        {
+                            row.setParameterCode("PSAL");
+                            row.setParameterValue(sbe.calculatedSalinityValue);
+                            row.setQualityCode("DERIVED");
+
+                            ok = row.insert();
+                            count++;
+                        }
+
+                        if (sbe.calculatedDensityValue != null)
+                        {
+                            double density = sbe.calculatedDensityValue;
+
+                            row.setParameterCode("DENSITY");
+                            row.setParameterValue(density);
+                            row.setQualityCode("DERIVED");
+
+                            ok = row.insert();
+
+                            if (sbe.calculatedOxygenSolubilityValue != null)
+                            {
+                                double oxsol = sbe.calculatedOxygenSolubilityValue; // in uM/kg
+
+                                row.setParameterCode("OXSOL");
+                                row.setParameterValue(oxsol); // in uM/kg
+                                row.setQualityCode("DERIVED");
+
+                                ok = row.insert();
+                            }
+                        }
+
+//                    if (sbe.calculatedDepth != null)
+//                    {
+//                        row.setParameterCode("DEPTH");
+//                        row.setParameterValue(sbe.calculatedDepth); // depth (m)
+//                        row.setQualityCode("DERIVED");
+//        
+//                        ok = row.insert();
+//                    }
+
+//                    dataSet.add(sbe);
+                    }
+                }
+
+                results.close();
+
+                logger.info("output rows " + count);
+                
+                String update = "UPDATE instrument_data_processors SET " 
+                                    + "processing_date = '" + Common.current() + "',"
+                                    + "count = "+ count
+                                    + " WHERE "
+                                    + "mooring_id = '" + selectedMooring.getMooringID() + "'"
+                                    + " AND class_name = '" + this.getClass().getName() + "'"
+                                    + " AND parameters = '" + paramToString()  + "'";
+
+                Statement stmt;
+                stmt = conn.createStatement();
+                stmt.executeUpdate(update);
+                logger.debug("Update processed table count " + count);
+
+                file.close();
+            }
+            catch (IOException ioex)
+            {
+                logger.error(ioex);
+            }
+        
             proc.execute("DROP TABLE sw");
             
             proc.close();
-            
-            logger.info("source rows " + dataSet.size());
-        
-            insertData();
+
+//            insertData();
                         
             conn.setAutoCommit(true);
+            
         }
         catch(SQLException sex)
         {
@@ -599,50 +677,6 @@ public class SeaWaterCalculationForm extends MemoryWindow implements DataProcess
     
     private void insertData()
     {
-        boolean ok = true;
-
-        for(int i = 0; i < dataSet.size(); i++)
-        {
-            SeaWaterData sbe = dataSet.get(i);
-            RawInstrumentData row = new RawInstrumentData();
-
-            row.setDataTimestamp(sbe.dataTimestamp);
-            row.setDepth(sbe.instrumentDepth);
-            if (targetInstrument != null)
-            {
-                row.setInstrumentID(targetInstrument.getInstrumentID());
-            }
-            else
-            {
-                row.setInstrumentID(sbe.instrument_id);
-            }
-            row.setLatitude(selectedMooring.getLatitudeIn());
-            row.setLongitude(selectedMooring.getLongitudeIn());
-            row.setMooringID(selectedMooring.getMooringID());
-            row.setSourceFileID(sbe.sourceFileID);
-            row.setQualityCode("RAW");
-
-            row.setParameterCode("PSAL");
-            row.setParameterValue(sbe.calculatedSalinityValue);
-            row.setQualityCode("DERIVED");
-
-            ok = row.insert();
-
-            double density = sbe.calculatedDensityValue;
-            double oxsol = sbe.calculatedOxygenSolubilityValue; // in mL/L
-            
-            row.setParameterCode("WATER_DENSITY");
-            row.setParameterValue(density);
-            row.setQualityCode("DERIVED");
-
-            ok = row.insert();
-
-            row.setParameterCode("OXSOL");
-            row.setParameterValue(oxsol * 44660 / density); // in uM/kg
-            row.setQualityCode("DERIVED");
-
-            ok = row.insert();
-        }
     }
     
     private class SeaWaterData
@@ -670,23 +704,36 @@ public class SeaWaterCalculationForm extends MemoryWindow implements DataProcess
             instrument_id = ((Number)row.elementAt(i++)).intValue();
             instrumentDepth = ((Number)row.elementAt(i++)).doubleValue();
 
-            temperatureValue = ((Number)row.elementAt(i++)).doubleValue();
+            Object o = row.elementAt(i++);
+            if (o != null)
+            {
+                temperatureValue = ((Number)o).doubleValue();
+            }
             pressureValue = ((Number)row.elementAt(i++)).doubleValue();
-            CNDCValue = ((Number)row.elementAt(i++)).doubleValue();
-            //
-            // CNDC is recorded in different units to what the salinity calculator requires
-            // so has to be multiplied by 10
-            //
-            calculatedSalinityValue = SalinityCalculator.calculateSalinityForITS90Temperature(temperatureValue,
-                                                                                            CNDCValue * 10,
-                                                                                            pressureValue
-                                                                                            );
-            
-            calculatedDensityValue = SeawaterParameterCalculator.calculateSeawaterDensityAtDepth(calculatedSalinityValue, temperatureValue, pressureValue);
+            o = row.elementAt(i++);
+            if (o != null)
+            {
+                CNDCValue = ((Number)o).doubleValue();
+            }
 
-            calculatedDepth = SeaWater.depth(pressureValue, -46.9);
-            
-            calculatedOxygenSolubilityValue = OxygenSolubilityCalculator.calculateOxygenSolubilityInMlPerLitre(temperatureValue, calculatedSalinityValue);
+            calculatedDepth = SeawaterParameterCalculator.depth(pressureValue, selectedMooring.getLatitudeIn());
+
+            if ((CNDCValue != null) && (temperatureValue != null))
+            {            
+                //
+                // CNDC is recorded in S/m units to what the salinity calculator requires (mmho/cm)
+                // so has to be multiplied by 10
+                //
+                calculatedSalinityValue = SalinityCalculator.calculateSalinityForITS90Temperature(temperatureValue,
+                                                                                                CNDCValue * 10,
+                                                                                                pressureValue
+                                                                                                );
+
+                calculatedDensityValue = SeawaterParameterCalculator.calculateSeawaterDensityAtPressure(calculatedSalinityValue, temperatureValue, pressureValue);
+
+
+                calculatedOxygenSolubilityValue = OxygenSolubilityCalculator.calculateOxygenSolubilityInUMolesPerKg(temperatureValue, calculatedSalinityValue);
+            }
         }
     }
     

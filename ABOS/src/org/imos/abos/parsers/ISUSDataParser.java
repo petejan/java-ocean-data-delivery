@@ -10,13 +10,17 @@
 package org.imos.abos.parsers;
 
 import java.math.BigDecimal;
+import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.text.DecimalFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.imos.abos.dbms.ArrayInstrumentData;
 import org.imos.abos.dbms.RawInstrumentData;
+import org.wiley.core.Common;
 import org.wiley.util.DateUtilities;
 
 /**
@@ -149,17 +153,22 @@ public class ISUSDataParser extends AbstractDataParser
         row.setLatitude(currentMooring.getLatitudeIn());
         row.setLongitude(currentMooring.getLongitudeIn());
         row.setMooringID(currentMooring.getMooringID());
-        row.setParameterCode("NTRI");
-        row.setParameterValue(NTR_CONC);
         row.setSourceFileID(currentFile.getDataFilePrimaryKey());
-        row.setQualityCode("RAW");
         
-        boolean ok = row.insert();
-        
-        row.setParameterCode("ISUS_REF");
-        row.setParameterValue(new Double(REF_AVGString));
-        
-        ok |= row.insert();
+        boolean ok = false;
+        if (dataLine.startsWith("SATNLF"))
+        {
+            row.setParameterCode("NTRI_RAW");
+            row.setParameterValue(NTR_CONC);
+            row.setQualityCode("RAW");
+
+            ok = row.insert();
+
+            row.setParameterCode("ISUS_REF");
+            row.setParameterValue(new Double(REF_AVGString));
+
+            ok |= row.insert();
+        }
                 
         BigDecimal spec[] = new BigDecimal[256];
         
@@ -188,8 +197,6 @@ public class ISUSDataParser extends AbstractDataParser
         array.setQualityCode("RAW");
 
         ok |= array.insert();
-        
-        //logger.debug(row.getDataTimestamp() + " " + array.getDataTimestamp());
     }
 
 }

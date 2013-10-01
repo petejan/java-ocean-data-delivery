@@ -21,6 +21,7 @@ import java.sql.*;
 import java.util.ArrayList;
 import java.util.TimeZone;
 import java.util.Vector;
+import java.util.logging.Level;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.swing.SwingUtilities;
@@ -33,6 +34,7 @@ import org.imos.abos.dbms.Instrument;
 import org.imos.abos.dbms.InstrumentCalibrationFile;
 import org.imos.abos.dbms.Mooring;
 import org.imos.abos.dbms.ProcessedInstrumentData;
+import org.imos.abos.dbms.RawInstrumentData;
 import org.imos.abos.instrument.WETLabsFLNTUSConstants;
 import org.wiley.core.Common;
 import org.wiley.core.forms.MemoryWindow;
@@ -77,7 +79,8 @@ public class WETLabsFLNTUSCalculationForm extends MemoryWindow implements DataPr
      */
     @SuppressWarnings("unchecked")
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
-    private void initComponents() {
+    private void initComponents()
+    {
 
         jPanel1 = new javax.swing.JPanel();
         mooringCombo1 = new org.imos.abos.dbms.fields.MooringCombo();
@@ -91,8 +94,10 @@ public class WETLabsFLNTUSCalculationForm extends MemoryWindow implements DataPr
         quitButton = new javax.swing.JButton();
 
         setTitle("WETLabs FLNTUS Data Processing Form");
-        addWindowListener(new java.awt.event.WindowAdapter() {
-            public void windowClosing(java.awt.event.WindowEvent evt) {
+        addWindowListener(new java.awt.event.WindowAdapter()
+        {
+            public void windowClosing(java.awt.event.WindowEvent evt)
+            {
                 formWindowClosing(evt);
             }
         });
@@ -100,8 +105,10 @@ public class WETLabsFLNTUSCalculationForm extends MemoryWindow implements DataPr
         jPanel1.setBorder(javax.swing.BorderFactory.createEtchedBorder());
 
         mooringCombo1.setOrientation(0);
-        mooringCombo1.addPropertyChangeListener(new java.beans.PropertyChangeListener() {
-            public void propertyChange(java.beans.PropertyChangeEvent evt) {
+        mooringCombo1.addPropertyChangeListener(new java.beans.PropertyChangeListener()
+        {
+            public void propertyChange(java.beans.PropertyChangeEvent evt)
+            {
                 mooringCombo1PropertyChange(evt);
             }
         });
@@ -109,22 +116,33 @@ public class WETLabsFLNTUSCalculationForm extends MemoryWindow implements DataPr
         mooringDescriptionField.setEnabled(false);
 
         calibrationFileCombo1.setLabel("Values From Calibration File");
-        calibrationFileCombo1.addPropertyChangeListener(new java.beans.PropertyChangeListener() {
-            public void propertyChange(java.beans.PropertyChangeEvent evt) {
+        calibrationFileCombo1.addPropertyChangeListener(new java.beans.PropertyChangeListener()
+        {
+            public void propertyChange(java.beans.PropertyChangeEvent evt)
+            {
                 calibrationFileCombo1PropertyChange(evt);
             }
         });
 
         sourceInstrumentCombo.setLabel("Source Instrument");
         sourceInstrumentCombo.setOrientation(0);
+        sourceInstrumentCombo.addPropertyChangeListener(new java.beans.PropertyChangeListener()
+        {
+            public void propertyChange(java.beans.PropertyChangeEvent evt)
+            {
+                sourceInstrumentComboPropertyChange(evt);
+            }
+        });
 
         targetInstrumentCombo.setLabel("Target Instrument");
         targetInstrumentCombo.setOrientation(0);
 
         deleteDataBox.setSelected(true);
         deleteDataBox.setText("Delete any existing processed data for target instrument & parameter");
-        deleteDataBox.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
+        deleteDataBox.addActionListener(new java.awt.event.ActionListener()
+        {
+            public void actionPerformed(java.awt.event.ActionEvent evt)
+            {
                 deleteDataBoxActionPerformed(evt);
             }
         });
@@ -170,16 +188,20 @@ public class WETLabsFLNTUSCalculationForm extends MemoryWindow implements DataPr
         jPanel2.setBorder(javax.swing.BorderFactory.createEtchedBorder());
 
         runButton.setText("Run");
-        runButton.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
+        runButton.addActionListener(new java.awt.event.ActionListener()
+        {
+            public void actionPerformed(java.awt.event.ActionEvent evt)
+            {
                 runButtonActionPerformed(evt);
             }
         });
         jPanel2.add(runButton);
 
         quitButton.setText("Quit");
-        quitButton.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
+        quitButton.addActionListener(new java.awt.event.ActionListener()
+        {
+            public void actionPerformed(java.awt.event.ActionEvent evt)
+            {
                 quitButtonActionPerformed(evt);
             }
         });
@@ -201,7 +223,7 @@ public class WETLabsFLNTUSCalculationForm extends MemoryWindow implements DataPr
             .add(org.jdesktop.layout.GroupLayout.TRAILING, layout.createSequentialGroup()
                 .addContainerGap()
                 .add(jPanel1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED, 5, Short.MAX_VALUE)
+                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED, 109, Short.MAX_VALUE)
                 .add(jPanel2, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                 .addContainerGap())
         );
@@ -218,7 +240,7 @@ public class WETLabsFLNTUSCalculationForm extends MemoryWindow implements DataPr
         //logger.debug(evt.getPropertyName());
         if(propertyName.equalsIgnoreCase("MOORING_SELECTED")) {
             Mooring selectedItem = (Mooring) evt.getNewValue();
-            sourceInstrumentCombo.setMooring(selectedItem);
+            sourceInstrumentCombo.setMooringParam(selectedItem, "ECO_FLNTUS_CHL_VOLT");
             targetInstrumentCombo.setMooring(selectedItem);
             calibrationFileCombo1.setMooring(selectedItem);
         }
@@ -255,8 +277,14 @@ public class WETLabsFLNTUSCalculationForm extends MemoryWindow implements DataPr
 
         if (deleteDataBox.isSelected())
         {
-            ProcessedInstrumentData.deleteDataForMooringAndInstrument(selectedMooring.getMooringID(),
-                    targetInstrument.getInstrumentID());
+            RawInstrumentData.deleteDataForMooringAndInstrumentAndParameter(selectedMooring.getMooringID(),
+                                                                                  targetInstrument.getInstrumentID(),
+                                                                                  "NTU")
+                                                                      ;
+            RawInstrumentData.deleteDataForMooringAndInstrumentAndParameter(selectedMooring.getMooringID(),
+                                                                                  targetInstrument.getInstrumentID(),
+                                                                                  "CHL")
+                                                                      ;
         }
 
         String insProc = "INSERT INTO instrument_data_processors (processors_pk, mooring_id, class_name, parameters, processing_date, display_code) VALUES ("
@@ -316,7 +344,7 @@ public class WETLabsFLNTUSCalculationForm extends MemoryWindow implements DataPr
     public void calculateDataValues()
     {
         Connection conn = null;
-        CallableStatement proc = null;
+        Statement proc = null;
         ResultSet results = null;
 
         WETLabsFLNTUSConstants constants = new WETLabsFLNTUSConstants();
@@ -327,20 +355,21 @@ public class WETLabsFLNTUSCalculationForm extends MemoryWindow implements DataPr
         try
         {
             
-            String storedProc = "{ ? = call xtract_wetlabs_flntus_selector"
-                                 + "("
-                                 + sourceInstrument.getInstrumentID()
-                                 + " , "
-                                 + StringUtilities.quoteString(selectedMooring.getMooringID())
-                                 + ") }";
-             
+            String tab;
             conn = Common.getConnection();
             conn.setAutoCommit(false);
-
-            proc = conn.prepareCall(storedProc);
-            proc.registerOutParameter(1, Types.OTHER);
-            proc.execute();
-            results = (ResultSet) proc.getObject(1);
+            proc = conn.createStatement();
+            
+            tab = "SELECT data_timestamp, source_file_id, instrument_id, depth, parameter_value AS chl INTO flntus FROM raw_instrument_data WHERE parameter_code = 'ECO_FLNTUS_CHL_VOLT' AND mooring_id = "+StringUtilities.quoteString(selectedMooring.getMooringID())+" AND instrument_id = "+ sourceInstrument.getInstrumentID()+" ORDER BY data_timestamp";                
+            proc.execute(tab);
+            tab = "ALTER TABLE flntus ADD ntu  numeric";
+            proc.execute(tab);            
+            tab = "UPDATE flntus SET ntu = d.parameter_value FROM raw_instrument_data d WHERE d.data_timestamp = flntus.data_timestamp AND parameter_code = 'ECO_FLNTUS_TURB_VOLT' AND d.instrument_id = flntus.instrument_id";                
+            proc.execute(tab);
+            
+            proc.execute("SELECT data_timestamp, source_file_id, depth, chl, ntu FROM flntus");
+            
+            results = (ResultSet) proc.getResultSet();
             ResultSetMetaData resultsMetaData = results.getMetaData();
             int colCount        = resultsMetaData.getColumnCount();
             
@@ -371,6 +400,10 @@ public class WETLabsFLNTUSCalculationForm extends MemoryWindow implements DataPr
                 dataSet.add(row);
             }
             results.close();
+
+            tab = "DROP table flntus";                
+            proc.execute(tab);
+
             proc.close();
             conn.setAutoCommit(true);
             
@@ -426,6 +459,15 @@ public class WETLabsFLNTUSCalculationForm extends MemoryWindow implements DataPr
         }
 
         insertData();
+        
+        try
+        {
+            conn.commit();
+        }
+        catch (SQLException ex)
+        {
+            logger.error(ex);
+        }
     }
 
     private void insertData()
@@ -434,7 +476,7 @@ public class WETLabsFLNTUSCalculationForm extends MemoryWindow implements DataPr
         {
             FLNTUData sbe = dataSet.get(i);
 
-            ProcessedInstrumentData row = new ProcessedInstrumentData();
+            RawInstrumentData row = new RawInstrumentData();
 
             row.setDataTimestamp(sbe.dataTimestamp);
             row.setDepth(sbe.instrumentDepth);
@@ -445,14 +487,14 @@ public class WETLabsFLNTUSCalculationForm extends MemoryWindow implements DataPr
             row.setParameterCode("TURB");
             row.setParameterValue(sbe.calculatedTurbidityValue);
             row.setSourceFileID(sbe.sourceFileID);
-            row.setQualityCode("RAW");
+            row.setQualityCode("DERIVED");
 
             boolean ok = row.insert();
 
             row.setParameterCode("CPHL");
             row.setParameterValue(sbe.calculatedChlorophyllValue);
             row.setSourceFileID(sbe.sourceFileID);
-            row.setQualityCode("RAW");
+            row.setQualityCode("DERIVED");
 
             ok = row.insert();
 
@@ -526,6 +568,14 @@ public class WETLabsFLNTUSCalculationForm extends MemoryWindow implements DataPr
     private void deleteDataBoxActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_deleteDataBoxActionPerformed
         // TODO add your handling code here:
 }//GEN-LAST:event_deleteDataBoxActionPerformed
+
+    private void sourceInstrumentComboPropertyChange(java.beans.PropertyChangeEvent evt) {//GEN-FIRST:event_sourceInstrumentComboPropertyChange
+        sourceInstrument = sourceInstrumentCombo.getSelectedInstrument();        
+        if (sourceInstrumentCombo.getSelectedItem() != null)
+        {
+            targetInstrumentCombo.setSelectedItem(sourceInstrumentCombo.getSelectedItem().toString());
+        }
+    }//GEN-LAST:event_sourceInstrumentComboPropertyChange
 
     public String paramToString()
     {

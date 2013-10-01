@@ -59,6 +59,7 @@ public class SeabirdSBE43OxygenCalculator
         //
         Double kelvinTemperature = new Double(273.15 + temperature);
         
+//        logger.debug("SBE43Calc:: temp = " + temperature + " pressure = " + pressure + " sal = " + salinity + " volt = " + voltage);
 //        logger.debug("SBE43Calc:: DO calc: SOC " + constants.Soc + " VOffset " + constants.VOffset + " A " + constants.A_Coefficient + " B " + constants.B_Coefficient + " C " + constants.C_Coefficient + " E(nom) " + constants.E_Nominal_Coefficient);
 //        logger.debug("SBE43Calc:: oxfactor " + (constants.Soc * (voltage + constants.VOffset)) + 
 //                                 " Temp Fact " + (1.0 + constants.A_Coefficient * temperature + (constants.B_Coefficient * Math.pow(temperature, 2)) + (constants.C_Coefficient * Math.pow(temperature, 3))) +
@@ -112,7 +113,10 @@ public class SeabirdSBE43OxygenCalculator
         //
         // correct for pressure, sea bird application note 64, SBE 43 Dissolved Oxygen Sensor – Background Information, Deployment Recommendations, and Cleaning and Storage
         //
-        DO2 = DO2 * (44660/SeawaterParameterCalculator.calculateSeawaterDensityAtDepth(salinity, temperature, pressure));
+        double sigma_theta = SeawaterParameterCalculator.PoTemp(salinity, temperature * 1.00024, pressure, 0);
+        
+        DO2 = DO2 * (44660/SeawaterParameterCalculator.calculateSeawaterDensityAtPressure(salinity, sigma_theta, 0.0));
+        //DO2 = DO2 * (44660/SeawaterParameterCalculator.calculateSeawaterDensityAtPressure(salinity, temperature, pressure));
 
         return DO2;
     }

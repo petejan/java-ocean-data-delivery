@@ -38,6 +38,48 @@ public class SeawaterParameterCalculator
                 + D0 * Math.pow(salinity, 2);
         return sw_dens0;
     }
+    
+    // ATG (used in potential temperature calculation)
+    // diabatic temperature gradient deg C per decibar 
+    // ref broyden,h. Deep-Sea Res.,20,401-408 
+    // s = salinity, t = temperature deg C ITPS-68, p = pressure in decibars
+    public static double ATG(double s, double t, double p)             
+    {
+        double ds;
+        ds = s - 35.0;
+        return ((((-2.1687e-16 * t + 1.8676e-14) * t - 4.6206e-13) * p + ((2.7759e-12 * t - 1.1351e-10) * ds + ((-5.4481e-14 * t + 8.733e-12) * t - 6.7795e-10) * t + 1.8741e-8)) * p + (-4.2393e-8 * t + 1.8932e-6) * ds + ((6.6228e-10 * t - 6.836e-8) * t + 8.5258e-6) * t + 3.5803e-5);
+    }// potential temperature
+    
+    /* local potential temperature at pr */
+    /* using atg procedure for adiabadic lapse rate */
+    /* Fofonoff,N.,Deep-Sea Res.,24,489-491 */
+    // s = salinity, t0 = local temperature deg C ITPS-68, p0 = local pressure in decibars, pr = reference pressure in decibars
+    public static double PoTemp(double s, double t0, double p0, double pr)
+    {
+        double p, t, h, xk, q, temp;
+        p = p0;
+        t = t0;
+        h = pr - p;
+        xk = h * ATG(s, t, p);
+        t += 0.5 * xk;
+        q = xk;
+        p += 0.5 * h;
+        xk = h * ATG(s, t, p);
+        t += 0.29289322 * (xk - q);
+        q = 0.58578644 * xk + 0.121320344 * q;
+        xk = h * ATG(s, t, p);
+        t += 1.707106781 * (xk - q);
+        q = 3.414213562 * xk - 4.121320344 * q;
+        p += 0.5 * h;
+        xk = h * ATG(s, t, p);
+        temp = t + (xk - 2.0 * q) / 6.0;
+        return (temp);
+    }
+    
+    public static double PoTemp90(double s, double t0, double p0, double pr)
+    {
+        return PoTemp(s, t0, p0, pr) / 1.00024;
+    }
 
     private static double sw_smow(double temp)
     {
@@ -96,7 +138,7 @@ public class SeawaterParameterCalculator
      * @param pressure
      * @return
      */
-    public static Double calculateSeawaterDensityAtDepth(Double salinity, Double temperature, Double pressure)
+    public static Double calculateSeawaterDensityAtPressure(Double salinity, Double temperature, Double pressure)
     {
         /*
          % SW_DENS    Density of sea water
@@ -329,12 +371,25 @@ public class SeawaterParameterCalculator
 
         double d0 = 4.8314e-4;
 
-        double dens = sw_smow(temperature)
+        double dens = sw_smow(T68)
                         + (b0
                         + (b1 + (b2 + (b3 + b4*T68)*T68)*T68)*T68)*salinity
                         + (c0 + (c1 + c2*T68)*T68)*salinity*Math.sqrt(salinity) + d0*Math.pow(salinity, 2);
 
         return dens;
+    }
+    
+    public static Double depth(Double pressure, Double latutude)
+    {
+        double x = Math.sin(Math.toRadians(latutude));
+        
+        x = x * x;
+        
+        double gr = 9.780318 * (1.0 + (5.2788e-3 + 2.36e-5 * x) * x) + 1.092e-6 * pressure;
+        
+        double depth = (((-1.82e-15 * pressure + 2.279e-10) * pressure - 2.2512e-5) * pressure + 9.72659) * pressure;
+        
+        return depth / gr;                
     }
 
 }

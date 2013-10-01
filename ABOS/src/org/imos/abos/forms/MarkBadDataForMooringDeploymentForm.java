@@ -229,28 +229,23 @@ public class MarkBadDataForMooringDeploymentForm extends MemoryWindow implements
     public void calculateDataValues()
     {
         // get the target instrument parameter to select the time stamps on
-        String SQL = "SELECT timestamp_in, timestamp_out FROM mooring WHERE mooring_id = "
-                        + StringUtilities.quoteString(selectedMooring.getMooringID());
         Connection conn = Common.getConnection();
         Statement proc;
+        String SQL;
         try
         {
             proc = conn.createStatement();
-            proc.execute(SQL);  
-            ResultSet results = (ResultSet) proc.getResultSet();
-            results.next();
-            Timestamp in = results.getTimestamp(1);
-            Timestamp out = results.getTimestamp(2);
-            results.close();
             
-            SQL = "UPDATE processed_instrument_data SET quality_code = 'BAD' WHERE mooring_id = " + StringUtilities.quoteString(selectedMooring.getMooringID()) +
-                    " AND (data_timestamp < '" + in + "' OR data_timestamp > '" + out + "')";
+            SQL = "UPDATE processed_instrument_data AS p SET quality_code = 'BAD' FROM mooring WHERE p.mooring_id = " + StringUtilities.quoteString(selectedMooring.getMooringID()) +
+                    " AND p.mooring_id = mooring.mooring_id " +
+                    " AND (data_timestamp < timestamp_in OR data_timestamp > timestamp_out)";
             
             logger.info("SQL : " + SQL);
             
-            proc.executeUpdate(SQL);
+            int t = proc.executeUpdate(SQL);
+//            conn.commit();
             
-            logger.info("Update Size " + proc.getFetchSize());
+            logger.info("Update " + t);
         }
         catch (SQLException ex)
         {

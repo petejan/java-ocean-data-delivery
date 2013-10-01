@@ -420,7 +420,7 @@ public class SeabirdSBE37CalculationForm  extends MemoryWindow implements DataPr
             double density = sbe.calculatedDensityValue;
             double oxsol = sbe.calculatedOxygenSolubilityValue;
             
-            row.setParameterCode("WATER_DENSITY");
+            row.setParameterCode("DENSITY");
             row.setParameterValue(density);
             row.setQualityCode("DERIVED");
 
@@ -625,7 +625,7 @@ public class SeabirdSBE37CalculationForm  extends MemoryWindow implements DataPr
                                                                                             CNDCValue * 10,
                                                                                             pressureValue
                                                                                             );
-            calculatedDensityValue = SeawaterParameterCalculator.calculateSeawaterDensityAtDepth(calculatedSalinityValue, temperatureValue, pressureValue);
+            calculatedDensityValue = SeawaterParameterCalculator.calculateSeawaterDensityAtPressure(calculatedSalinityValue, temperatureValue, pressureValue);
 
             calculatedOxygenSolubilityValue = OxygenSolubilityCalculator.calculateOxygenSolubilityInMlPerLitre(temperatureValue, calculatedSalinityValue);
 

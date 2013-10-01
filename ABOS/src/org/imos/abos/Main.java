@@ -85,6 +85,7 @@ public class Main
             Common.closeConnection();
             Common.build(home + "/ABOS/ABOS.properties");
         }
+        System.out.println("Common.getDBMSUser " + Common.getDBMSUser());
 
         TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
         
