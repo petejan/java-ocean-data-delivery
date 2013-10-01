@@ -1,3 +1,4 @@
+COPY instrument_calibration_values (instrument_id, mooring_id, datafile_pk, param_code, description, data_type, data_value) FROM stdin;
 727	Pulse-8-2011        	100234	EQUATION1                               	Uchita	STRING    	Oxy = ((C4 + C5.T)/(C6 + C7.BPhase))/(C1 + C2.T + C3.T^2)                                                               
 727	Pulse-8-2011        	100234	EQUATION2                               	Uchita	STRING    	O2C = OXY * exp(PSAL*(B0 + B1.T + B2.T^2 + B3.T^3)+C0.S^2 ... Gordon Garcia 1992                                        
 727	Pulse-8-2011        	100234	EQUATION3                               	Uchita	STRING    	O2C = OXY * (1 + (0.032 * depth)/1000)) ... Aanderaa Optode Manual TD218, 2007                                          
@@ -11,3 +12,4 @@
 727	Pulse-8-2011        	100234	UCHIDA_C7                               	C7	NUMBER    	4.0355                                                                                                                  
 727	Pulse-8-2011        	100234	UCHIDA_C8                               	C8	NUMBER    	0.033285                                                                                                                
 727	Pulse-8-2011        	100234	UCHIDA_C9                               	C9	NUMBER    	-0.00042391                                                                                                             
+\.
