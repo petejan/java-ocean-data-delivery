@@ -17,6 +17,8 @@ package org.imos.abos.forms;
 
 import java.awt.Color;
 import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Timestamp;
@@ -24,6 +26,7 @@ import java.util.ArrayList;
 import java.util.StringTokenizer;
 import java.util.TimeZone;
 import java.util.Vector;
+import java.util.logging.Level;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.swing.SwingUtilities;
@@ -52,11 +55,7 @@ public class InterpolatedProcessedDataCreationForm extends MemoryWindow implemen
     protected static SQLWrapper query = new SQLWrapper();        
 
     private Mooring selectedMooring = null;
-    private Instrument sourceInstrument = null;
-    private Instrument targetInstrument = null;
-
-    private ParameterCodes sourceParameter = null;
-    private ParameterCodes targetParameter = null;
+    final static long outputPeriod = 60 * 60 * 1000; // 1 hour in msec
 
     /** Creates new form ProcessedDataCreationForm */
     public InterpolatedProcessedDataCreationForm()
@@ -250,33 +249,185 @@ public class InterpolatedProcessedDataCreationForm extends MemoryWindow implemen
         worker.start();
     }//GEN-LAST:event_runButtonActionPerformed
 
+    private int interpolate(ParamsToProcess p, ResultSet results) throws SQLException
+    {
+        int count = 0;
+        
+        double[] x = null;
+        double[] y = null;
+        UnivariateInterpolator interpolator = new LinearInterpolator();
+        UnivariateFunction function = null;
+
+        int s = (int) ((p.start.getTime()) / (outputPeriod));
+        int e = (int) ((p.end.getTime()) / (outputPeriod));
+        count = e - s;
+
+        x = new double[(int) p.count];
+        y = new double[(int) p.count];
+
+        ProcessedInstrumentData pid = new ProcessedInstrumentData();
+
+        int i = 0;
+
+        Timestamp ts;
+        Integer sf = null;
+        Double d = null;
+        Double lat = null;
+        Double lon = null;
+        Double value = null;
+        String q = null;
+
+        while (results.next())
+        {
+            ts = results.getTimestamp(1);
+            sf = results.getInt(2);
+            d = results.getDouble(3);
+            lat = results.getDouble(4);
+            lon = results.getDouble(5);
+            value = results.getDouble(6);
+            q = results.getString(7);
+            
+            x[i] = ts.getTime();
+            y[i] = value;
+            i++;
+        }
+
+        function = interpolator.interpolate(x, y);
+
+        count = i;
+        pid.setDepth(d);
+        pid.setInstrumentID(p.instrument_id);
+        pid.setLatitude(lat);
+        pid.setLongitude(lon);
+        pid.setMooringID(selectedMooring.getMooringID());
+        pid.setParameterCode(p.param);
+        pid.setSourceFileID(sf);
+        pid.setQualityCode(q);
+        double t;
+        i = 0;
+        for (t = s + 1; t < e; t++)
+        {
+            pid.setDataTimestamp(new Timestamp((long) t * outputPeriod));
+            pid.setParameterValue(function.value(t * outputPeriod) * p.coeffs[1] + p.coeffs[0]);
+            i++;
+            //System.out.println(pid.getDataTimestamp() + " ," + pid.getParameterValue());
+
+            boolean ok = pid.insert();
+        }
+        
+        return count;
+    }
+
+    private int decimate(ParamsToProcess p, ResultSet results) throws SQLException
+    {
+        int count = 0;
+        int t;
+        
+        int s = (int)((p.start.getTime())/(outputPeriod));
+        int e = (int)((p.end.getTime())/(outputPeriod));
+        count = e - s;
+
+        ProcessedInstrumentData pid = new ProcessedInstrumentData();
+
+        Timestamp ts;
+        Integer sf = null;
+        Double d = null;
+        Double lat = null;
+        Double lon = null;
+        Double value = null;
+        String q = null;
+
+        t = s + 1;
+        while (results.next())
+        {
+            ts = results.getTimestamp(1);
+            sf = results.getInt(2);
+            d = results.getDouble(3);
+            lat = results.getDouble(4);
+            lon = results.getDouble(5);
+            value = results.getDouble(6);
+            q = results.getString(7);
+            //System.out.println(ts + " ," + value + " ," + q);
+            if (Math.abs((ts.getTime() - (t*outputPeriod))) <= (p.sampleInterval * 1000))
+            {
+                pid.setDepth(d);
+                pid.setInstrumentID(p.instrument_id);
+                pid.setLatitude(lat);
+                pid.setLongitude(lon);
+                pid.setMooringID(selectedMooring.getMooringID());
+                pid.setParameterCode(p.param);
+                pid.setSourceFileID(sf);
+                pid.setQualityCode(q);
+                pid.setDataTimestamp(new Timestamp((long)t * outputPeriod));
+                pid.setParameterValue(value * p.coeffs[1] + p.coeffs[0]);
+                //System.out.println(pid.getDataTimestamp() + " ," + pid.getParameterValue());
+
+                boolean ok = pid.insert();  
+
+                t++;
+            }
+        }
+        
+        return count;
+    }
+
     public class ParamsToProcess
     {
         String param;
         double depth;
         int instrument_id;
+        long count;
         double[] coeffs = {0.0, 1.0};
+        Timestamp start;
+        Timestamp end;
+        int sampleTime;
+        int sampleInterval;
         
-        ParamsToProcess(String p, double d, int i)
+        ParamsToProcess(Vector row)
         {
-            param = p;
-            depth = d;
-            instrument_id = i;
+            depth = ((Number)(row.get(0))).doubleValue();
+            param = ((String)(row.get(1))).trim();
+            instrument_id = (Integer)(row.get(2));
+            count = (Long)(row.get(3));
+            start = (Timestamp)(row.get(4));
+            end = (Timestamp)(row.get(5));            
         }
         
         public String toString()
         {
-            return "instrument=" + instrument_id + ", param=" + param + ", depth=" + depth;
+            return "instrument=" + instrument_id + ", param=" + param + ", depth=" + depth + ", count=" + count;
+        }
+        
+        public void addCalCoef(int i, double d)
+        {
+            coeffs[i] = d;
+        }
+        
+        public void addSampleInterval(int i)
+        {
+            sampleInterval = i;
+        }
+        public void addSampleTime(int i)
+        {
+            sampleTime = i;
         }
     }
 
     public void calculateDataValues()
     {
-        String SQL = "SELECT DISTINCT ON (depth, parameter_code, instrument_id) depth, parameter_code, instrument_id " + 
+        // get a list of paramters and information to work with
+        // TODO: NTRI has issues because we have many samples per hour (40 sec burst), need to make a NTRI averaged product
+        
+        String SQL = "SELECT depth, parameter_code, instrument_id, count(*), min(data_timestamp), max(data_timestamp) " + 
                         "FROM raw_instrument_data " + 
                         "WHERE mooring_id = " + StringUtilities.quoteString(selectedMooring.getMooringID()) + " " +
-                        " AND parameter_code in ('TEMP', 'PSAL', 'OXSOL', 'DENSITY', 'DOX2', 'PRES', 'DISSOLVED_AIR_PRESSURE', 'PAR', 'NTU', 'NTRI', 'CAPH') " +
+                        " AND parameter_code in ('TEMP', 'CNDC', 'PSAL', 'DENSITY', 'OXSOL', 'SBE43_OXY_VOLTAGE', 'OPTODE_BPHASE', 'OPTODE_TEMP', 'DOX2', 'PRES', 'DISSOLVED_AIR_PRESSURE', 'GTD_TEMPERATURE', 'PAR', 'NTU', 'CAPH', 'NTRI', 'CPHL', 'TURB') " +
+                        " AND quality_code != 'BAD'" +
+                        " AND quality_code != 'INTERPOLATED'" +                
+                        " GROUP BY depth, parameter_code, instrument_id " +
                         "ORDER BY depth, parameter_code";
+        
+        System.out.println(SQL);
         
         query.setConnection(Common.getConnection());
         query.executeQuery(SQL);
@@ -288,30 +439,39 @@ public class InterpolatedProcessedDataCreationForm extends MemoryWindow implemen
             for (int i = 0; i < attributeSet.size(); i++)
             {
                 Vector row = (Vector) attributeSet.get(i);
-                double depth = ((Number)(row.get(0))).doubleValue();
-                String param = ((String)(row.get(1))).trim();
-                Integer instrument = (Integer)(row.get(2));
 
-                params.add(new ParamsToProcess(param, depth, instrument));
+                ParamsToProcess p = new ParamsToProcess(row);
+                params.add(p);
                 
-                logger.debug("Param " + param + " depth " + depth + " instrument " + instrument);
+                logger.debug("Param " + p);
             }
         }
-        
+        try
+        {
+            Common.getConnection().setAutoCommit(false);
+        }
+        catch (SQLException ex)
+        {
+            logger.debug(ex);
+        }
+        // Iterate over each parameter to process
         int count = 0;
+        int totalCount = 0;
         for (ParamsToProcess p : params)
         {        
             logger.info("----");
             logger.info("Processing " + p);
-            ArrayList<InstrumentCalibrationValue> calValues = InstrumentCalibrationValue.selectByInstrument((p.instrument_id));
+            // ArrayList<InstrumentCalibrationValue> calValues = InstrumentCalibrationValue.selectByInstrumentAndMooring(p.instrument_id, selectedMooring.getMooringID());
+            ArrayList<InstrumentCalibrationValue> calValues = InstrumentCalibrationValue.selectByInstrument(p.instrument_id);
             
+            // get any calibration values that should be applied to this paramter
             if(calValues != null && calValues.size() > 0)
             {
                 for(int i = 0; i < calValues.size(); i++)
                 {
                     if (calValues.get(i).getParameterCode().trim().compareTo(p.param.trim()) == 0)
                     {
-                        logger.info("Parameter Has Calibration " + calValues.get(i).getParameterValue());
+                        logger.info("Parameter has Calibration " + calValues.get(i).getParameterValue());
                         
                         StringTokenizer st = new StringTokenizer(calValues.get(i).getParameterValue(), ",");
 
@@ -322,8 +482,8 @@ public class InterpolatedProcessedDataCreationForm extends MemoryWindow implemen
                             try
                             {
                                 Double d = new Double(s);
-                                p.coeffs[j] = d;
-                                //System.out.println("calculateDataValues::calibration:parseData: " + j + " input " + s + " " + p.coeffs[j]);
+                                p.addCalCoef(j, d);
+                                System.out.println("calculateDataValues::calibration:parseData: " + j + " input " + s + " " + p.coeffs[j]);
                                 j++;
                             }
                             catch(NumberFormatException nex)
@@ -336,129 +496,110 @@ public class InterpolatedProcessedDataCreationForm extends MemoryWindow implemen
                 }
             }
                         
-            ArrayList<RawInstrumentData> selectionSet = RawInstrumentData.selectInstrumentAndMooringAndParameter
-                                                        (
-                                                          p.instrument_id,
-                                                          selectedMooring.getMooringID(),
-                                                          p.param
-                                                        );
+            // get the data sampling time and sample interval
+            
+            SQL = "SELECT avg(date_part('epoch', data_timestamp)::integer % (24*3600)) " + 
+                            "FROM raw_instrument_data JOIN mooring USING (mooring_id) " + 
+                            "WHERE mooring_id = " + StringUtilities.quoteString(selectedMooring.getMooringID()) + " " +
+                            " AND parameter_code = " + StringUtilities.quoteString(p.param) + " " +
+                            " AND instrument_id = " + p.instrument_id +
+//                            " AND depth = " + p.depth +
+                            " AND quality_code != 'BAD'" +
+                            " AND data_timestamp BETWEEN timestamp_in AND timestamp_out "+
+                            " GROUP BY date_part('epoch', data_timestamp)::integer % (24*3600)/20 " +
+                            " HAVING count(*) > 10 " +
+                            "ORDER BY 1";
 
-            if(selectionSet != null && selectionSet.size() > 0)
+            System.out.println(SQL);
+
+            query.setConnection(Common.getConnection());
+            query.executeQuery(SQL);
+            attributeSet = query.getData();
+
+            if (attributeSet != null && attributeSet.size() > 2)
             {
-                RawInstrumentData row = selectionSet.get(0);
+                Vector row = (Vector) attributeSet.get(0);
+                int sampleTime = ((Number)(row.get(0))).intValue(); 
+                p.addSampleTime(sampleTime);
+                row = (Vector)attributeSet.get(1);
+                p.addSampleInterval(((Number)(row.get(0))).intValue() - sampleTime);
+            }
+            else
+            {
+                logger.info("Samples less than every 24 hours, not processing parameter " + p);
+                continue;
+            }
+            
+            
+            logger.info("Data Points     : " + p.count);
+            logger.info("Start Time      : " + p.start + " end " + p.end);
+            logger.info("Sample Time     : " + p.sampleTime);
+            logger.info("Sample Interval : " + p.sampleInterval);            
 
-                Timestamp start = row.getDataTimestamp();
-                Timestamp end = selectionSet.get(selectionSet.size()-1).getDataTimestamp();
+            Connection conn = null;
+            Statement proc = null;
+            ResultSet results = null;
 
-                logger.info("Data points selected " + selectionSet.size());
-                long s = start.getTime() / (60 * 60 * 1000); // truncate first sample hour
-                s = (s + 1) * (60 * 60 * 1000); // start on the hour after the first sample
-                logger.info("Start Time " + new Timestamp(s) + " End Time " + end);
-                long points = (end.getTime() - s)/(60 * 60 * 1000);
-                double inputSamplesPerOutputSamples = (double)selectionSet.size() / points;
-                double timeOffset = ((double)selectionSet.get(selectionSet.size()/2).getDataTimestamp().getTime() % (60 * 60 * 1000));
-                for(int i=(int)((selectionSet.size()/2)- inputSamplesPerOutputSamples); i<(int)((selectionSet.size()/2)+ inputSamplesPerOutputSamples);i++)
-                {
-                    timeOffset = Math.min(timeOffset, ((double)selectionSet.get(i).getDataTimestamp().getTime() % (60 * 60 * 1000)));
-                    //logger.debug("timeOffset " + i + " " + selectionSet.get(i).getDataTimestamp() + " " + timeOffset);
-                }
-                logger.info("Output Samples " + points + " inputSamples/OutputSamples " + inputSamplesPerOutputSamples + " Time offset " + timeOffset/1000 + " sec");
-                ProcessedInstrumentData pid = new ProcessedInstrumentData();
+            // now finally select the data
+            try
+            {
+                String tab;
+                conn = Common.getConnection();
+                proc = conn.createStatement();
+
+                tab = "SELECT data_timestamp, source_file_id, depth, latitude, longitude, parameter_value, quality_code FROM raw_instrument_data " +
+                        " WHERE mooring_id = " + StringUtilities.quoteString(selectedMooring.getMooringID()) + " " +
+                                " AND parameter_code = " + StringUtilities.quoteString(p.param) + " " +
+                                " AND instrument_id = " + p.instrument_id +
+//                                " AND depth = " + p.depth +                    
+                                " AND quality_code != 'BAD'" +
+                        " ORDER BY data_timestamp";
+
+                System.out.println(tab);
                 
-                if (inputSamplesPerOutputSamples < 60)
+                proc.execute(tab);
+                results = (ResultSet) proc.getResultSet();
+
+                conn.setAutoCommit(false);
+                results.setFetchSize(50);
+                
+                count = 0;
+                if (p.sampleInterval > 10 * 60)
                 {
-                    double x[] = new double[selectionSet.size()];
-                    double y[] = new double[selectionSet.size()];
-
-                    for(int i = 0; i < selectionSet.size(); i++)
-                    {
-                        RawInstrumentData t = selectionSet.get(i);
-                        x[i] = t.getDataTimestamp().getTime();
-                        y[i] = t.getParameterValue();
-                    }            
-
-                    UnivariateInterpolator interpolator = new LinearInterpolator();
-                    UnivariateFunction function = interpolator.interpolate(x, y);
-
-                    int i=0;
-                    for(long t = s; t < end.getTime(); t += (60 * 60 * 1000))
-                    {
-                        RawInstrumentData d = selectionSet.get(i);
-                        while (d.getDataTimestamp().getTime() < t)
-                        {
-                            d = selectionSet.get(++i);
-                        }
-
-                        pid.setDataTimestamp(new Timestamp(t));
-                        pid.setDepth(row.getDepth());
-                        pid.setInstrumentID(p.instrument_id);
-                        pid.setLatitude(row.getLatitude());
-                        pid.setLongitude(row.getLongitude());
-                        pid.setMooringID(row.getMooringID());
-                        pid.setParameterCode(p.param);
-                        pid.setParameterValue(function.value((double)t) * p.coeffs[1] + p.coeffs[0]);
-                        pid.setSourceFileID(row.getSourceFileID());
-                        pid.setQualityCode(d.getQualityCode());
-
-                        boolean ok = pid.insert();  
-                        if (ok)
-                        {
-                            count++;
-                        }
-                    }
+                    count = interpolate(p, results);
+                    logger.info("interpolate count " + count);
                 }
                 else
                 {
-                    int i=0;
-                    for(long t = s; t < end.getTime(); t += (60 * 60 * 1000))
-                    {
-                        RawInstrumentData d = selectionSet.get(i);
-                        while (d.getDataTimestamp().getTime() < t)
-                        {
-                            d = selectionSet.get(++i);
-                        }
-                        //logger.debug("Using " + d.getDataTimestamp() + " for " + new Timestamp(t));
-                        
-                        pid = new ProcessedInstrumentData();
-
-                        pid.setDataTimestamp(new Timestamp(t));
-                        pid.setDepth(row.getDepth());
-                        pid.setInstrumentID(p.instrument_id);
-                        pid.setLatitude(row.getLatitude());
-                        pid.setLongitude(row.getLongitude());
-                        pid.setMooringID(row.getMooringID());
-                        pid.setParameterCode(p.param);
-                        pid.setParameterValue(d.getParameterValue() * p.coeffs[1] + p.coeffs[0]);
-                        pid.setSourceFileID(row.getSourceFileID());
-                        pid.setQualityCode(d.getQualityCode());
-
-                        boolean ok = pid.insert();  
-                        if (ok)
-                        {
-                            count++;
-                        }
-                    }
-                    
+                    count = decimate(p, results);
+                    logger.info("decimate count " + count);
                 }
+                totalCount += count;
+                
+                // conn.commit();
             }
-        }
+            catch(SQLException sex)
+            {
+                logger.error(sex);
+            }
+        }                    
         
         String update = "UPDATE instrument_data_processors SET " 
                             + "processing_date = '" + Common.current() + "',"
-                            + "count = "+ count
+                            + "count = "+ totalCount
                             + " WHERE "
                             + "mooring_id = '" + selectedMooring.getMooringID() + "'"
                             + " AND class_name = '" + this.getClass().getName() + "'"
                             + " AND parameters = '" + paramToString()  + "'";
 
         Connection conn = Common.getConnection();
-
+        
         Statement stmt;
         try
         {
             stmt = conn.createStatement();
             stmt.executeUpdate(update);
-            logger.debug("Update processed table count " + count);
+            logger.debug("Update processed table count " + totalCount);
         }
         catch (SQLException ex)
         {
@@ -561,35 +702,7 @@ public class InterpolatedProcessedDataCreationForm extends MemoryWindow implemen
         mat.find();
         
         String mooringId = mat.group(2);
-        
-        mat = Pattern.compile("(?:SRC_INST= *)(([^,]*))").matcher(s);
-        mat.find();
-        
-        int srcInstrumentId = Integer.parseInt(mat.group(2));
-        
-        mat = Pattern.compile("(?:TGT_INST= *)(([^,]*))").matcher(s);
-        mat.find();
-                
-        int tgtInstrumentId = Integer.parseInt(mat.group(2));
-        
-        selectedMooring = Mooring.selectByMooringID(mooringId);
-        
-        sourceInstrument = Instrument.selectByInstrumentID(srcInstrumentId);
-        targetInstrument = Instrument.selectByInstrumentID(tgtInstrumentId);
-        
-        mat = Pattern.compile("(?:SRC_PARAM= *)(([^,]*))").matcher(s);
-        mat.find();
-        
-        String srcParam = mat.group(2);
-        
-        sourceParameter = ParameterCodes.selectByID(srcParam);
-        
-        mat = Pattern.compile("(?:TGT_PARAM= *)(([^,]*))").matcher(s);
-        mat.find();
-        
-        String tgtParam = mat.group(2);
-        
-        targetParameter = ParameterCodes.selectByID(tgtParam);
+        selectedMooring = selectedMooring = Mooring.selectByMooringID(mooringId);
         
         return true;
     }

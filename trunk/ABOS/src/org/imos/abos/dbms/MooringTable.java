@@ -395,7 +395,9 @@ public class MooringTable extends EditableBaseTable
             return;
         }
 
-        String SQL = "select instrument_id, depth, parameter_code, avg(parameter_value), max(parameter_value), min(parameter_value), count(*), min(data_timestamp) AS first, max(data_timestamp) AS last, to_char(age(max(data_timestamp), min(data_timestamp)), 'DDD \"days\" HH24 \"hours\"') AS duration"
+        // TODO: fix underlying code so we don't have to cast to float
+        
+        String SQL = "select instrument_id, depth, parameter_code, avg(parameter_value)::float, max(parameter_value)::float, min(parameter_value)::float, count(*), min(data_timestamp) AS first, max(data_timestamp) AS last, to_char(age(max(data_timestamp), min(data_timestamp)), 'DDD \"days\" HH24 \"hours\"') AS duration"
                     + " from raw_instrument_data"
                     + " where mooring_id = "
                     + StringUtilities.quoteString(selectedRow.getMooringID())
@@ -434,9 +436,9 @@ public class MooringTable extends EditableBaseTable
         String SQL = " select pid.instrument_id, "
                     + " ins.make || '/' || ins.model as Make,"
                     + " depth, parameter_code,"
-                    + " avg(parameter_value)as avg_value,"
-                    + " max(parameter_value) as max_value,"
-                    + " min(parameter_value) as min_value,"
+                    + " avg(parameter_value)::float as avg_value,"
+                    + " max(parameter_value)::float as max_value,"
+                    + " min(parameter_value)::float as min_value,"
                     + " count(*) as total_count, min(data_timestamp) AS first, max(data_timestamp) AS last, to_char(age(max(data_timestamp), min(data_timestamp)), 'DDD \"days\" HH24 \"hours\"') AS duration\n"
                     + " from processed_instrument_data pid, instrument ins\n"
                     + " where mooring_id = "

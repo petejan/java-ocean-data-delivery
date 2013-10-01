@@ -7,6 +7,8 @@ package org.imos.abos.plot;
 import java.awt.BorderLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
@@ -224,6 +226,16 @@ public class JDBCplot extends JfreeChartDemo
                 
                 demo.createChartPanel();
                 demo.createAndShowGUI();
+                demo.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
+                demo.addWindowListener(new WindowAdapter() 
+                {
+                    public void windowClosing(WindowEvent e) 
+                    {
+                        System.out.println("WindowClosing");
+                    }
+
+                });
+                
             }
         });
         
@@ -243,8 +255,6 @@ public class JDBCplot extends JfreeChartDemo
     {
         //Create and set up the window.
         JFrame frame = new JFrame("Extract Plot");
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
- 
         //Create and set up the content pane.
         JComponent newContentPane = createSelectPanel();
         newContentPane.setOpaque(true); //content panes must be opaque
@@ -253,6 +263,7 @@ public class JDBCplot extends JfreeChartDemo
         frame.pack();
         frame.setLocationRelativeTo(null);
         frame.setVisible(true);
+        frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
     }
     
     public class DepthParam
@@ -387,8 +398,7 @@ public class JDBCplot extends JfreeChartDemo
             
             pl.createChartPanel();                       
             
-            pl.createPDF(m + "-" + p + ".pdf");
-            
+            pl.createPDF(m + "-" + p + ".pdf");            
         }
     }
     

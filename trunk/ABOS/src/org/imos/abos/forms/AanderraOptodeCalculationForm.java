@@ -421,7 +421,7 @@ public class AanderraOptodeCalculationForm extends MemoryWindow implements DataP
 
             tab = "ALTER TABLE aanderra ADD density  numeric";
             proc.execute(tab);
-            tab = "UPDATE aanderra SET density = d.parameter_value FROM raw_instrument_data d WHERE d.data_timestamp = aanderra.data_timestamp AND d.depth = aanderra.depth AND parameter_code = 'WATER_DENSITY'";
+            tab = "UPDATE aanderra SET density = d.parameter_value FROM raw_instrument_data d WHERE d.data_timestamp = aanderra.data_timestamp AND d.depth = aanderra.depth AND parameter_code = 'DENSITY'";
             proc.execute(tab);
 
             proc.execute("SELECT out_timestamp, data_timestamp, source_file_id, depth, optode_temp, optode_bphase, TEMPerature, pressure, psal, density FROM aanderra");
@@ -429,10 +429,12 @@ public class AanderraOptodeCalculationForm extends MemoryWindow implements DataP
             ResultSetMetaData resultsMetaData = results.getMetaData();
             int colCount        = resultsMetaData.getColumnCount();
 
+            boolean nullData;
             while (results.next())
             {
                 Vector data = new Vector();
 
+                nullData = false;
                 for ( int numcol = 1; numcol <= colCount; numcol++ )
                 {
                     Object o = new Object();
@@ -444,13 +446,17 @@ public class AanderraOptodeCalculationForm extends MemoryWindow implements DataP
                     else
                     {
                         data.addElement( null );
+                        nullData = true;
                     }
                 }
 
-                optodeData row = new optodeData();
-                row.setData(data);
+                if (!nullData)
+                {
+                    optodeData row = new optodeData();
+                    row.setData(data);
 
-                dataSet.add(row);
+                    dataSet.add(row);
+                }
             }
 
             proc.execute("DROP Table aanderra");
@@ -538,7 +544,7 @@ public class AanderraOptodeCalculationForm extends MemoryWindow implements DataP
             //
             // finally use Aanderra supplied algorithm to convert DPhase value to dissolved oxygen
             //
-            row.calculatedDissolvedOxygenPerKg = AanderraOptodeOxygenCalculator.calculateDissolvedOxygenInUMolesPerKg(
+            row.calculatedDissolvedOxygenPerKg = AanderraOptodeOxygenCalculator.AanderaaCalculateDissolvedOxygenInUMolesPerKg(
                                                                                             row.optodeTemperatureValue,
                                                                                             row.optodeDPhaseValue,
                                                                                             row.psal,

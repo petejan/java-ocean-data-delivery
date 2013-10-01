@@ -154,10 +154,10 @@ public class RBRDR1050Parser extends AbstractDataParser
 
             boolean ok = row.insert();
 
-            row.setParameterCode("DEPTH");
-            row.setParameterValue(depth);
-            
-            ok = row.insert();
+//            row.setParameterCode("DEPTH");
+//            row.setParameterValue(depth);
+//            
+//            ok = row.insert();
         }
         catch (NoSuchElementException nse)
         {

@@ -152,7 +152,7 @@ public class SeabirdSBE37ODOParser extends AbstractDataParser
                                                                                                 CNDC * 10,
                                                                                                 pressure
                                                                                                 );
-                double calculatedSeawaterDensity = SeawaterParameterCalculator.calculateSeawaterDensityAtDepth(calculatedSalinityValue,
+                double calculatedSeawaterDensity = SeawaterParameterCalculator.calculateSeawaterDensityAtPressure(calculatedSalinityValue,
                                                                                                         waterTemp,
                                                                                                         pressure);
 

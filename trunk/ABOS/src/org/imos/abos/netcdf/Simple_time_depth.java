@@ -27,6 +27,9 @@ import ucar.ma2.InvalidRangeException;
 import java.util.ArrayList;
 import java.util.List;
 import java.io.IOException;
+import ucar.ma2.ArrayString;
+import ucar.ma2.Index;
+import ucar.ma2.Index1D;
 
 public class Simple_time_depth
 {
@@ -59,6 +62,21 @@ public class Simple_time_depth
             Variable vDEPTH = dataFile.addVariable(null, "DEPTH", DataType.FLOAT, dimTIME);
 
             Variable vTemp = dataFile.addVariable(null, "temperature", DataType.FLOAT, dims);
+//            int[] snDim = {3};
+//            ArrayString aSerialNumbers = new ArrayString(snDim);
+//            Index idx1 = new Index1D(snDim);
+//            idx1.set(0);
+//            aSerialNumbers.set(idx1, "1234");
+//            idx1.incr();
+//            aSerialNumbers.set(idx1, "8967");
+//            idx1.incr();
+//            aSerialNumbers.set(idx1, "ABSC");
+            ArrayList aSerialNumbers = new ArrayList();
+            aSerialNumbers.add("1234; ");
+            aSerialNumbers.add("8976; ");
+            aSerialNumbers.add("ABSC");
+            
+            vTemp.addAttribute(new Attribute("SerialNumber", aSerialNumbers));
 
             // Define units attributes for coordinate vars. This attaches a
             // text attribute to each of the coordinate variables, containing

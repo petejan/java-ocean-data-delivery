@@ -24,6 +24,7 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.sql.SQLException;
 import java.util.Properties;
 import java.util.TimeZone;
 import java.util.logging.Level;
@@ -267,6 +268,14 @@ public class InstrumentCalibrationFileForm extends MemoryWindow
             editableItem.setSelectedFile(dataFileField.getSelectedFile());
 
             OK = editableItem.insert();
+            try
+            {
+                Common.getConnection().commit();
+            }
+            catch (SQLException ex)
+            {
+                java.util.logging.Logger.getLogger(InstrumentCalibrationFileForm.class.getName()).log(Level.SEVERE, null, ex);
+            }
 
             if ( OK )
             {

@@ -354,7 +354,7 @@ public class SeabirdSBE43CalculationForm extends MemoryWindow implements DataPro
 
             tab = "ALTER TABLE sbe43 ADD density  numeric";
             proc.execute(tab);
-            tab = "UPDATE sbe43 SET density = d.parameter_value FROM raw_instrument_data d WHERE d.data_timestamp = sbe43.data_timestamp AND d.depth = sbe43.depth AND parameter_code = 'WATER_DENSITY'";
+            tab = "UPDATE sbe43 SET density = d.parameter_value FROM raw_instrument_data d WHERE d.data_timestamp = sbe43.data_timestamp AND d.depth = sbe43.depth AND parameter_code = 'DENSITY'";
             proc.execute(tab);
 
             proc.execute("SELECT data_timestamp, source_file_id, depth, volt, temp, pressure, psal, density FROM sbe43");
@@ -684,12 +684,10 @@ public class SeabirdSBE43CalculationForm extends MemoryWindow implements DataPro
             psal = ((Number)row.elementAt(i++)).doubleValue();
             density = ((Number)row.elementAt(i++)).doubleValue();
             
-            calculatedOxygenSolubility = OxygenSolubilityCalculator.calculateOxygenSolubilityInMlPerLitre(waterTemperature,
-                                                                                                          psal);
-            
-            calculatedOxygenSolubility = calculatedOxygenSolubility * 44660 / density;
-            
-            dox2 = SeabirdSBE43OxygenCalculator.calculateOxygenValueInUMolesPerKg(waterTemperature, psal, pressureValue, sbe43Voltage);
+            calculatedOxygenSolubility = OxygenSolubilityCalculator.calculateOxygenSolubilityInUMolesPerKg(waterTemperature, psal);
+
+//            logger.debug("SBE43CalcForm:: " + dataTimestamp);
+            dox2 = SeabirdSBE43OxygenCalculator.calculateOxygenValueInUMolesPerKg(waterTemperature, pressureValue, psal , sbe43Voltage);
         }
         
         public final static String header = "Timestamp, Volt, Temp, pressure, psal, OXSOL, density, dox2";

@@ -94,7 +94,7 @@ public class OxygenSolubilityCalculator
     }
 
     /**
-     * calculate oxygen solubility in ml/l as per Seabird reference above.
+     * calculate oxygen solubility in uM/kg as per Seabird reference above.
      *
      * @param temperature - Double not null
      * @param salinity  -   Double not null

@@ -72,7 +72,7 @@ public class AanderraOptodeOxygenCalculator
      * 
      * @return dissolved oxygen in micromoles per kg of water
      */
-    public static Double calculateDissolvedOxygenInUMolesPerKg(Double optodeTemperature, Double optodeDPhaseValue, Double salinity, Double pressure)
+    public static Double AanderaaCalculateDissolvedOxygenInUMolesPerKg(Double optodeTemperature, Double optodeDPhaseValue, Double salinity, Double pressure)
     {
         //logger.debug("optodeTemp " + optodeTemperature + " optodeDPhase " + optodeDPhaseValue + " Salinity " + salinity + " pressure " + pressure);
         
@@ -143,6 +143,10 @@ public class AanderraOptodeOxygenCalculator
         o2 = o2 * correctDepth(pressure);
 
         //logger.debug("salinity & depth djusted oxygen: " + o2);
+
+        double sigma_theta = SeawaterParameterCalculator.PoTemp(salinity, optodeTemperature * 1.00024, pressure, 0);
+        
+        o2 = o2 * (1000.0/SeawaterParameterCalculator.calculateSeawaterDensityAtPressure(salinity, sigma_theta, 0.0));        
         
         return new Double(o2);
     }
@@ -159,7 +163,7 @@ public class AanderraOptodeOxygenCalculator
     
     public static Double UchidaCalculateDissolvedOxygenInUMolesPerKg(Double optodeTemperature, Double optodeBPhaseValue, Double salinity, Double pressure)
     {
-        double dissolvedOxygen = AanderraOptodeOxygenCalculator.UchidaCalculateDissolvedOxygenInUMolesPerLitre(optodeTemperature, optodeBPhaseValue);
+        double dissolvedOxygen = AanderraOptodeOxygenCalculator.UchidaCalculateDissolvedOxygenRaw(optodeTemperature, optodeBPhaseValue);
         
         //logger.debug("Oxygen before salinity adjustment: " + dissolvedOxygen);
 
@@ -169,12 +173,16 @@ public class AanderraOptodeOxygenCalculator
         
         dissolvedOxygen = dissolvedOxygen * correctDepth(pressure);
 
+        double sigma_theta = SeawaterParameterCalculator.PoTemp(salinity, optodeTemperature * 1.00024, pressure, 0);
+        
+        dissolvedOxygen = dissolvedOxygen * (1000.0/SeawaterParameterCalculator.calculateSeawaterDensityAtPressure(salinity, sigma_theta, 0.0));        
+
         //logger.debug("salinity & depth djusted oxygen: " + dissolvedOxygen);
         
         return dissolvedOxygen;
         
     }
-    public static Double UchidaCalculateDissolvedOxygenInUMolesPerLitre(Double optodeTemperature, Double optodeBPhaseValue)
+    public static Double UchidaCalculateDissolvedOxygenRaw(Double optodeTemperature, Double optodeBPhaseValue)
     {
         if(constants == null)
         {

@@ -166,7 +166,17 @@ public class CalibrationFileCombo extends BasicCombo implements PropertyChangeLi
             for(int i = 0; i < codes.size(); i++)
             {
                 InstrumentCalibrationFile ps = codes.get(i);
-                combo.addItem(ps.getFileName());
+                String p = ps.getFilePath();
+                p = p.replaceAll("\\\\", "/");
+                int ip = p.lastIndexOf("/");
+                if (ip == -1)
+                    ip = 1;
+                ip = p.substring(0, ip -1).lastIndexOf("/");
+                if (ip == -1)
+                    ip = 1;                            
+                ip = p.substring(0, ip -1).lastIndexOf("/");
+                
+                combo.addItem(p.substring(ip+1));
             }
         }
         else

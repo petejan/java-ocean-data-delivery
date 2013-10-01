@@ -102,9 +102,7 @@ public class AanderaaOxygenCalculatorTest
         for(int i = 0; i < testSet.size(); i++)
         {
             UchidaData row = testSet.get(i);
-            double dox = AanderraOptodeOxygenCalculator.UchidaCalculateDissolvedOxygenInUMolesPerLitre(
-                    row.temperature, row.bPhase
-                    ); 
+            double dox = AanderraOptodeOxygenCalculator.UchidaCalculateDissolvedOxygenRaw(row.temperature, row.bPhase); 
         
             System.out.println("DO = " + dox);
         

@@ -53,6 +53,7 @@ public class SBE16CalculationForm extends MemoryWindow implements DataProcessor
     private Instrument SBE43Instrument = null;
     private Instrument FLNTUSInstrument = null;
     private Instrument OptodeInstrument = null;
+    private Instrument GTDInstrument = null;
     
     private AanderraOptodeConstants constants = null;
 
@@ -79,7 +80,8 @@ public class SBE16CalculationForm extends MemoryWindow implements DataProcessor
      */
     @SuppressWarnings("unchecked")
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
-    private void initComponents() {
+    private void initComponents()
+    {
 
         buttonGroup1 = new javax.swing.ButtonGroup();
         jPanel1 = new javax.swing.JPanel();
@@ -91,13 +93,16 @@ public class SBE16CalculationForm extends MemoryWindow implements DataProcessor
         PARInstrumentCombo = new org.imos.abos.dbms.fields.InstrumentSelectorCombo();
         OptodeInstrumentCombo = new org.imos.abos.dbms.fields.InstrumentSelectorCombo();
         FLNTUSInstrumentCombo = new org.imos.abos.dbms.fields.InstrumentSelectorCombo();
+        GTDInstrumentCombo = new org.imos.abos.dbms.fields.InstrumentSelectorCombo();
         jPanel2 = new javax.swing.JPanel();
         runButton = new javax.swing.JButton();
         quitButton = new javax.swing.JButton();
 
-        setTitle("Aanderra Optode Data Processing Form");
-        addWindowListener(new java.awt.event.WindowAdapter() {
-            public void windowClosing(java.awt.event.WindowEvent evt) {
+        setTitle("SBE16 Extract Form");
+        addWindowListener(new java.awt.event.WindowAdapter()
+        {
+            public void windowClosing(java.awt.event.WindowEvent evt)
+            {
                 formWindowClosing(evt);
             }
         });
@@ -106,8 +111,10 @@ public class SBE16CalculationForm extends MemoryWindow implements DataProcessor
 
         mooringCombo1.setDescriptionField(mooringDescriptionField);
         mooringCombo1.setOrientation(0);
-        mooringCombo1.addPropertyChangeListener(new java.beans.PropertyChangeListener() {
-            public void propertyChange(java.beans.PropertyChangeEvent evt) {
+        mooringCombo1.addPropertyChangeListener(new java.beans.PropertyChangeListener()
+        {
+            public void propertyChange(java.beans.PropertyChangeEvent evt)
+            {
                 mooringCombo1PropertyChange(evt);
             }
         });
@@ -122,8 +129,10 @@ public class SBE16CalculationForm extends MemoryWindow implements DataProcessor
 
         deleteDataBox.setSelected(true);
         deleteDataBox.setText("Delete any existing processed data for target instrument");
-        deleteDataBox.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
+        deleteDataBox.addActionListener(new java.awt.event.ActionListener()
+        {
+            public void actionPerformed(java.awt.event.ActionEvent evt)
+            {
                 deleteDataBoxActionPerformed(evt);
             }
         });
@@ -137,24 +146,32 @@ public class SBE16CalculationForm extends MemoryWindow implements DataProcessor
         FLNTUSInstrumentCombo.setLabel("FLNTUS Instrument");
         FLNTUSInstrumentCombo.setOrientation(0);
 
+        GTDInstrumentCombo.setLabel("GTD Instrument");
+        GTDInstrumentCombo.setOrientation(0);
+
         org.jdesktop.layout.GroupLayout jPanel1Layout = new org.jdesktop.layout.GroupLayout(jPanel1);
         jPanel1.setLayout(jPanel1Layout);
         jPanel1Layout.setHorizontalGroup(
             jPanel1Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
             .add(jPanel1Layout.createSequentialGroup()
-                .addContainerGap()
                 .add(jPanel1Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-                    .add(deleteDataBox, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 398, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                     .add(jPanel1Layout.createSequentialGroup()
-                        .add(mooringCombo1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 169, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                        .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-                        .add(mooringDescriptionField, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 343, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
-                    .add(sourceInstrumentCombo, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 562, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                    .add(SBE43InstrumentCombo, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 562, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                    .add(PARInstrumentCombo, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 562, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                    .add(FLNTUSInstrumentCombo, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 562, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                    .add(OptodeInstrumentCombo, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 562, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
-                .addContainerGap(org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                        .addContainerGap()
+                        .add(jPanel1Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
+                            .add(GTDInstrumentCombo, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 562, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                            .add(jPanel1Layout.createSequentialGroup()
+                                .add(mooringCombo1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 169, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
+                                .add(mooringDescriptionField, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 343, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
+                            .add(sourceInstrumentCombo, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 562, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                            .add(SBE43InstrumentCombo, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 562, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                            .add(PARInstrumentCombo, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 562, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                            .add(FLNTUSInstrumentCombo, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 562, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                            .add(OptodeInstrumentCombo, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 562, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)))
+                    .add(jPanel1Layout.createSequentialGroup()
+                        .add(36, 36, 36)
+                        .add(deleteDataBox, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 398, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)))
+                .addContainerGap(410, Short.MAX_VALUE))
         );
         jPanel1Layout.setVerticalGroup(
             jPanel1Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
@@ -174,23 +191,29 @@ public class SBE16CalculationForm extends MemoryWindow implements DataProcessor
                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
                 .add(OptodeInstrumentCombo, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 26, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.UNRELATED)
+                .add(GTDInstrumentCombo, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 26, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
                 .add(deleteDataBox, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 63, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                .add(218, 218, 218))
+                .add(186, 186, 186))
         );
 
         jPanel2.setBorder(javax.swing.BorderFactory.createEtchedBorder());
 
         runButton.setText("Run");
-        runButton.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
+        runButton.addActionListener(new java.awt.event.ActionListener()
+        {
+            public void actionPerformed(java.awt.event.ActionEvent evt)
+            {
                 runButtonActionPerformed(evt);
             }
         });
         jPanel2.add(runButton);
 
         quitButton.setText("Quit");
-        quitButton.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
+        quitButton.addActionListener(new java.awt.event.ActionListener()
+        {
+            public void actionPerformed(java.awt.event.ActionEvent evt)
+            {
                 quitButtonActionPerformed(evt);
             }
         });
@@ -204,7 +227,7 @@ public class SBE16CalculationForm extends MemoryWindow implements DataProcessor
                 .addContainerGap()
                 .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
                     .add(jPanel1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .add(org.jdesktop.layout.GroupLayout.TRAILING, jPanel2, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 586, Short.MAX_VALUE))
+                    .add(org.jdesktop.layout.GroupLayout.TRAILING, jPanel2, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
                 .addContainerGap())
         );
         layout.setVerticalGroup(
@@ -236,6 +259,7 @@ public class SBE16CalculationForm extends MemoryWindow implements DataProcessor
         PARInstrument = PARInstrumentCombo.getSelectedInstrument();
         FLNTUSInstrument = FLNTUSInstrumentCombo.getSelectedInstrument();
         OptodeInstrument = OptodeInstrumentCombo.getSelectedInstrument();
+        GTDInstrument = GTDInstrumentCombo.getSelectedInstrument();
 
         selectedMooring = mooringCombo1.getSelectedMooring();
 
@@ -258,6 +282,9 @@ public class SBE16CalculationForm extends MemoryWindow implements DataProcessor
                                                                       ;
             RawInstrumentData.deleteDataForMooringAndInstrument(selectedMooring.getMooringID(),
                                                                       OptodeInstrument.getInstrumentID())
+                                                                      ;
+            RawInstrumentData.deleteDataForMooringAndInstrument(selectedMooring.getMooringID(),
+                                                                      GTDInstrument.getInstrumentID())
                                                                       ;
         }
 
@@ -324,6 +351,7 @@ public class SBE16CalculationForm extends MemoryWindow implements DataProcessor
             PARInstrumentCombo.setMooring(selectedItem);
             FLNTUSInstrumentCombo.setMooring(selectedItem);
             OptodeInstrumentCombo.setMooring(selectedItem);
+            GTDInstrumentCombo.setMooring(selectedItem);
         }
     }//GEN-LAST:event_mooringCombo1PropertyChange
 
@@ -349,6 +377,12 @@ public class SBE16CalculationForm extends MemoryWindow implements DataProcessor
             conn = Common.getConnection();
             conn.setAutoCommit(false);
             proc = conn.createStatement();
+            proc.execute("UPDATE raw_instrument_data SET instrument_id = " +  GTDInstrument.getInstrumentID() +
+                        " WHERE mooring_id = "+StringUtilities.quoteString(selectedMooring.getMooringID())+" AND instrument_id = "+ sourceInstrument.getInstrumentID() + " AND parameter_code = 'GTD_TEMPERATURE' " +
+                        "");
+            proc.execute("UPDATE raw_instrument_data SET instrument_id = " +  GTDInstrument.getInstrumentID() +
+                        " WHERE mooring_id = "+StringUtilities.quoteString(selectedMooring.getMooringID())+" AND instrument_id = "+ sourceInstrument.getInstrumentID() + " AND parameter_code = 'DISSOLVED_AIR_PRESS' " +
+                        "");
             
             tab = "SELECT data_timestamp, source_file_id, instrument_id, depth, parameter_value as volt1 INTO TEMP sbe16 FROM raw_instrument_data WHERE parameter_code = 'VOLT1' AND mooring_id = "+StringUtilities.quoteString(selectedMooring.getMooringID())+" AND instrument_id = "+ sourceInstrument.getInstrumentID()+" ORDER BY data_timestamp";                
             proc.execute(tab);
@@ -459,7 +493,7 @@ public class SBE16CalculationForm extends MemoryWindow implements DataProcessor
         {
             stmt = conn.createStatement();
             stmt.executeUpdate(update);
-            logger.debug("Update processed table count " + dataSet.size());
+            logger.debug("Update raw table count " + dataSet.size());
         }
         catch (SQLException ex)
         {
@@ -483,7 +517,7 @@ public class SBE16CalculationForm extends MemoryWindow implements DataProcessor
             rid.setLatitude(selectedMooring.getLatitudeIn());
             rid.setLongitude(selectedMooring.getLongitudeIn());
             rid.setMooringID(selectedMooring.getMooringID());
-            rid.setQualityCode("DERIVED");
+            rid.setQualityCode("EXTRACTED");
 
             rid.setInstrumentID(SBE43Instrument.getInstrumentID());
             rid.setParameterCode("SBE43_OXY_VOLTAGE");
@@ -510,14 +544,18 @@ public class SBE16CalculationForm extends MemoryWindow implements DataProcessor
             rid.setParameterCode("OPTODE_BPHASE_VOLT");
             rid.setParameterValue(row.Volt5);
             ok = rid.insert();
-            rid.setParameterCode("OPTODE_BPHASE");
-            rid.setParameterValue(constants.BPhaseVoltConstant + (constants.BPhaseVoltMultiplier * row.Volt5));
-            ok = rid.insert();
 
             rid.setInstrumentID(OptodeInstrument.getInstrumentID());
             rid.setParameterCode("OPTODE_TEMP_VOLT");
             rid.setParameterValue(row.Volt6);
             ok = rid.insert();
+
+            // This probably should be in the Aandera calculation form
+            rid.setQualityCode("DERIVED");            
+            rid.setParameterCode("OPTODE_BPHASE");
+            rid.setParameterValue(constants.BPhaseVoltConstant + (constants.BPhaseVoltMultiplier * row.Volt5));
+            ok = rid.insert();
+            
             rid.setParameterCode("OPTODE_TEMP");
             rid.setParameterValue(constants.TempVoltConstant + (constants.TempVoltMultiplier * row.Volt6));
             ok = rid.insert();
@@ -643,9 +681,9 @@ public class SBE16CalculationForm extends MemoryWindow implements DataProcessor
         return "MOORING="+selectedMooring.getMooringID() + 
                 ",SRC_INST="+sourceInstrument.getInstrumentID()+
                 ",SBE43_INST="+SBE43Instrument.getInstrumentID()+
-                ",PAR_INST="+SBE43Instrument.getInstrumentID()+
-                ",FLNTUS_INST="+SBE43Instrument.getInstrumentID()+
-                ",OPTODE_INST="+SBE43Instrument.getInstrumentID();
+                ",PAR_INST="+PARInstrument.getInstrumentID()+
+                ",FLNTUS_INST="+FLNTUSInstrument.getInstrumentID()+
+                ",OPTODE_INST="+OptodeInstrument.getInstrumentID();
     }
 
     public boolean setupFromString(String s)
@@ -665,10 +703,28 @@ public class SBE16CalculationForm extends MemoryWindow implements DataProcessor
                 
         int SBE43InstrumentId = Integer.parseInt(mat.group(2));
         
+        mat = Pattern.compile("(?:PAR_INST= *)(([^,]*))").matcher(s);
+        mat.find();
+                
+        int PARInstrumentId = Integer.parseInt(mat.group(2));
+        
+        mat = Pattern.compile("(?:FLNTUS_INST= *)(([^,]*))").matcher(s);
+        mat.find();
+                
+        int FLNTUSInstrumentId = Integer.parseInt(mat.group(2));
+        
+        mat = Pattern.compile("(?:OPTODE_INST= *)(([^,]*))").matcher(s);
+        mat.find();
+                
+        int OptodeInstrumentId = Integer.parseInt(mat.group(2));
+        
         selectedMooring = Mooring.selectByMooringID(mooringId);
         
         sourceInstrument = Instrument.selectByInstrumentID(srcInstrumentId);
         SBE43Instrument = Instrument.selectByInstrumentID(SBE43InstrumentId);
+        PARInstrument = Instrument.selectByInstrumentID(PARInstrumentId);
+        FLNTUSInstrument = Instrument.selectByInstrumentID(FLNTUSInstrumentId);
+        OptodeInstrument = Instrument.selectByInstrumentID(OptodeInstrumentId);
         
         return true;
     }
@@ -706,6 +762,7 @@ public class SBE16CalculationForm extends MemoryWindow implements DataProcessor
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private org.imos.abos.dbms.fields.InstrumentSelectorCombo FLNTUSInstrumentCombo;
+    private org.imos.abos.dbms.fields.InstrumentSelectorCombo GTDInstrumentCombo;
     private org.imos.abos.dbms.fields.InstrumentSelectorCombo OptodeInstrumentCombo;
     private org.imos.abos.dbms.fields.InstrumentSelectorCombo PARInstrumentCombo;
     private org.imos.abos.dbms.fields.InstrumentSelectorCombo SBE43InstrumentCombo;
