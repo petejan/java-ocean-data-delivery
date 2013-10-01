@@ -1,3 +1,4 @@
+COPY instrument_calibration_values (instrument_id, mooring_id, datafile_pk, param_code, description, data_type, data_value) FROM stdin;
 742	Pulse-8-2011        	100228	A_COEFF                                 	A coefficient	NUMBER    	-2.579E-003                                                                                                             
 742	Pulse-8-2011        	100228	B_COEFF                                 	B coefficient	NUMBER    	1.6628E-004                                                                                                             
 742	Pulse-8-2011        	100228	C_COEFF                                 	C coefficient	NUMBER    	-3.1959E-006                                                                                                            
@@ -11,3 +12,4 @@
 742	Pulse-8-2011        	100228	SOC                                     	Soc coefficient	NUMBER    	0.45523758                                                                                                              
 742	Pulse-8-2011        	100228	TAU_20                                  	Tau 20 value	NUMBER    	5.56                                                                                                                    
 742	Pulse-8-2011        	100228	V_OFFSET                                	V offset value	NUMBER    	-0.404528                                                                                                               
+\.
