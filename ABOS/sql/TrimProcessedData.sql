@@ -27,3 +27,9 @@ UPDATE processed_instrument_data SET quality_code = 'BAD' WHERE quality_code != 
 -- SOFS-3 ASIMET L22 CAPH Failed 2012-07-15 12:00
 UPDATE processed_instrument_data SET quality_code = 'BAD' WHERE quality_code != 'BAD' AND mooring_id = 'SOFS-3-2012' AND parameter_code = 'CAPH' AND (data_timestamp > '2012-07-15 12:00');
 
+-- SAZ-15-2012 PSAL bad
+update processed_instrument_data set quality_code = 'BAD' where mooring_id = 'SAZ-15-2012' and parameter_code = 'PSAL' and parameter_value < 34.7055 and quality_code != 'BAD';
+update processed_instrument_data set quality_code = 'BAD' where 
+	mooring_id = 'SAZ-15-2012' 
+	and parameter_code = 'CNDC' 
+	and data_timestamp in (SELECT data_timestamp FROM processed_instrument_data WHERE mooring_id = 'SAZ-15-2012' and parameter_code = 'PSAL' and quality_code = 'BAD');

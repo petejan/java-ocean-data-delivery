@@ -28,6 +28,8 @@ public class Matcher
         Pattern p = Pattern.compile(patten);
         java.util.regex.Matcher m = p.matcher(s);
         
+        System.out.println("matches " + s.matches(patten));
+        
         if (m.find())
         {
             System.out.println(" count " + m.groupCount() + " startIndex " + m.start());

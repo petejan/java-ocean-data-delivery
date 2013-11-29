@@ -200,7 +200,7 @@ public class SeabirdSBE16Pulse6 extends AbstractDataParser
             row.setQualityCode("RAW");
             ok = row.insert();
 
-            row.setParameterCode("DISSOLVED_AIR_PRESS");
+            row.setParameterCode("TOTAL_GAS_PRESSURE");
             row.setParameterValue(GTDPressureVal);
             row.setSourceFileID(currentFile.getDataFilePrimaryKey());
             row.setQualityCode("RAW");

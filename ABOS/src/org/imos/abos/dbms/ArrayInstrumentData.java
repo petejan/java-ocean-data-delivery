@@ -44,10 +44,10 @@ public class ArrayInstrumentData  implements Cloneable
         return success;
     }
 
-    private boolean isNew = false;
-    private static Logger logger = Logger.getLogger(ArrayInstrumentData.class.getName());
+    boolean isNew = false;
+    static Logger logger = Logger.getLogger(ArrayInstrumentData.class.getName());
 
-    private String message = "";
+    String message = "";
 
     public static int[] getColumnWidths()
     {
@@ -77,19 +77,19 @@ public class ArrayInstrumentData  implements Cloneable
         return columnNames[column];
     }
 
-    private boolean isEdited = false;
+    boolean isEdited = false;
     protected static SQLWrapper query    = new SQLWrapper();
 
-    private Integer sourceFileID;
-    private Integer instrumentID;
-    private String mooringID;
-    private Timestamp dataTimestamp;
-    private Double latitude;
-    private Double longitude;
-    private Double depth;
-    private String parameterCode;
-    private BigDecimal[] parameterValue;
-    private String qualityCode;
+    Integer sourceFileID;
+    Integer instrumentID;
+    String mooringID;
+    Timestamp dataTimestamp;
+    Double latitude;
+    Double longitude;
+    Double depth;
+    String parameterCode;
+    private Double[] parameterValue;
+    String qualityCode;
 
     private static String[] columnNames = new String[]
     {
@@ -678,9 +678,9 @@ public class ArrayInstrumentData  implements Cloneable
             isEdited = true;
             return true;
         }
-        if(value instanceof BigDecimal[])
+        if(value instanceof Double[])
         {
-            parameterValue = ((BigDecimal[]) value);
+            parameterValue = ((Double[]) value);
             isEdited = true;
             return true;
         }
@@ -688,7 +688,7 @@ public class ArrayInstrumentData  implements Cloneable
         return false;
     }
 
-    public BigDecimal[] getParameterValue()
+    public Double[] getParameterValue()
     {
         return parameterValue;
     }
@@ -864,7 +864,7 @@ public class ArrayInstrumentData  implements Cloneable
         return true;
     }
 
-    private boolean doInsert(PreparedStatement psql)
+    protected boolean doInsert(PreparedStatement psql)
     {
         try
         {
@@ -925,7 +925,7 @@ public class ArrayInstrumentData  implements Cloneable
         for(ArrayInstrumentData s : al)
         {
             System.out.print(s.getDataTimestamp() + " data (");
-            for(BigDecimal sd : s.getParameterValue())
+            for(Double sd : s.getParameterValue())
             {
                 System.out.print(" " + sd);
             }

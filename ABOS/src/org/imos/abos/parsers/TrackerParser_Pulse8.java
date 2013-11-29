@@ -63,46 +63,12 @@ public class TrackerParser_Pulse8 extends TrackerParser
 
             int latCutoff = latitudeString.lastIndexOf("=") + 1;
             
-            try
-            {
-                
-                latitude = new Double(latitudeString.substring(latCutoff));
-            }
-
-            catch(NumberFormatException pex)
-            {
-                try
-                {
-                    Number n = deciFormat.parse(latitudeString.substring(latCutoff));
-                    latitude = n.doubleValue();
-                }
-                catch(ParseException pexx)
-                {
-                    throw new ParseException("parse failed for text '" + latitudeString.substring(latCutoff) + "'",0);
-                }
-            }
-
-            int lonCutoff = longitudeString.lastIndexOf("=") + 1;
+            latitude = getDouble(latitudeString);
             
-            try
-            {
-                
-                longitude = new Double(longitudeString.substring(lonCutoff));
-            }
 
-            catch(NumberFormatException pex)
-            {
-                try
-                {
-                    Number n = deciFormat.parse(longitudeString.substring(lonCutoff));
-                    longitude = n.doubleValue();
-                }
-                catch(ParseException pexx)
-                {
-                    throw new ParseException("parse failed for text '" + longitudeString.substring(lonCutoff) + "'",0);
-                }
-            }
-
+            
+            int lonCutoff = longitudeString.lastIndexOf("=") + 1;
+            longitude = getDouble(longitudeString.substring(lonCutoff));
             //
             // ok, we have parsed out the values we need, can now construct the raw data class
             //
@@ -114,17 +80,16 @@ public class TrackerParser_Pulse8 extends TrackerParser
             row.setLatitude(currentMooring.getLatitudeIn());
             row.setLongitude(currentMooring.getLongitudeIn());
             row.setMooringID(currentMooring.getMooringID());
-            row.setParameterCode("LATITUDE");
-            row.setParameterValue(latitude);
             row.setSourceFileID(currentFile.getDataFilePrimaryKey());
             row.setQualityCode("RAW");
+
+            row.setParameterCode("YPOS");
+            row.setParameterValue(latitude);
 
             boolean ok = row.insert();
 
-            row.setParameterCode("LONGITUDE");
+            row.setParameterCode("XPOS");
             row.setParameterValue(longitude);
-            row.setSourceFileID(currentFile.getDataFilePrimaryKey());
-            row.setQualityCode("RAW");
 
             ok = row.insert();
 

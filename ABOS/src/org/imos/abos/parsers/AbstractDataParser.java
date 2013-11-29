@@ -203,7 +203,9 @@ public abstract class AbstractDataParser
         
         String $HOME = System.getProperty("user.home");
         //TextFileLogger errorlogger = new TextFileLogger($HOME + "/" + fileName.trim() + "_errors", "csv");
-        errorlogger = new TextFileLogger(fileName.trim() + "_errors", "csv");
+        String n = fileName.trim();
+        n = n.substring(n.lastIndexOf("/")+1);
+        errorlogger = new TextFileLogger(n + "_errors", "csv");
         try
         {
             errorlogger.open();
@@ -390,5 +392,7 @@ public abstract class AbstractDataParser
         }
     }
 
-
+    public static void main(String args[])
+    {
+    }
 }

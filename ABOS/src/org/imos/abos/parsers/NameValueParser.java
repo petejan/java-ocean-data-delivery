@@ -57,6 +57,7 @@ public class NameValueParser extends AbstractDataParser
     protected void parseData(String dataLine) throws ParseException, NoSuchElementException
     {
         SimpleDateFormat dateParser = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        dateParser.setTimeZone(tz);
 
         String dateString;
         Timestamp dataTimestamp = null;
@@ -73,17 +74,24 @@ public class NameValueParser extends AbstractDataParser
         hm.put("sct", "TEMP");
         hm.put("scc", "CNDC");
         hm.put("swh", "SIG_WAVE_HEIGHT");
-        hm.put("th", "AIRT");
-        hm.put("rh", "RELH");
+        hm.put("waveheight", "SIG_WAVE_HEIGHT");
+        hm.put("AirT", "AIRT");
+        hm.put("temp", "TEMP");
+        hm.put("RH", "RELH");
         hm.put("we", "UWND");
         hm.put("wn", "VWND");
         hm.put("wsavg", "WSPD");
         hm.put("wsdir", "WDIR");
+        hm.put("lat", "YPOS");
+        hm.put("lon", "XPOS");
 
-        StringTokenizer st = new StringTokenizer(dataLine, ",");
+        hm.put("CHL", "ECO_FLNTUS_CHL");
+        hm.put("NTU", "ECO_FLNTUS_TURB");
+
+        StringTokenizer st = new StringTokenizer(dataLine, ", ");
         try
         {
-            dateString = st.nextToken();
+            dateString = st.nextToken() + " " + st.nextToken();
             try
             {
                 java.util.Date d = dateParser.parse(dateString);

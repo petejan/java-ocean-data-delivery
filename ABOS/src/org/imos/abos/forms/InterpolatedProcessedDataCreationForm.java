@@ -36,6 +36,7 @@ import org.apache.commons.math3.analysis.UnivariateFunction;
 import org.apache.commons.math3.analysis.interpolation.LinearInterpolator;
 import org.apache.commons.math3.analysis.interpolation.SplineInterpolator;
 import org.apache.commons.math3.analysis.interpolation.UnivariateInterpolator;
+import org.apache.commons.math3.stat.descriptive.SummaryStatistics;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
 import org.imos.abos.dbms.*;
@@ -337,7 +338,17 @@ public class InterpolatedProcessedDataCreationForm extends MemoryWindow implemen
         Double value = null;
         String q = null;
 
+        // Averaging goes here...
+        Timestamp cellStart = new Timestamp(0);
+        Timestamp cellEnd = new Timestamp(0);
+        
         t = s + 1;
+        
+        cellStart.setTime(t * outputPeriod - outputPeriod/2);
+        cellEnd.setTime(t * outputPeriod + outputPeriod/2);
+        
+        SummaryStatistics valueStats = new SummaryStatistics();
+        
         while (results.next())
         {
             ts = results.getTimestamp(1);
@@ -347,8 +358,8 @@ public class InterpolatedProcessedDataCreationForm extends MemoryWindow implemen
             lon = results.getDouble(5);
             value = results.getDouble(6);
             q = results.getString(7);
-            //System.out.println(ts + " ," + value + " ," + q);
-            if (Math.abs((ts.getTime() - (t*outputPeriod))) <= (p.sampleInterval * 1000))
+            
+            if (ts.after(cellEnd))
             {
                 pid.setDepth(d);
                 pid.setInstrumentID(p.instrument_id);
@@ -359,13 +370,22 @@ public class InterpolatedProcessedDataCreationForm extends MemoryWindow implemen
                 pid.setSourceFileID(sf);
                 pid.setQualityCode(q);
                 pid.setDataTimestamp(new Timestamp((long)t * outputPeriod));
-                pid.setParameterValue(value * p.coeffs[1] + p.coeffs[0]);
-                //System.out.println(pid.getDataTimestamp() + " ," + pid.getParameterValue());
-
+                pid.setParameterValue(valueStats.getMean() * p.coeffs[1] + p.coeffs[0]);
+                System.out.println(pid.getDataTimestamp() + " ," + pid.getParameterValue() + ": " + valueStats.getN() + " " + valueStats.getMean());
+                
+                valueStats.clear();
+                
                 boolean ok = pid.insert();  
 
-                t++;
+                t++;                
+
+                cellStart.setTime(t * outputPeriod - outputPeriod/2);
+                cellEnd.setTime((t + 1) * outputPeriod + outputPeriod/2);       
             }
+            if (ts.after(cellStart))
+            {
+                valueStats.addValue(value);
+            }            
         }
         
         return count;
@@ -421,7 +441,8 @@ public class InterpolatedProcessedDataCreationForm extends MemoryWindow implemen
         String SQL = "SELECT depth, parameter_code, instrument_id, count(*), min(data_timestamp), max(data_timestamp) " + 
                         "FROM raw_instrument_data " + 
                         "WHERE mooring_id = " + StringUtilities.quoteString(selectedMooring.getMooringID()) + " " +
-                        " AND parameter_code in ('TEMP', 'CNDC', 'PSAL', 'DENSITY', 'OXSOL', 'SBE43_OXY_VOLTAGE', 'OPTODE_BPHASE', 'OPTODE_TEMP', 'DOX2', 'PRES', 'DISSOLVED_AIR_PRESSURE', 'GTD_TEMPERATURE', 'PAR', 'NTU', 'CAPH', 'NTRI', 'CPHL', 'TURB') " +
+                        " AND parameter_code in ('TEMP', 'CNDC', 'PSAL', 'DENSITY', 'OXSOL', 'SBE43_OXY_VOLTAGE', 'OPTODE_BPHASE', 'OPTODE_TEMP', 'DOX2', 'PRES', " +
+                                                "'TOTAL_GAS_PRESSUREURE', 'GTD_TEMPERATURE', 'PAR', 'NTU', 'CAPH', 'NTRI', 'CPHL', 'TURB', 'XPOS', 'YPOS', 'SIG_WAVE_HEIGHT') " +
                         " AND quality_code != 'BAD'" +
                         " AND quality_code != 'INTERPOLATED'" +                
                         " GROUP BY depth, parameter_code, instrument_id " +
@@ -529,8 +550,7 @@ public class InterpolatedProcessedDataCreationForm extends MemoryWindow implemen
                 logger.info("Samples less than every 24 hours, not processing parameter " + p);
                 continue;
             }
-            
-            
+                        
             logger.info("Data Points     : " + p.count);
             logger.info("Start Time      : " + p.start + " end " + p.end);
             logger.info("Sample Time     : " + p.sampleTime);
@@ -564,7 +584,7 @@ public class InterpolatedProcessedDataCreationForm extends MemoryWindow implemen
                 results.setFetchSize(50);
                 
                 count = 0;
-                if (p.sampleInterval > 10 * 60)
+                if ((p.sampleInterval > 10 * 60) || (p.count < 8000)) // should use (p.end - p.start) in hours maybe
                 {
                     count = interpolate(p, results);
                     logger.info("interpolate count " + count);

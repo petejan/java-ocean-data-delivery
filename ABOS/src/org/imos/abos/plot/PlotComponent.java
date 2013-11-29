@@ -115,7 +115,7 @@ public class PlotComponent extends MemoryWindow
             chart = createChart(dataset);
             chartPanel = new ChartPanel(chart);
             chartPanel.addChartMouseListener(new MouseClick());
-            chartPanel.setPreferredSize(new java.awt.Dimension(1024, 768));
+            chartPanel.setPreferredSize(new java.awt.Dimension(1500, 1100));
             chartPanel.setMouseZoomable(true, false);
             chart.addChangeListener(cc);
             plot = chart.getXYPlot();
@@ -127,7 +127,7 @@ public class PlotComponent extends MemoryWindow
             chart.getLegend().setPosition(RectangleEdge.RIGHT);
 
             final DateAxis axis = (DateAxis) plot.getDomainAxis();
-            axis.setDateFormatOverride(new SimpleDateFormat("yyyy-MM-dd HH:MM"));
+            axis.setDateFormatOverride(new SimpleDateFormat("yyyy-MM-dd HH:mm"));
 
             query.setConnection(Common.getConnection());
             query.executeQuery("SELECT min(timestamp_in), max(timestamp_out) FROM mooring WHERE mooring_id IN (" + mooring.toSelectString() + ")");
@@ -171,7 +171,7 @@ public class PlotComponent extends MemoryWindow
                 {
                     table = ((String) tableList.getSelectedItem()).trim();
                 }
-                String where = "mooring_id IN (" + mooring.toSelectString() + ") AND parameter_code IN (" + parameter_code.toSelectString() + ") AND quality_code != 'BAD'";
+                String where = "mooring_id IN (" + mooring.toSelectString() + ") AND parameter_code IN (" + parameter_code.toSelectString() + ") AND quality_code != 'BAD' AND quality_code != 'INTERPOLATED'";
                 //                    String where = "data_timestamp BETWEEN (SELECT (min(timestamp_in) - interval '1 day') FROM mooring WHERE mooring_id IN (" + mooring.toSelectString() + ")) " +
                 //                                                     " AND (SELECT (max(timestamp_out) + interval '1 day') FROM mooring WHERE mooring_id IN (" + mooring.toSelectString() + ")) " + 
                 //                                                     " AND parameter_code IN (" + parameter_code.toSelectString() + ") " + 
@@ -223,7 +223,7 @@ public class PlotComponent extends MemoryWindow
             }
             catch (SQLException ex)
             {
-                Logger.getLogger(JDBCplot.class.getName()).log(Level.SEVERE, null, ex);
+                Logger.getLogger(PlotComponent.class.getName()).log(Level.SEVERE, null, ex);
             }
             //            }
             //        });
@@ -308,6 +308,36 @@ public class PlotComponent extends MemoryWindow
                     }
                 }
             });
+            JCheckBox linesPoints = new JCheckBox("Lines Points");
+            linesPoints.setSelected(true);
+            linesPoints.addItemListener(new ItemListener()
+            {
+                @Override
+                public void itemStateChanged(ItemEvent e)
+                {
+                    if (e.getStateChange() == ItemEvent.DESELECTED)
+                    {
+                        XYItemRenderer r = plot.getRenderer();
+                        if (r instanceof XYLineAndShapeRenderer)
+                        {
+                            XYLineAndShapeRenderer renderer = (XYLineAndShapeRenderer) r;
+                            renderer.setBaseLinesVisible(false);
+                        }
+                    }
+                    else
+                    {
+                        if (e.getStateChange() == ItemEvent.SELECTED)
+                        {
+                            XYItemRenderer r = plot.getRenderer();
+                            if (r instanceof XYLineAndShapeRenderer)
+                            {
+                                XYLineAndShapeRenderer renderer = (XYLineAndShapeRenderer) r;
+                                renderer.setBaseLinesVisible(true);
+                            }
+                        }
+                    }
+                }
+            });
 
             setLayout(new BorderLayout());
             add(chartPanel, BorderLayout.CENTER);
@@ -322,6 +352,7 @@ public class PlotComponent extends MemoryWindow
             right.add(autoZoom);
             right.add(pdfButton);
             right.add(showPoints);
+            right.add(linesPoints);
             add(right, BorderLayout.LINE_END);
 
             setLocationRelativeTo(null);
@@ -638,7 +669,7 @@ public class PlotComponent extends MemoryWindow
                     JFrame demo = new JFrame();
                     JPanel p = createChartPanel();
                     demo.add(p);
-                    demo.setSize(1000, 600);
+                    demo.setSize(1500, 1100);
                     demo.setLocationRelativeTo(null);
                     demo.setVisible(true);                    
                 }
