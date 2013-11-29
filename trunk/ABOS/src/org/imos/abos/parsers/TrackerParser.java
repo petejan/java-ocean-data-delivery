@@ -97,41 +97,8 @@ public class TrackerParser extends AbstractDataParser
                 throw new ParseException("Timestamp parse failed for text '" + constructTimestamp + "'",0);
             }
 
-            try
-            {
-                latitude = new Double(latitudeString.trim());
-            }
-
-            catch(NumberFormatException pex)
-            {
-                try
-                {
-                    Number n = deciFormat.parse(latitudeString.trim());
-                    latitude = n.doubleValue();
-                }
-                catch(ParseException pexx)
-                {
-                    throw new ParseException("parse failed for text '" + latitudeString + "'",0);
-                }
-            }
-
-            try
-            {
-                longitude = new Double(longitudeString.trim());
-            }
-
-            catch(NumberFormatException pex)
-            {
-                try
-                {
-                    Number n = deciFormat.parse(longitudeString.trim());
-                    longitude = n.doubleValue();
-                }
-                catch(ParseException pexx)
-                {
-                    throw new ParseException("parse failed for text '" + longitudeString + "'",0);
-                }
-            }
+            latitude = getDouble(latitudeString);
+            longitude = getDouble(longitudeString);
 
             //
             // ok, we have parsed out the values we need, can now construct the raw data class
@@ -144,17 +111,15 @@ public class TrackerParser extends AbstractDataParser
             row.setLatitude(currentMooring.getLatitudeIn());
             row.setLongitude(currentMooring.getLongitudeIn());
             row.setMooringID(currentMooring.getMooringID());
-            row.setParameterCode("LATITUDE");
-            row.setParameterValue(latitude);
             row.setSourceFileID(currentFile.getDataFilePrimaryKey());
             row.setQualityCode("RAW");
 
+            row.setParameterCode("YPOS");
+            row.setParameterValue(latitude);
             boolean ok = row.insert();
 
-            row.setParameterCode("LONGITUDE");
+            row.setParameterCode("XPOS");
             row.setParameterValue(longitude);
-            row.setSourceFileID(currentFile.getDataFilePrimaryKey());
-            row.setQualityCode("RAW");
 
             ok = row.insert();
 

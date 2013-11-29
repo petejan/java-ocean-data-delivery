@@ -395,7 +395,7 @@ public class AanderraOptodeCalculationForm extends MemoryWindow implements DataP
             conn.setAutoCommit(false);
             proc = conn.createStatement();
             
-            tab = "SELECT date_trunc('hour', data_timestamp) AS out_timestamp, data_timestamp, source_file_id, depth, parameter_value as optode_bphase INTO TEMP aanderra FROM raw_instrument_data WHERE parameter_code = 'OPTODE_BPHASE' AND mooring_id = "+StringUtilities.quoteString(selectedMooring.getMooringID())+" AND instrument_id = "+ sourceInstrument.getInstrumentID()+" ORDER BY data_timestamp";           
+            tab = "SELECT data_timestamp, source_file_id, depth, parameter_value as optode_bphase INTO TEMP aanderra FROM raw_instrument_data WHERE parameter_code = 'OPTODE_BPHASE' AND mooring_id = "+StringUtilities.quoteString(selectedMooring.getMooringID())+" AND instrument_id = "+ sourceInstrument.getInstrumentID()+" ORDER BY data_timestamp";           
                 
             proc.execute(tab);            
             tab = "ALTER TABLE aanderra ADD optode_temp  numeric";
@@ -424,7 +424,7 @@ public class AanderraOptodeCalculationForm extends MemoryWindow implements DataP
             tab = "UPDATE aanderra SET density = d.parameter_value FROM raw_instrument_data d WHERE d.data_timestamp = aanderra.data_timestamp AND d.depth = aanderra.depth AND parameter_code = 'DENSITY'";
             proc.execute(tab);
 
-            proc.execute("SELECT out_timestamp, data_timestamp, source_file_id, depth, optode_temp, optode_bphase, TEMPerature, pressure, psal, density FROM aanderra");
+            proc.execute("SELECT data_timestamp, source_file_id, depth, optode_temp, optode_bphase, TEMPerature, pressure, psal, density FROM aanderra ORDER BY data_timestamp");
             results = (ResultSet) proc.getResultSet();
             ResultSetMetaData resultsMetaData = results.getMetaData();
             int colCount        = resultsMetaData.getColumnCount();
@@ -450,6 +450,7 @@ public class AanderraOptodeCalculationForm extends MemoryWindow implements DataP
                     }
                 }
 
+                System.out.println("data: " + data);
                 if (!nullData)
                 {
                     optodeData row = new optodeData();
@@ -467,6 +468,7 @@ public class AanderraOptodeCalculationForm extends MemoryWindow implements DataP
         }
         catch(SQLException sex)
         {
+            sex.printStackTrace();
             logger.error(sex);
             if (conn != null)
             {
@@ -585,7 +587,7 @@ public class AanderraOptodeCalculationForm extends MemoryWindow implements DataP
 
             RawInstrumentData rid = new RawInstrumentData();
 
-            rid.setDataTimestamp(row.rawTimestamp);
+            rid.setDataTimestamp(row.dataTimestamp);
             rid.setDepth(row.instrumentDepth);
             rid.setInstrumentID(sourceInstrument.getInstrumentID());
             rid.setLatitude(selectedMooring.getLatitudeIn());
@@ -768,7 +770,6 @@ public class AanderraOptodeCalculationForm extends MemoryWindow implements DataP
     private class optodeData
     {
         public Timestamp dataTimestamp;
-        public Timestamp rawTimestamp;
         public Integer sourceFileID;
         public Double instrumentDepth;
 
@@ -789,7 +790,6 @@ public class AanderraOptodeCalculationForm extends MemoryWindow implements DataP
             int i = 0;
 
             dataTimestamp = (Timestamp) row.elementAt(i++);
-            rawTimestamp = (Timestamp) row.elementAt(i++);
             sourceFileID = ((Number)row.elementAt(i++)).intValue();
             instrumentDepth = ((Number)row.elementAt(i++)).doubleValue();
 

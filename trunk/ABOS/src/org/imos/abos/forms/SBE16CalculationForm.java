@@ -94,6 +94,7 @@ public class SBE16CalculationForm extends MemoryWindow implements DataProcessor
         OptodeInstrumentCombo = new org.imos.abos.dbms.fields.InstrumentSelectorCombo();
         FLNTUSInstrumentCombo = new org.imos.abos.dbms.fields.InstrumentSelectorCombo();
         GTDInstrumentCombo = new org.imos.abos.dbms.fields.InstrumentSelectorCombo();
+        jCheckBoxOxygen = new javax.swing.JCheckBox();
         jPanel2 = new javax.swing.JPanel();
         runButton = new javax.swing.JButton();
         quitButton = new javax.swing.JButton();
@@ -149,6 +150,8 @@ public class SBE16CalculationForm extends MemoryWindow implements DataProcessor
         GTDInstrumentCombo.setLabel("GTD Instrument");
         GTDInstrumentCombo.setOrientation(0);
 
+        jCheckBoxOxygen.setText("Oxygen Output");
+
         org.jdesktop.layout.GroupLayout jPanel1Layout = new org.jdesktop.layout.GroupLayout(jPanel1);
         jPanel1.setLayout(jPanel1Layout);
         jPanel1Layout.setHorizontalGroup(
@@ -167,7 +170,10 @@ public class SBE16CalculationForm extends MemoryWindow implements DataProcessor
                             .add(SBE43InstrumentCombo, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 562, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                             .add(PARInstrumentCombo, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 562, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                             .add(FLNTUSInstrumentCombo, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 562, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                            .add(OptodeInstrumentCombo, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 562, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)))
+                            .add(jPanel1Layout.createSequentialGroup()
+                                .add(OptodeInstrumentCombo, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 428, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                                .add(18, 18, 18)
+                                .add(jCheckBoxOxygen))))
                     .add(jPanel1Layout.createSequentialGroup()
                         .add(36, 36, 36)
                         .add(deleteDataBox, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 398, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)))
@@ -189,12 +195,14 @@ public class SBE16CalculationForm extends MemoryWindow implements DataProcessor
                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
                 .add(PARInstrumentCombo, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 26, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-                .add(OptodeInstrumentCombo, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 26, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                .add(jPanel1Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.TRAILING)
+                    .add(OptodeInstrumentCombo, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 26, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                    .add(jCheckBoxOxygen))
                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.UNRELATED)
                 .add(GTDInstrumentCombo, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 26, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-                .add(deleteDataBox, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 63, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                .add(186, 186, 186))
+                .add(deleteDataBox, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 31, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                .add(218, 218, 218))
         );
 
         jPanel2.setBorder(javax.swing.BorderFactory.createEtchedBorder());
@@ -381,7 +389,7 @@ public class SBE16CalculationForm extends MemoryWindow implements DataProcessor
                         " WHERE mooring_id = "+StringUtilities.quoteString(selectedMooring.getMooringID())+" AND instrument_id = "+ sourceInstrument.getInstrumentID() + " AND parameter_code = 'GTD_TEMPERATURE' " +
                         "");
             proc.execute("UPDATE raw_instrument_data SET instrument_id = " +  GTDInstrument.getInstrumentID() +
-                        " WHERE mooring_id = "+StringUtilities.quoteString(selectedMooring.getMooringID())+" AND instrument_id = "+ sourceInstrument.getInstrumentID() + " AND parameter_code = 'DISSOLVED_AIR_PRESS' " +
+                        " WHERE mooring_id = "+StringUtilities.quoteString(selectedMooring.getMooringID())+" AND instrument_id = "+ sourceInstrument.getInstrumentID() + " AND parameter_code = 'TOTAL_GAS_PRESSURE' " +
                         "");
             
             tab = "SELECT data_timestamp, source_file_id, instrument_id, depth, parameter_value as volt1 INTO TEMP sbe16 FROM raw_instrument_data WHERE parameter_code = 'VOLT1' AND mooring_id = "+StringUtilities.quoteString(selectedMooring.getMooringID())+" AND instrument_id = "+ sourceInstrument.getInstrumentID()+" ORDER BY data_timestamp";                
@@ -519,47 +527,69 @@ public class SBE16CalculationForm extends MemoryWindow implements DataProcessor
             rid.setMooringID(selectedMooring.getMooringID());
             rid.setQualityCode("EXTRACTED");
 
-            rid.setInstrumentID(SBE43Instrument.getInstrumentID());
-            rid.setParameterCode("SBE43_OXY_VOLTAGE");
-            rid.setParameterValue(row.Volt1);
-            ok = rid.insert();
-            
-            rid.setInstrumentID(PARInstrument.getInstrumentID());
-            rid.setParameterCode("PAR_VOLT");
-            rid.setParameterValue(row.Volt2);
-            ok = rid.insert();
+            if (SBE43Instrument != null)
+            {
+                rid.setInstrumentID(SBE43Instrument.getInstrumentID());
+                rid.setParameterCode("SBE43_OXY_VOLTAGE");
+                rid.setParameterValue(row.Volt1);
+                ok = rid.insert();
+            }
 
-            rid.setInstrumentID(FLNTUSInstrument.getInstrumentID());
-            rid.setParameterCode("ECO_FLNTUS_CHL_VOLT");
-            rid.setParameterValue(row.Volt3);
-            ok = rid.insert();
+            if (PARInstrument != null)
+            {
+                rid.setInstrumentID(PARInstrument.getInstrumentID());
+                rid.setParameterCode("PAR_VOLT");
+                rid.setParameterValue(row.Volt2);
+                ok = rid.insert();
+            }
 
-            rid.setParameterCode("ECO_FLNTUS_TURB_VOLT");
-            rid.setParameterValue(row.Volt4);
-            ok = rid.insert();
+            if (FLNTUSInstrument != null)
+            {
+                rid.setInstrumentID(FLNTUSInstrument.getInstrumentID());
+                rid.setParameterCode("ECO_FLNTUS_CHL_VOLT");
+                rid.setParameterValue(row.Volt3);
+                ok = rid.insert();
 
-            constants = new AanderraOptodeConstants();
-            
-            rid.setInstrumentID(OptodeInstrument.getInstrumentID());
-            rid.setParameterCode("OPTODE_BPHASE_VOLT");
-            rid.setParameterValue(row.Volt5);
-            ok = rid.insert();
+                rid.setParameterCode("ECO_FLNTUS_TURB_VOLT");
+                rid.setParameterValue(row.Volt4);
+                ok = rid.insert();
+            }
 
-            rid.setInstrumentID(OptodeInstrument.getInstrumentID());
-            rid.setParameterCode("OPTODE_TEMP_VOLT");
-            rid.setParameterValue(row.Volt6);
-            ok = rid.insert();
 
-            // This probably should be in the Aandera calculation form
-            rid.setQualityCode("DERIVED");            
-            rid.setParameterCode("OPTODE_BPHASE");
-            rid.setParameterValue(constants.BPhaseVoltConstant + (constants.BPhaseVoltMultiplier * row.Volt5));
-            ok = rid.insert();
-            
-            rid.setParameterCode("OPTODE_TEMP");
-            rid.setParameterValue(constants.TempVoltConstant + (constants.TempVoltMultiplier * row.Volt6));
-            ok = rid.insert();
+            if (OptodeInstrument != null)
+            {
+                constants = new AanderraOptodeConstants();
 
+                if (jCheckBoxOxygen.isSelected())
+                {
+                    rid.setParameterCode("OPTODE_VOLT");
+                }
+                else
+                {
+                    rid.setParameterCode("OPTODE_BPHASE_VOLT");                
+                }
+                rid.setInstrumentID(OptodeInstrument.getInstrumentID());
+                rid.setParameterValue(row.Volt5);
+                ok = rid.insert();
+
+                rid.setInstrumentID(OptodeInstrument.getInstrumentID());
+                rid.setParameterCode("OPTODE_TEMP_VOLT");
+                rid.setParameterValue(row.Volt6);
+                ok = rid.insert();
+
+                rid.setQualityCode("DERIVED");            
+                if (!jCheckBoxOxygen.isSelected())
+                {
+                    // This probably should be in the Aandera calculation form
+                    rid.setParameterCode("OPTODE_BPHASE");
+                    rid.setParameterValue(constants.BPhaseVoltConstant + (constants.BPhaseVoltMultiplier * row.Volt5));
+                    ok = rid.insert();
+                }
+
+                rid.setParameterCode("OPTODE_TEMP");
+                rid.setParameterValue(constants.TempVoltConstant + (constants.TempVoltMultiplier * row.Volt6));
+                ok = rid.insert();
+            }
         }
     }
 
@@ -678,12 +708,17 @@ public class SBE16CalculationForm extends MemoryWindow implements DataProcessor
 
     public String paramToString()
     {
-        return "MOORING="+selectedMooring.getMooringID() + 
-                ",SRC_INST="+sourceInstrument.getInstrumentID()+
-                ",SBE43_INST="+SBE43Instrument.getInstrumentID()+
-                ",PAR_INST="+PARInstrument.getInstrumentID()+
-                ",FLNTUS_INST="+FLNTUSInstrument.getInstrumentID()+
-                ",OPTODE_INST="+OptodeInstrument.getInstrumentID();
+        String s = "MOORING="+selectedMooring.getMooringID() + ",SRC_INST="+sourceInstrument.getInstrumentID();
+        if (SBE43Instrument != null)
+            s += ",SBE43_INST="+SBE43Instrument.getInstrumentID();
+        if (PARInstrument != null)
+            s += ",PAR_INST="+PARInstrument.getInstrumentID();
+        if (FLNTUSInstrument != null)
+            s += ",FLNTUS_INST="+FLNTUSInstrument.getInstrumentID();
+        if (OptodeInstrument != null)
+            s += ",OPTODE_INST="+OptodeInstrument.getInstrumentID();
+
+        return s;                
     }
 
     public boolean setupFromString(String s)
@@ -768,6 +803,7 @@ public class SBE16CalculationForm extends MemoryWindow implements DataProcessor
     private org.imos.abos.dbms.fields.InstrumentSelectorCombo SBE43InstrumentCombo;
     private javax.swing.ButtonGroup buttonGroup1;
     private javax.swing.JCheckBox deleteDataBox;
+    private javax.swing.JCheckBox jCheckBoxOxygen;
     private javax.swing.JPanel jPanel1;
     private javax.swing.JPanel jPanel2;
     private org.imos.abos.dbms.fields.MooringCombo mooringCombo1;

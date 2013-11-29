@@ -215,7 +215,7 @@ public class SeaWaterCalculationForm extends MemoryWindow implements DataProcess
         if (propertyName.equalsIgnoreCase("MOORING_SELECTED"))
         {
             Mooring selectedItem = (Mooring) evt.getNewValue();
-            sourceInstrumentCombo.setMooringParam(selectedItem, "PRES");
+            sourceInstrumentCombo.setMooringParam(selectedItem, "CNDC");
             targetInstrumentCombo.setMooring(selectedItem);
         }
     }//GEN-LAST:event_mooringCombo1PropertyChange
@@ -453,11 +453,11 @@ public class SeaWaterCalculationForm extends MemoryWindow implements DataProcess
             
             if (sourceInstrument != null)
             {
-                tab = "SELECT data_timestamp, source_file_id, instrument_id, depth, parameter_value AS pres INTO TEMP sw FROM raw_instrument_data WHERE parameter_code = 'PRES' AND mooring_id = "+StringUtilities.quoteString(selectedMooring.getMooringID())+" AND instrument_id = "+ sourceInstrument.getInstrumentID()+" ORDER BY data_timestamp";
+                tab = "SELECT data_timestamp, source_file_id, instrument_id, depth, parameter_value AS cndc, depth AS pres INTO TEMP sw FROM raw_instrument_data WHERE parameter_code = 'CNDC' AND mooring_id = "+StringUtilities.quoteString(selectedMooring.getMooringID())+" AND instrument_id = "+ sourceInstrument.getInstrumentID()+" ORDER BY data_timestamp";
             }
             else
             {
-                tab = "SELECT data_timestamp, source_file_id, instrument_id, depth, parameter_value AS pres INTO TEMP sw FROM raw_instrument_data WHERE parameter_code = 'PRES' AND mooring_id = "+StringUtilities.quoteString(selectedMooring.getMooringID()) +" ORDER BY data_timestamp";
+                tab = "SELECT data_timestamp, source_file_id, instrument_id, depth, parameter_value AS cndc, depth AS pres INTO TEMP sw FROM raw_instrument_data WHERE parameter_code = 'CNDC' AND mooring_id = "+StringUtilities.quoteString(selectedMooring.getMooringID()) +" ORDER BY data_timestamp";
             }
             proc.execute(tab);
             
@@ -466,9 +466,9 @@ public class SeaWaterCalculationForm extends MemoryWindow implements DataProcess
             tab = "UPDATE sw SET temp = d.parameter_value FROM raw_instrument_data d WHERE d.data_timestamp = sw.data_timestamp AND parameter_code = 'TEMP' AND d.instrument_id = sw.instrument_id";                
             proc.execute(tab);
 
-            tab = "ALTER TABLE sw ADD cndc  numeric";
-            proc.execute(tab);            
-            tab = "UPDATE sw SET cndc = d.parameter_value FROM raw_instrument_data d WHERE d.data_timestamp = sw.data_timestamp AND parameter_code = 'CNDC' AND d.instrument_id = sw.instrument_id";                
+//            tab = "ALTER TABLE sw ADD pres  numeric";
+//            proc.execute(tab);            
+            tab = "UPDATE sw SET pres = d.parameter_value FROM raw_instrument_data d WHERE d.data_timestamp = sw.data_timestamp AND parameter_code = 'PRES' AND d.instrument_id = sw.instrument_id";                
             proc.execute(tab);
             
             proc.execute("SELECT data_timestamp, source_file_id, instrument_id, depth, temp, pres, cndc FROM sw");

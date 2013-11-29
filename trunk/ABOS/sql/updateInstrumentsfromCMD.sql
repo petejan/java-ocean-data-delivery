@@ -1,4 +1,4 @@
-﻿-- TRUNCATE TABLE instrument CASCADE;
+-- TRUNCATE TABLE instrument CASCADE;
 INSERT INTO instrument
 (
 	SELECT 	cmdidid AS instrument_id,

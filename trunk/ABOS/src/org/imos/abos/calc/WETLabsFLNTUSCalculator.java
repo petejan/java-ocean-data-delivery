@@ -60,4 +60,38 @@ public class WETLabsFLNTUSCalculator
         Double turbidityValue = constants.TurbidityAnalogScaleFactor * (voltage - constants.TurbidityAnalogDarkCount);
         return turbidityValue;
     }
+    
+    public static Double calculateChlorophyllCount(Double count)
+    {
+        if(constants == null)
+        {
+            logger.error("Cannot calculate chlorophyll without calibration coefficients!");
+            return null;
+        }
+        if( count == null)
+        {
+            logger.error("Cannot calculate chlorophyll without valid voltage value!");
+            return null;
+        }
+
+        Double chlorophyllValue = constants.ChlorophyllDigitalScaleFactor * (count - constants.ChlorophyllDigitalDarkCount);
+        return chlorophyllValue;
+    }
+
+    public static Double calculateTurbidityCount(Double count)
+    {
+        if(constants == null)
+        {
+            logger.error("Cannot calculate turbidity without calibration coefficients!");
+            return null;
+        }
+        if( count == null)
+        {
+            logger.error("Cannot calculate turbidity without valid voltage value!");
+            return null;
+        }
+
+        Double turbidityValue = constants.TurbidityDigitalScaleFactor * (count - constants.TurbidityDigitalDarkCount);
+        return turbidityValue;
+    }
 }

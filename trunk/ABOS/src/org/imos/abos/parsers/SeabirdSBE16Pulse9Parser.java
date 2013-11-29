@@ -20,7 +20,7 @@ import org.imos.abos.dbms.RawInstrumentData;
  *
  * @author peter
  */
-public class SeabirdSBE16Pulse9Parser extends SeabirdSBE16Pulse7Parser
+public class SeabirdSBE16Pulse9Parser extends SeabirdSBE16Parser
 {
      /**
      * we need to create this subclass because some clever person added an extra column to the ASCII data file
@@ -192,7 +192,7 @@ public class SeabirdSBE16Pulse9Parser extends SeabirdSBE16Pulse7Parser
             row.setQualityCode("RAW");
             ok = row.insert();
 
-            row.setParameterCode("DISSOLVED_AIR_PRESS");
+            row.setParameterCode("TOTAL_GAS_PRESSURE");
             row.setParameterValue(GTDPressureVal);
             row.setSourceFileID(currentFile.getDataFilePrimaryKey());
             row.setQualityCode("RAW");

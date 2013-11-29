@@ -11,3 +11,4 @@ INSERT INTO mooring_attached_instruments
 		cmddd_cbid = 2
 	ORDER BY 1
 )
+ 

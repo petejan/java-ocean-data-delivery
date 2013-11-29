@@ -49,6 +49,7 @@ public class SeabirdSBE37ParserASC extends AbstractDataParser
     int presIndex = -1;
     int salIndex = -1;
     int tsIndex = -1;
+    int ox2Index = -1;
     
     @Override
     protected void parseHeader(String dataLine) throws ParseException, NoSuchElementException
@@ -71,11 +72,20 @@ public class SeabirdSBE37ParserASC extends AbstractDataParser
             {
                 salIndex = i;
             }
+            else if (token.compareTo("PrdM") == 0)
+            {
+                presIndex = i;
+            }
+            else if (token.compareTo("SbeopoxMm/Kg") == 0)
+            {
+                ox2Index = i;
+            }
             else if (token.compareTo("DD MMM YYYY HH:MM:SS") == 0)
             {
                 tsIndex = i;
             }
         }
+        logger.info("tsIndex " + tsIndex + " presIndex " + presIndex);
     }
 
     @Override
@@ -88,6 +98,7 @@ public class SeabirdSBE37ParserASC extends AbstractDataParser
         String CNDCString = null;
         String salinityString = null;
         String pressureString = null;
+        String ox2String = null;
 
         String dateString = null;
 
@@ -95,6 +106,8 @@ public class SeabirdSBE37ParserASC extends AbstractDataParser
         Double waterTemp = null;
         Double CNDC = null;
         Double pres = null;
+        Double psal = null;
+        Double ox2 = null;
 
         StringTokenizer st = new StringTokenizer(dataLine, "\t");
         int tokenCount = st.countTokens();
@@ -121,6 +134,12 @@ public class SeabirdSBE37ParserASC extends AbstractDataParser
                 else if (i == salIndex)
                 {
                     salinityString = token;
+                    psal = getDouble(salinityString);
+                }
+                else if (i == ox2Index)
+                {
+                    ox2String = token;
+                    ox2 = getDouble(ox2String);
                 }
                 else if (i == tsIndex)
                 {
@@ -148,26 +167,37 @@ public class SeabirdSBE37ParserASC extends AbstractDataParser
             row.setLatitude(currentMooring.getLatitudeIn());
             row.setLongitude(currentMooring.getLongitudeIn());
             row.setMooringID(currentMooring.getMooringID());
-            row.setParameterCode("TEMP");
-            row.setParameterValue(waterTemp);
             row.setSourceFileID(currentFile.getDataFilePrimaryKey());
             row.setQualityCode("RAW");
+            
+            row.setParameterCode("TEMP");
+            row.setParameterValue(waterTemp);
 
             boolean ok = row.insert();
 
             row.setParameterCode("CNDC");
             row.setParameterValue(CNDC);
-            row.setSourceFileID(currentFile.getDataFilePrimaryKey());
-            row.setQualityCode("RAW");
 
             ok = row.insert();
             
             if (presIndex != -1)
             {
                 row.setParameterCode("PRES");
-                row.setParameterValue(CNDC);
-                row.setSourceFileID(currentFile.getDataFilePrimaryKey());
-                row.setQualityCode("RAW");
+                row.setParameterValue(pres);
+
+                ok = row.insert();
+            }
+            if (salIndex != -1)
+            {
+                row.setParameterCode("PSAL");
+                row.setParameterValue(psal);
+
+                ok = row.insert();
+            }
+            if (ox2Index != -1)
+            {
+                row.setParameterCode("DOX2");
+                row.setParameterValue(ox2);
 
                 ok = row.insert();
             }

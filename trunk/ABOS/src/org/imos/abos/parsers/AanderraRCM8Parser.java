@@ -22,6 +22,25 @@ import org.imos.abos.dbms.RawInstrumentData;
  */
 public class AanderraRCM8Parser  extends AbstractDataParser
 {
+    // Example File:
+    //
+    //MOORING             : SAZ47-12                                                                                       
+    //INSTRUMENT          : Aanderaa RCM8-07773                                                                            
+    //POSITION            : 46 50.01 S  141 39.41 E                                                                        
+    //INSTRUMENT DEPTH    : 1232 (m) (when mooring vertical)                                                               
+    //INSTRUMENT PRESSURE : 1246.3 (dbar) (when mooring vertical)                                                          
+    //BOTTOM DEPTH        : 4599 (m)                                                                                       
+    //MAGNETIC DECLINATION APPLIED :  13.12 (deg)                                                                          
+    //COMMENT :                                                                                                            
+    //COMMENT :                                                                                                            
+    //COMMENT :                                                                                                            
+    //COMMENT :                                                                                                            
+    //COMMENT :                                                                                                            
+    //----time for speed,dir,u,v----                                 --------time for p,t,c--------                        
+    //decimaltime date and time(UTC)  speed   dir  E comp  N comp    decimaltime date and time(UTC) press.   temp.   cond. 
+    //   (UTC)   dd mm yyyy hh mm ss (cm/s) (degT) (cm/s)  (cm/s)       (UTC)   dd mm yyyy hh mm ss (dbar)  (degC)  (mS/cm)
+    //4653.00015 28 09 2009 00 00 13 -999.00 -999 -999.00 -999.00    4653.01057 28 09 2009 00 15 13 -999.0 -999.00 -999.000
+    //4653.75016 28 09 2009 18 00 14    4.88  286   -4.69    1.34    4653.76058 28 09 2009 18 15 14 1249.7    3.70 -999.000
 
     protected SimpleDateFormat dateParser = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
     
@@ -178,132 +197,14 @@ public class AanderraRCM8Parser  extends AbstractDataParser
                 throw new ParseException("Timestamp parse failed for text '" + constructTimestamp + "'",0);
             }
 
-            try
-            {
-                speedValue = new Double(speedString.trim());
-            }
-
-            catch(NumberFormatException pex)
-            {
-                try
-                {
-                    Number n = deciFormat.parse(speedString.trim());
-                    speedValue = n.doubleValue();
-                }
-                catch(ParseException pexx)
-                {
-                    throw new ParseException("parse failed for text '" + speedString + "'",0);
-                }
-            }
-            
-            try
-            {
-                directionValue = new Double(directionString.trim());
-            }
-
-            catch(NumberFormatException pex)
-            {
-                try
-                {
-                    Number n = deciFormat.parse(directionString.trim());
-                    directionValue = n.doubleValue();
-                }
-                catch(ParseException pexx)
-                {
-                    throw new ParseException("parse failed for text '" + directionString + "'",0);
-                }
-            }
-            
-            try
-            {
-                eastValue = new Double(eastString.trim());
-            }
-
-            catch(NumberFormatException pex)
-            {
-                try
-                {
-                    Number n = deciFormat.parse(eastString.trim());
-                    eastValue = n.doubleValue();
-                }
-                catch(ParseException pexx)
-                {
-                    throw new ParseException("parse failed for text '" + eastString + "'",0);
-                }
-            }
-            
-            try
-            {
-                northValue = new Double(northString.trim());
-            }
-
-            catch(NumberFormatException pex)
-            {
-                try
-                {
-                    Number n = deciFormat.parse(northString.trim());
-                    northValue = n.doubleValue();
-                }
-                catch(ParseException pexx)
-                {
-                    throw new ParseException("parse failed for text '" + northString + "'",0);
-                }
-            }
-
-            try
-            {
-                pressureValue = new Double(pressureString.trim());
-            }
-
-            catch(NumberFormatException pex)
-            {
-                try
-                {
-                    Number n = deciFormat.parse(pressureString.trim());
-                    pressureValue = n.doubleValue();
-                }
-                catch(ParseException pexx)
-                {
-                    throw new ParseException("parse failed for text '" + pressureString + "'",0);
-                }
-            }
-            
-            try
-            {
-                CNDCValue = new Double(CNDCString.trim());
-            }
-
-            catch(NumberFormatException pex)
-            {
-                try
-                {
-                    Number n = deciFormat.parse(CNDCString.trim());
-                    CNDCValue = n.doubleValue();
-                }
-                catch(ParseException pexx)
-                {
-                    throw new ParseException("parse failed for text '" + CNDCString + "'",0);
-                }
-            }
-            
-            try
-            {
-                temperatureValue = new Double(temperatureString.trim());
-            }
-
-            catch(NumberFormatException pex)
-            {
-                try
-                {
-                    Number n = deciFormat.parse(temperatureString.trim());
-                    temperatureValue = n.doubleValue();
-                }
-                catch(ParseException pexx)
-                {
-                    throw new ParseException("parse failed for text '" + temperatureString + "'",0);
-                }
-            }
-            
+            speedValue = getDouble(speedString);
+            directionValue = getDouble(directionString);
+            eastValue = getDouble(eastString);
+            northValue = getDouble(northString);
+            pressureValue = getDouble(pressureString);
+            CNDCValue = getDouble(CNDCString);
+            temperatureValue = getDouble(temperatureString);
+                        
             //
             // ok, we have parsed out the values we need, can now construct the raw data class
             //
@@ -315,27 +216,38 @@ public class AanderraRCM8Parser  extends AbstractDataParser
             row.setLatitude(currentMooring.getLatitudeIn());
             row.setLongitude(currentMooring.getLongitudeIn());
             row.setMooringID(currentMooring.getMooringID());
-            row.setParameterCode("SPEED_VALUE");
-            row.setParameterValue(speedValue);
             row.setSourceFileID(currentFile.getDataFilePrimaryKey());
             row.setQualityCode("RAW");
 
-            boolean ok = row.insert();
+            boolean ok = false;
+            if (speedString.compareTo("-999.00") != 0)
+            {
+                row.setParameterCode("SPEED_VALUE");
+                row.setParameterValue(speedValue * 0.01); // convert to m/s
 
-            row.setParameterCode("DIRECTION_VALUE");
-            row.setParameterValue(directionValue);
+                ok = row.insert();
+            }
+            if (directionString.compareTo("-999.00") != 0)
+            {            
+                row.setParameterCode("DIRECTION_VALUE");
+                row.setParameterValue(directionValue);
+
+                ok = row.insert();
+            }
+            if (eastString.compareTo("-999.00") != 0)
+            {
+                row.setParameterCode("UCUR");
+                row.setParameterValue(eastValue * 0.01);
+
+                ok = row.insert();
+            }
+            if (northString.compareTo("-9999.00") != 0)
+            {            
+                row.setParameterCode("VCUR");
+                row.setParameterValue(northValue * 0.01);
             
-            ok = row.insert();
-            
-            row.setParameterCode("EAST_VALUE");
-            row.setParameterValue(eastValue);
-            
-            ok = row.insert();
-            
-            row.setParameterCode("NORTH_VALUE");
-            row.setParameterValue(northValue);
-            
-            ok = row.insert();
+                ok = row.insert();
+            }
             
             //
             // now for the pressure/temperature/CNDC data
@@ -345,20 +257,29 @@ public class AanderraRCM8Parser  extends AbstractDataParser
             
             row.setDataTimestamp(pressureDataTimestamp);
             
-            row.setParameterCode("PRES");
-            row.setParameterValue(pressureValue);
+            if (pressureString.compareTo("-999.0") != 0)
+            {
+                row.setParameterCode("PRES");
+                row.setParameterValue(pressureValue);
+
+                ok = row.insert();
+            }
             
-            ok = row.insert();
-            
-            row.setParameterCode("TEMP");
-            row.setParameterValue(temperatureValue);
-            
-            ok = row.insert();
-            
-            row.setParameterCode("CNDC");
-            row.setParameterValue(CNDCValue);
-            
-            ok = row.insert();
+            if (temperatureString.compareTo("-999.00") != 0)
+            {
+                row.setParameterCode("TEMP");
+                row.setParameterValue(temperatureValue);
+
+                ok = row.insert();
+            }
+
+            if (CNDCString.compareTo("-999.000") != 0)
+            {
+                row.setParameterCode("CNDC");
+                row.setParameterValue(CNDCValue);
+
+                ok = row.insert();
+            }
 
         }
         catch (NoSuchElementException nse)

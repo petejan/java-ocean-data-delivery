@@ -9,7 +9,6 @@
 
 package org.imos.abos.parsers;
 
-import java.math.BigDecimal;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.text.DecimalFormat;
@@ -170,11 +169,11 @@ public class ISUSDataParser extends AbstractDataParser
             ok |= row.insert();
         }
                 
-        BigDecimal spec[] = new BigDecimal[256];
+        Double spec[] = new Double[256];
         
         for(int i=0;i<256;i++)
         {
-            spec[i] = new BigDecimal(CHANNELString[i]);
+            spec[i] = new Double(CHANNELString[i]);
         }
         
         ArrayInstrumentData array = new ArrayInstrumentData();
