@@ -177,7 +177,7 @@ public class AanderraOptodeOxygenCalculator
         
         dissolvedOxygen = dissolvedOxygen * (1000.0/SeawaterParameterCalculator.calculateSeawaterDensityAtPressure(salinity, sigma_theta, 0.0));        
 
-        //logger.debug("salinity & depth djusted oxygen: " + dissolvedOxygen);
+        //logger.debug("salinity & depth adjusted oxygen: " + dissolvedOxygen);
         
         return dissolvedOxygen;
         

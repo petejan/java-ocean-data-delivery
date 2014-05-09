@@ -33,3 +33,8 @@ update processed_instrument_data set quality_code = 'BAD' where
 	mooring_id = 'SAZ-15-2012' 
 	and parameter_code = 'CNDC' 
 	and data_timestamp in (SELECT data_timestamp FROM processed_instrument_data WHERE mooring_id = 'SAZ-15-2012' and parameter_code = 'PSAL' and quality_code = 'BAD');
+
+-- Pulse-10-2013 475m pressure failed
+UPDATE processed_instrument_data SET quality_code = 'BAD' WHERE quality_code != 'BAD' AND mooring_id = 'Pulse-10-2013' AND parameter_code = 'PRES' AND source_file_id = 200470 AND (data_timestamp > '2013-10-03 13:55:00');
+-- Pulse-10-2013 oxygen @100m, 200m failed
+UPDATE processed_instrument_data SET quality_code = 'BAD' WHERE quality_code != 'BAD' AND mooring_id = 'Pulse-10-2013' AND parameter_code = 'DOX2' AND parameter_value < 230 ;

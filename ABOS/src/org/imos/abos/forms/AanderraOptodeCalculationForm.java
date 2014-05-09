@@ -395,33 +395,36 @@ public class AanderraOptodeCalculationForm extends MemoryWindow implements DataP
             conn.setAutoCommit(false);
             proc = conn.createStatement();
             
-            tab = "SELECT data_timestamp, source_file_id, depth, parameter_value as optode_bphase INTO TEMP aanderra FROM raw_instrument_data WHERE parameter_code = 'OPTODE_BPHASE' AND mooring_id = "+StringUtilities.quoteString(selectedMooring.getMooringID())+" AND instrument_id = "+ sourceInstrument.getInstrumentID()+" ORDER BY data_timestamp";           
+            tab = "SELECT data_timestamp, source_file_id, depth, instrument_id, parameter_value as optode_bphase INTO TEMP aanderra FROM raw_instrument_data WHERE parameter_code = 'OPTODE_BPHASE' AND mooring_id = "+StringUtilities.quoteString(selectedMooring.getMooringID())+" AND instrument_id = "+ sourceInstrument.getInstrumentID()+" ORDER BY data_timestamp";           
                 
             proc.execute(tab);            
             tab = "ALTER TABLE aanderra ADD optode_temp  numeric";
             proc.execute(tab);            
-            tab = "UPDATE aanderra SET optode_temp = d.parameter_value FROM raw_instrument_data d WHERE d.data_timestamp = aanderra.data_timestamp AND parameter_code = 'OPTODE_TEMP' AND instrument_id = "+ sourceInstrument.getInstrumentID();
+            tab = "UPDATE aanderra SET optode_temp = d.parameter_value FROM raw_instrument_data d WHERE d.data_timestamp = aanderra.data_timestamp AND parameter_code = 'OPTODE_TEMP' AND d.instrument_id = "+ sourceInstrument.getInstrumentID();
                 
             proc.execute(tab);
             
             tab = "ALTER TABLE aanderra ADD TEMPerature  numeric";
             proc.execute(tab);
-            tab = "UPDATE aanderra SET TEMPerature = d.parameter_value FROM raw_instrument_data d WHERE d.data_timestamp = aanderra.data_timestamp AND d.depth = aanderra.depth AND parameter_code = 'TEMP'";
+            tab = "UPDATE aanderra SET TEMPerature = d.parameter_value FROM raw_instrument_data d WHERE d.data_timestamp = aanderra.data_timestamp AND d.instrument_id = "+ sourceInstrument.getInstrumentID()+" AND parameter_code = 'TEMP'";
             proc.execute(tab);
             
             tab = "ALTER TABLE aanderra ADD pressure  numeric";
             proc.execute(tab);
-            tab = "UPDATE aanderra SET pressure = d.parameter_value FROM raw_instrument_data d WHERE d.data_timestamp = aanderra.data_timestamp AND d.depth = aanderra.depth AND parameter_code = 'PRES'";
+            // first load depth
+            tab = "UPDATE aanderra SET pressure = d.depth FROM raw_instrument_data d WHERE d.data_timestamp = aanderra.data_timestamp AND d.instrument_id = "+ sourceInstrument.getInstrumentID()+" AND parameter_code = 'TEMP'";
+            proc.execute(tab);
+            tab = "UPDATE aanderra SET pressure = d.parameter_value FROM raw_instrument_data d WHERE d.data_timestamp = aanderra.data_timestamp AND d.instrument_id = "+ sourceInstrument.getInstrumentID()+" AND parameter_code = 'PRES'";
             proc.execute(tab);
             
             tab = "ALTER TABLE aanderra ADD psal  numeric";
             proc.execute(tab);
-            tab = "UPDATE aanderra SET psal = d.parameter_value FROM raw_instrument_data d WHERE d.data_timestamp = aanderra.data_timestamp AND d.depth = aanderra.depth AND parameter_code = 'PSAL'";
+            tab = "UPDATE aanderra SET psal = d.parameter_value FROM raw_instrument_data d WHERE d.data_timestamp = aanderra.data_timestamp AND d.instrument_id = "+ sourceInstrument.getInstrumentID()+" AND parameter_code = 'PSAL'";
             proc.execute(tab);
 
             tab = "ALTER TABLE aanderra ADD density  numeric";
             proc.execute(tab);
-            tab = "UPDATE aanderra SET density = d.parameter_value FROM raw_instrument_data d WHERE d.data_timestamp = aanderra.data_timestamp AND d.depth = aanderra.depth AND parameter_code = 'DENSITY'";
+            tab = "UPDATE aanderra SET density = d.parameter_value FROM raw_instrument_data d WHERE d.data_timestamp = aanderra.data_timestamp AND d.instrument_id = "+ sourceInstrument.getInstrumentID()+" AND parameter_code = 'DENSITY'";
             proc.execute(tab);
 
             proc.execute("SELECT data_timestamp, source_file_id, depth, optode_temp, optode_bphase, TEMPerature, pressure, psal, density FROM aanderra ORDER BY data_timestamp");

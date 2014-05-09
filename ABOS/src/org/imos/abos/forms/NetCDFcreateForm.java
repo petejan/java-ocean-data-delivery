@@ -247,8 +247,8 @@ public class NetCDFcreateForm extends MemoryWindow
                         runButton.setForeground(Color.BLACK);
                         runButton.setText("Run");
                         repaint();
-                        createTimeArray(f.getDeployment());
-                        createDepthArray(f.getDeployment());
+                        createTimeArray(selectedMooring.getMooringID());
+                        createDepthArray(selectedMooring.getMooringID());
                         createCDFFile();                        
                     }
                 });
@@ -278,6 +278,8 @@ public class NetCDFcreateForm extends MemoryWindow
         nameFormatter.setTimeZone(tz);
 
         String filename = "ABOS_NetCDF.nc";
+        String deployment = selectedMooring.getMooringID();
+        String mooring = deployment.substring(0, deployment.indexOf("-"));
         
         if (authority.equals("IMOS"))
         {
@@ -287,8 +289,8 @@ public class NetCDFcreateForm extends MemoryWindow
                             authority 
                             + "_ABOS-" + site + "_"
                             + nameFormatter.format(startTime)
-                            + "_" + f.getMooringName().toUpperCase() + "_FV01"
-                            + "_" + f.getDeployment().toUpperCase()
+                            + "_" + mooring.toUpperCase() + "_FV01"
+                            + "_" + deployment.toUpperCase()
                             + "_END-"
                             + nameFormatter.format(endTime)
                             + "_C-"               
@@ -300,7 +302,7 @@ public class NetCDFcreateForm extends MemoryWindow
         {
             filename = "OS"
                         + "_" + site
-                        + "_" + f.getDeployment().toUpperCase()
+                        + "_" + deployment.toUpperCase()
                         + "_D"
                         + ".nc"
                         ;
@@ -393,7 +395,7 @@ public class NetCDFcreateForm extends MemoryWindow
             String pt = params[p].trim();
             ArrayFloat.D2 dataTemp = new ArrayFloat.D2(RECORD_COUNT, depths.length);
             ArrayByte.D2 dataTempQC = new ArrayByte.D2(RECORD_COUNT, depths.length);
-            byte b = -128;
+            byte b = 9;
             for (int i = 0; i < RECORD_COUNT; i++)
             {
                 for (int j = 0; j < depths.length; j++)
@@ -416,7 +418,13 @@ public class NetCDFcreateForm extends MemoryWindow
             varNameQC[p] = qc;
             varQC[p] = dataFile.addVariable(null, qc, DataType.BYTE, timeAndDim);
             varQC[p].addAttribute(new Attribute("long_name", "quality flag"));
-            varQC[p].addAttribute(new Attribute("conventions", "OceanSITES reference table 2"));
+            if (authority.equals("IMOS"))
+                varQC[p].addAttribute(new Attribute("quality_control_conventions", "IMOS standard set using the IODE flags"));
+            else
+                varQC[p].addAttribute(new Attribute("conventions", "OceanSITES reference table 2"));
+                
+            varQC[p].addAttribute(new Attribute("quality_control_set", (float)1.0));
+            
             b = -128;
             varQC[p].addAttribute(new Attribute("_FillValue", b));
             b = 0;
@@ -424,17 +432,13 @@ public class NetCDFcreateForm extends MemoryWindow
             b = 9;
             varQC[p].addAttribute(new Attribute("valid_max", b));
             
-            ArrayByte.D1 qcValues = new ArrayByte.D1(8);
+            ArrayByte.D1 qcValues = new ArrayByte.D1(4);
             b = 0; qcValues.set(0, b);
             b = 1; qcValues.set(1, b);
-            b = 2; qcValues.set(2, b);
-            b = 3; qcValues.set(3, b);
-            b = 4; qcValues.set(4, b);
-            b = 7; qcValues.set(5, b);
-            b = 8; qcValues.set(6, b);
-            b = 9; qcValues.set(7, b);
+            b = 4; qcValues.set(2, b);
+            b = 9; qcValues.set(3, b);
             varQC[p].addAttribute(new Attribute("flag_values", qcValues));
-            varQC[p].addAttribute(new Attribute("flag_meanings", "unknown good_data probably_good_data potentially_correctable bad_data bad_data nominal_value interpolated_value missing_value"));
+            varQC[p].addAttribute(new Attribute("flag_meanings", "unknown good_data bad_data missing_value"));
             
             return pt;
         }
@@ -701,13 +705,12 @@ public class NetCDFcreateForm extends MemoryWindow
                 variable.addAttribute(new Attribute("long_name", param.getNetCDFLongName()));
             
             if(param.getMinimumValidValue() != null)
-                variable.addAttribute(new Attribute("valid_min", param.getMinimumValidValue()));
+                variable.addAttribute(new Attribute("valid_min", param.getMinimumValidValue().floatValue()));
             
             if(param.getMaximumValidValue() != null)
-                variable.addAttribute(new Attribute("valid_max", param.getMaximumValidValue()));
+                variable.addAttribute(new Attribute("valid_max", param.getMaximumValidValue().floatValue()));
             
             variable.addAttribute(new Attribute("_FillValue", Float.NaN));
-            variable.addAttribute(new Attribute("quality_control_set", 1.0f));
             //dataFile.addVariableAttribute(variable, "csiro_instrument_id", instrumentID);
         }
         
@@ -807,7 +810,7 @@ public class NetCDFcreateForm extends MemoryWindow
                                     matchedElements++;
                                     value = currentValue.val;
                                     ic.dataVar[p].set(record, d, value.floatValue());
-                                    byte b = 0;
+                                    byte b = 1;
                                     if (currentValue.quality.trim().equals("BAD"))
                                     {
                                         b = 4;

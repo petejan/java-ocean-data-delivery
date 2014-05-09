@@ -22,6 +22,33 @@ import org.wiley.core.Common;
 import org.wiley.util.SQLWrapper;
 import org.wiley.util.StringUtilities;
 
+//        % MATLAB:: read SOFS generated csv file
+//
+//        fid = fopen('SOFS-2-RAW.csv');
+//
+//        tline=fgetl(fid); % Header  
+//        split = strsplit(tline, ',');
+//        iMLD = find(cellfun('isempty', strfind(split, 'MLD')) == 0);
+//        iTemp = find(cellfun('isempty', strfind(split, 'TEMP')) == 0);
+//
+//        tline=fgetl(fid); % Units
+//        units = strsplit(tline, ',');
+//
+//        i = 1;
+//        while (! feof (fid))
+//                tline=fgetl(fid); % data
+//                sl = strsplit(tline, ','); 
+//                ts(i) = datenum(sl(1), 'YYYY-mm-dd HH:MM:SS.0');
+//                temp(i,:) = cellfun(@(x) sscanf(x, "%f"), sl(iTemp));
+//                mld(i,:) = cellfun(@(x) sscanf(x, "%f"), sl(iMLD));
+//                i = i + 1;
+//        end
+//
+//        fclose(fid);
+
+
+
+
 /**
  *
  * @author Peter Jansen
@@ -31,21 +58,38 @@ public class CrossTabData
 
     private static Logger logger = Logger.getLogger(CrossTabData.class.getName());
     protected static SQLWrapper query = new SQLWrapper();
-    protected static String mooring_id = "SOFS-4-2013";
+    protected static String mooring_id = "'SOFS-3-2012','SOFS-2-2011','SOFS-4-2013'";
     protected static String table = "raw_instrument_data";
-    protected static String paramid = "parameter_code || '-' || trim(to_char(depth, 'MI009')) || 'm-' || model || '-' || serial_number";
-
+    //protected static String paramid = "parameter_code || '-' || trim(to_char(depth, 'MI009')) || 'm-' || model || '-' || serial_number";
+    protected static String paramid = "parameter_code || '-' || trim(to_char(depth, 'MI009')) || 'm-' || model";
+    
     public void CrossTabData()
     {
         TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
     }
 
+    public void setMooring(String m)
+    {
+        mooring_id = m;
+    }
+    
+    public void setTable(String t)
+    {
+        table = t;
+    }
+    
+    boolean limit = false;
+    public void setLimitDeploymentData(boolean l)
+    {
+        limit = l;
+    }
+    
     public int getData()
     {
         Connection conn = null;
         Statement proc = null;
         ResultSet results = null;
-        int count = -1;
+        int count = 0;
 
         conn = Common.getConnection();
         try
@@ -55,34 +99,73 @@ public class CrossTabData
 
 //        logger.debug("Searching for parameters " + mooring_id + " table " + table);
         
-            String SQL = "SELECT DISTINCT("+paramid+") "
+            String SQL = "SELECT DISTINCT("+paramid+"), units,  netcdf_std_name, netcdf_long_name, depth "
                     + " FROM "+table+" JOIN instrument USING (instrument_id) "
-                    + " WHERE mooring_id = '" + mooring_id + "'" + " AND depth < 0"
+                    + " JOIN parameters ON (code = parameter_code)"
+                    + " WHERE mooring_id IN (" + mooring_id + ")"
                     + " ORDER BY "+paramid+"";
 //        logger.debug(SQL);
 
             proc.execute(SQL);
             results = (ResultSet) proc.getResultSet();
 
-            String s;
+            // print a header
+            String s, u, sn, ln, de;
+            String hdr, units, depth, name, short_name;
             int params = 0;
             HashMap map = new HashMap();
-            System.out.print("timestamp");
+            hdr = "timestamp";
+            units = "";
+            name = "";
+            depth = "";
+            short_name = "";
             while (results.next())
             {
                 s = results.getString(1);
+                u = results.getString(2);
+                sn = results.getString(3);
+                ln = results.getString(4);
+                de = results.getString(5);
                 map.put(s, new Integer(params++));
-                System.out.print(" ," + s);
+                hdr += " ," + s;
+                if (u != null)
+                {
+                    units += " ," + u.trim();
+                }
+                else
+                {
+                    units += " ,";
+                }
+                if (sn != null)
+                {
+                    name += " ," + sn.trim();
+                }
+                else if(ln != null)
+                {
+                    name += " ," + ln.trim();
+                }
+                else
+                {
+                    name += " ,";
+                }
+                depth += " ," + de.trim();
             }
-            System.out.println();
+            System.out.println(hdr);
+            //System.out.println(name);
+            //System.out.println(depth);
+            //System.out.println(units);
 
 //        logger.debug("Searching for data");
             SQL = "SELECT date_trunc('hour', data_timestamp) AT TIME ZONE 'UTC',"
                     + " ("+paramid+"),"
                     + " avg(parameter_value)"
-                    + " FROM "+table+" JOIN instrument USING (instrument_id)"
-                    + " WHERE quality_code != 'BAD'"
-                    + " AND mooring_id = '" + mooring_id + "'" + " AND depth < 0"
+                    + " FROM "+table+" JOIN instrument USING (instrument_id) JOIN mooring USING (mooring_id)"
+                    + " WHERE quality_code != 'BAD'";
+            if (limit)
+            {
+                SQL += " AND data_timestamp BETWEEN timestamp_in AND timestamp_out";
+            }
+            SQL +=  " AND mooring_id IN (" + mooring_id + ")" 
                     + " GROUP BY date_trunc('hour', data_timestamp), " + paramid
                     + " ORDER BY date_trunc('hour', data_timestamp), " + paramid;
 //        logger.debug(SQL);
@@ -116,12 +199,13 @@ public class CrossTabData
                     {
                         if (foo[i] != null)
                         {
-                            System.out.print(" ," + foo[i].val);
+                            System.out.print("," + foo[i].val);
                         }
                         else
                         {
-                            System.out.print(" ,");
+                            System.out.print(",NaN");
                         }
+                        foo[i] = null;
                     }
                     System.out.println();
                 }
@@ -140,20 +224,23 @@ public class CrossTabData
     {
         String $HOME = System.getProperty("user.home");
 
-        if (args.length == 0)
-        {
-            PropertyConfigurator.configure("log4j.properties");
-            Common.build($HOME + "/ABOS/ABOS.properties");
-        }
+        PropertyConfigurator.configure("log4j.properties");
+        Common.build($HOME + "/ABOS/ABOS.properties");
 
         CrossTabData ctd = new CrossTabData();
+        
+        ctd.setLimitDeploymentData(true);
+        
+        if (args.length > 0)
+        {
+            ctd.setMooring(args[0]);
+        }
 
         ctd.getData();
     }
 
     protected class ParamDatum
     {
-
         public Timestamp ts;
         public String paramCode;
         public Double val;

@@ -442,7 +442,8 @@ public class InterpolatedProcessedDataCreationForm extends MemoryWindow implemen
                         "FROM raw_instrument_data " + 
                         "WHERE mooring_id = " + StringUtilities.quoteString(selectedMooring.getMooringID()) + " " +
                         " AND parameter_code in ('TEMP', 'CNDC', 'PSAL', 'DENSITY', 'OXSOL', 'SBE43_OXY_VOLTAGE', 'OPTODE_BPHASE', 'OPTODE_TEMP', 'DOX2', 'PRES', " +
-                                                "'TOTAL_GAS_PRESSUREURE', 'GTD_TEMPERATURE', 'PAR', 'NTU', 'CAPH', 'NTRI', 'CPHL', 'TURB', 'XPOS', 'YPOS', 'SIG_WAVE_HEIGHT') " +
+                                                "'TOTAL_GAS_PRESSURE', 'GTD_TEMPERATURE', 'PAR', 'NTU', 'CAPH', 'NTRI', 'CPHL', 'ECO_FLNTUS_CHL', 'TURB', 'XPOS', 'YPOS', 'SIG_WAVE_HEIGHT'" +
+                                                "'PCO2', 'PCO2_AIR', 'MLD', 'WSPD', 'AIRT') " +
                         " AND quality_code != 'BAD'" +
                         " AND quality_code != 'INTERPOLATED'" +                
                         " GROUP BY depth, parameter_code, instrument_id " +

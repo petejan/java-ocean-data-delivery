@@ -37,6 +37,21 @@ import java.util.TimeZone;
 public class AsimetDecode
 {
     int used;
+    
+    public void output(Date d, String hdr, String fmt, double v)
+    {
+        System.out.printf("," + hdr + "=" + fmt, v);
+    }
+    
+    public void outputNewTs(String t)
+    {
+        System.out.print(t);        
+    }
+    
+    public void outputNext()
+    {
+        System.out.println();        
+    }
 
     public class reader
     {
@@ -78,20 +93,20 @@ public class AsimetDecode
 
         public void printArrayVars(double[] ...list)
 	{
-            // record time is written at end of timeperiod
+            // record time is written at end of timeperiod, so first record is t - 59 seconds
             ts.set(Calendar.SECOND, 0);
             ts.add(Calendar.MINUTE, -59);
             Date d = ts.getTime();
             for (int i = 0; i < 60; i++)
             {
-                System.out.print(sdf.format(d));
+                outputNewTs(sdf.format(d));
+
                 int j = 0;
                 for (double[] v : list)
                 {
-                    System.out.printf("," + headers[j] + "=" + fmts[0], v[i]);
+                    output(d, headers[j], fmts[j], v[i]);
                     j++;
                 }
-                System.out.println();
                 ts.add(Calendar.MINUTE, 1);
                 d = ts.getTime();
             }
@@ -100,11 +115,13 @@ public class AsimetDecode
         public void printVars(double... list)
         {
             Date d = getTime();
-            System.out.print(sdf.format(d));
+
+            outputNewTs(sdf.format(d));
             int i = 0;
             for (double v : list)
             {
-                System.out.printf("," + headers[i] + "=" + fmts[i], v);
+                output(d, headers[i], fmts[i], v);
+
                 i++;
             }
         }
@@ -158,7 +175,6 @@ public class AsimetDecode
 
     public class readLSR extends reader
     {
-
         public readLSR()
         {
             length = 64;
@@ -196,7 +212,7 @@ public class AsimetDecode
             ByteBuffer buf = ByteBuffer.allocate(length);
             buf.order(ByteOrder.BIG_ENDIAN);
 
-			// System.out.println(header);
+            // System.out.println(header);
             while (inChannel.read(buf) != -1)
             {
                 // System.out.println("pos " + inChannel.position());
@@ -246,7 +262,7 @@ public class AsimetDecode
                 {
                     recordsProcessed++;
                     print();
-                    System.out.println();
+                    outputNext();
                 }
             }
 
@@ -262,7 +278,6 @@ public class AsimetDecode
 
     public class readBPR extends reader
     {
-
         public readBPR()
         {
             length = 256;
@@ -283,7 +298,7 @@ public class AsimetDecode
             ByteBuffer buf = ByteBuffer.allocate(length);
             buf.order(ByteOrder.BIG_ENDIAN);
 
-            System.err.println(this.getClass().getSimpleName());
+            System.err.println("AsimetDeocode::" + this.getClass().getSimpleName());
             
             while (inChannel.read(buf) != -1)
             {
@@ -314,7 +329,6 @@ public class AsimetDecode
 
     public class readPRC extends readBPR
     {
-
         public readPRC()
         {
             length = 256;
@@ -323,12 +337,10 @@ public class AsimetDecode
             fmt = "%.2f";
             fmts = fmt.split(", ");
         }
-
     }
 
     public class readSWR extends readBPR
     {
-
         public readSWR()
         {
             length = 256;
@@ -341,11 +353,10 @@ public class AsimetDecode
 
     public class readHRH extends reader
     {
-
         public readHRH()
         {
             length = 512;
-            header = "AirT, RH";
+            header = "AirT, rh";
             headers = header.split(", ");
             fmt = "%.2f, %.2f";
             fmts = fmt.split(", ");
@@ -363,7 +374,7 @@ public class AsimetDecode
             ByteBuffer buf = ByteBuffer.allocate(length);
             buf.order(ByteOrder.BIG_ENDIAN);
 
-            System.err.println("HRH reader");
+            System.err.println("AsimetDecode:: HRH reader");
 
             while (inChannel.read(buf) != -1)
             {
@@ -398,11 +409,10 @@ public class AsimetDecode
 
     public class readWND extends reader
     {
-
         public readWND()
         {
             length = 740;
-            header = "ve, vn, WSpeed, WSMax, LastVane, LastCompass, TiltX, TiltY";
+            header = "we, wn, WSpeed, WSMax, LastVane, LastCompass, TiltX, TiltY";
             headers = header.split(", ");
             fmt = "%.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f";
             fmts = fmt.split(", ");
@@ -426,7 +436,7 @@ public class AsimetDecode
             ByteBuffer buf = ByteBuffer.allocate(length);
             buf.order(ByteOrder.BIG_ENDIAN);
 
-            System.err.println("WND reader");
+            System.err.println("AsimetDecode:: WND reader");
 
             while (inChannel.read(buf) != -1)
             {
@@ -485,11 +495,10 @@ public class AsimetDecode
 
     public class readSWND extends reader
     {
-
         public readSWND()
         {
             length = 1212;
-            header = "ve, vn, ws, wsMax, LastVane, LastCompass, TiltX, TiltY, GillSOS, GillTemp";
+            header = "we, wn, ws, wsMax, LastVane, LastCompass, TiltX, TiltY, GillSOS, GillTemp";
             headers = header.split(", ");
             fmt = "%.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f";
             fmts = fmt.split(", ");
@@ -515,7 +524,7 @@ public class AsimetDecode
             ByteBuffer buf = ByteBuffer.allocate(length);
             buf.order(ByteOrder.BIG_ENDIAN);
 
-            System.err.println(getClass().getSimpleName());
+            System.err.println("AsimetDecode:: " + getClass().getSimpleName());
 
             while (inChannel.read(buf) != -1)
             {
@@ -583,7 +592,6 @@ public class AsimetDecode
 
     public class readLWR extends reader
     {
-
         public readLWR()
         {
             length = 612;
@@ -607,7 +615,7 @@ public class AsimetDecode
             ByteBuffer buf = ByteBuffer.allocate(length);
             buf.order(ByteOrder.BIG_ENDIAN);
 
-            System.err.println("LWR reader");
+            System.err.println("AsimetDecode:: LWR reader");
 
             while (inChannel.read(buf) != -1)
             {
@@ -651,7 +659,6 @@ public class AsimetDecode
 
     public class readIridium extends reader
     {
-
         public readIridium()
         {
             length = 32;
@@ -682,7 +689,7 @@ public class AsimetDecode
             ByteBuffer buf = ByteBuffer.allocate(length);
             buf.order(ByteOrder.LITTLE_ENDIAN);
 
-            System.err.println("Iridium reader");
+            System.err.println("AsimetDecode:: Iridium reader");
 
             while (inChannel.read(buf) != -1)
             {
@@ -717,7 +724,7 @@ public class AsimetDecode
 
         public void print()
         {
-            System.out.printf("%s ,", fileName);
+            System.out.printf("AsimetDecode:: %s ,", fileName);
 
             printVars(record, wn, we, compass, bpr, th, rh, swr, lwr, pcr, sst, ssc, used);
         }
@@ -737,7 +744,7 @@ public class AsimetDecode
         FileInputStream inFile = new FileInputStream(aFile);
 
         FileChannel inChannel = inFile.getChannel();
-        System.err.println("file " + file + " size " + inChannel.size());
+        System.err.println("AsimetDecode::read() file " + file + " size " + inChannel.size());
 
         reader r = null;
         if (raw)
@@ -784,7 +791,7 @@ public class AsimetDecode
         }
         else
         {
-            System.err.println("unknown type");
+            System.err.println("AsimetDecode:: unknown type");
         }
 
         if (r != null)
@@ -793,7 +800,7 @@ public class AsimetDecode
 
             int read = r.read(inChannel);
 
-            System.err.println("records out " + read);
+            System.err.println("AsimetDecode::read() records out " + read);
         }
     }
 

@@ -84,14 +84,17 @@ public class NameValueParser extends AbstractDataParser
         hm.put("wsdir", "WDIR");
         hm.put("lat", "YPOS");
         hm.put("lon", "XPOS");
+        hm.put("PAR", "PAR_VOLT");
 
         hm.put("CHL", "ECO_FLNTUS_CHL");
         hm.put("NTU", "ECO_FLNTUS_TURB");
 
-        StringTokenizer st = new StringTokenizer(dataLine, ", ");
+        hm.put("MLD", "MLD");
+
+        StringTokenizer st = new StringTokenizer(dataLine, ",");
         try
         {
-            dateString = st.nextToken() + " " + st.nextToken();
+            dateString = st.nextToken();
             try
             {
                 java.util.Date d = dateParser.parse(dateString);
@@ -113,25 +116,32 @@ public class NameValueParser extends AbstractDataParser
                     {
                         sValue = nv.nextToken();
 
-                        value = new Double(sValue.trim());
+                        try
+                        {
+                            value = new Double(sValue.trim());
                         //
-                        // ok, we have parsed out the values we need, can now construct the raw data class
-                        //
-                        RawInstrumentData row = new RawInstrumentData();
+                            // ok, we have parsed out the values we need, can now construct the raw data class
+                            //
+                            RawInstrumentData row = new RawInstrumentData();
 
-                        row.setDataTimestamp(dataTimestamp);
-                        row.setDepth(instrumentDepth);
-                        row.setInstrumentID(currentInstrument.getInstrumentID());
-                        row.setLatitude(currentMooring.getLatitudeIn());
-                        row.setLongitude(currentMooring.getLongitudeIn());
-                        row.setMooringID(currentMooring.getMooringID());
-                        row.setParameterCode(hm.get(sName));
-                        row.setParameterValue(value);
-                        row.setSourceFileID(currentFile.getDataFilePrimaryKey());
-                        row.setQualityCode("RAW");
-                        paramsSent++;
+                            row.setDataTimestamp(dataTimestamp);
+                            row.setDepth(instrumentDepth);
+                            row.setInstrumentID(currentInstrument.getInstrumentID());
+                            row.setLatitude(currentMooring.getLatitudeIn());
+                            row.setLongitude(currentMooring.getLongitudeIn());
+                            row.setMooringID(currentMooring.getMooringID());
+                            row.setParameterCode(hm.get(sName));
+                            row.setParameterValue(value);
+                            row.setSourceFileID(currentFile.getDataFilePrimaryKey());
+                            row.setQualityCode("RAW");
+                            paramsSent++;
 
-                        boolean ok = row.insert();
+                            boolean ok = row.insert();
+                        }
+                        catch (NumberFormatException ex)
+                        {
+                            // just ignore, don't insert into database
+                        }
                     }
                 }
             }

@@ -22,6 +22,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.JFileChooser;
 import ucar.ma2.Array;
+import ucar.ma2.ArrayDouble;
+import ucar.ma2.ArrayFloat;
 import ucar.ma2.Index;
 import ucar.nc2.Attribute;
 import ucar.nc2.Dimension;
@@ -29,6 +31,7 @@ import ucar.nc2.Variable;
 import ucar.nc2.dataset.CoordinateAxis1DTime;
 import ucar.nc2.dataset.NetcdfDataset;
 import ucar.nc2.dataset.VariableDS;
+import ucar.nc2.time.CalendarDate;
 
 /**
  *
@@ -40,17 +43,22 @@ import ucar.nc2.dataset.VariableDS;
 public class ReadCDF extends Component
 {
     SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-    ArrayList timeArrays = new ArrayList();
-    ArrayList headers = new ArrayList();
-    Date times[];
+    ArrayList<Variable> timeVars;
+    List<CalendarDate> dates;
+    ArrayList<String> auxVarNames;
+    NetcdfDataset ncd;
 
     public ReadCDF()
     {
+        timeVars = new ArrayList<Variable>();
+        auxVarNames = new ArrayList<String>();
         sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
     }
 
     public void process(NetcdfDataset ncd) throws IOException, Exception
     {
+        this.ncd = ncd;
+        
         Variable varT = ncd.findVariable("TIME");
         if (varT == null)
         {
@@ -70,12 +78,11 @@ public class ReadCDF extends Component
 
         System.err.println("Time type " + tunit.getDataType() + " value " + tunit.toString());
 
-        Formatter fmt = new Formatter();
-        fmt.format("CoordinateAxis1DTime %s: %n %s is %d %n %s is %f", fmt.getClass(), "Integer", 10, "Float", 10.4);
-        CoordinateAxis1DTime tm = CoordinateAxis1DTime.factory(ncd, new VariableDS(null, varT, true), fmt);
-        times = tm.getTimeDates();
+        CoordinateAxis1DTime tm = CoordinateAxis1DTime.factory(ncd, new VariableDS(null, varT, true), null);
+        dates = tm.getCalendarDates();
 
-        System.err.println(sdf.format(times[0]) + " CoordinateAxis1DTime " + tm);
+        Date t0 = new Date(dates.get(0).getMillis());
+        System.err.println(sdf.format(t0) + " CoordinateAxis1DTime " + tm);
 
         // iterate over all variables, extracting the time based ones
         for (Variable var : ncd.getVariables())
@@ -85,52 +92,101 @@ public class ReadCDF extends Component
             {
                 for (Dimension d : var.getDimensions())
                 {
-                    System.err.print(" " + d.getName());
-                    if (d.getName().startsWith(tvarString))
+                    System.err.print(" " + d.getShortName());
+                    if (d.getShortName().startsWith(tvarString))
                     {
-                        headers.add(var.getShortName());
-                        timeArrays.add(var.read());
+                        timeVars.add(var);
                     }
                 }
+                Attribute aAv = var.findAttribute("ancillary_variables");
+                System.err.println(")");
+                if (aAv != null)
+                {                    
+                    auxVarNames.add(aAv.getStringValue());
+                    System.err.println(" has AUX var : " + aAv.getStringValue());
+                }                
             }
-            System.err.println(")");
+            else 
+                System.err.println(")");
         }
     }
     
     public void csvOutput()
     {   
         // print header
-        System.out.print("TIME,");
-        for (ListIterator<String> it = headers.listIterator(); it.hasNext();)
+        System.out.print("TIME");
+        for (ListIterator<Variable> it = timeVars.listIterator(); it.hasNext();)
         {
-            String v = it.next();
-            System.out.print(v);
-            if (it.hasNext())
+            Variable v = it.next();
+            
+            if (!auxVarNames.contains(v.getShortName()))
             {
-                System.out.print(",");
+                Attribute aSn = v.findAttribute("standard_name");
+                Attribute aLn = v.findAttribute("long_name");
+                String name = v.getShortName();
+                if (aSn != null)
+                {
+                    name = aSn.getStringValue();
+                }
+                else if (aLn != null)
+                {
+                    name = aLn.getStringValue();
+                }
+                Dimension dDepth = v.getDimension(1);
+                //System.out.print("Dim : " + dDepth.getShortName());
+                Variable vDepth = ncd.findVariable(dDepth.getShortName());
+                ArrayFloat.D1 depths;
+                try 
+                {
+                    depths = (ArrayFloat.D1)vDepth.read();
+                    for(int i=0;i<depths.getSize();i++)
+                    {
+                        System.out.print(",");
+                        System.out.print(name + "(" + depths.get(i) + ")");
+                    }
+                }
+                catch (IOException ex) 
+                {
+                    ex.printStackTrace();
+                }
             }
         }
         System.out.println();
         
         // print data
-        for(int i=0;i<times.length;i++)
+        Date t = new Date();
+        float d;
+        float nan = Float.NaN;
+        
+        // now finally for each time, output the data from each sensor at each depth
+        for (int i = 0; i < dates.size() ; i++)
         {
-            System.out.print(sdf.format(times[i]) + ",");
-            for (ListIterator<Array> it = timeArrays.listIterator(); it.hasNext();)
+            t.setTime(dates.get(i).getMillis());
+            System.out.print(sdf.format(t));
+            for (ListIterator<Variable> it = timeVars.listIterator(); it.hasNext();)
             {
-                Array v = it.next();
-                
-                Index ix = v.getIndex();
-                int shape[] = ix.getShape();
-                int rank = ix.getRank();
-
-                for(int s=0;s<rank;s++)
+                Variable v = it.next();
+                if (!auxVarNames.contains(v.getShortName()))
                 {
-                    ix.set(i, s);
-                    System.out.print(v.getDouble(ix));
-                    if (it.hasNext())
+                    ArrayFloat.D2 data;
+                    try
                     {
-                        System.out.print(",");
+                        data = (ArrayFloat.D2) v.read();
+
+                        int[] shape = data.getShape();
+                        for(int j=0;j<shape[1];j++)
+                        {
+                            System.out.print(",");
+                            d = data.get(i, j);
+                            if (!Float.isNaN(d))
+                                System.out.print(d);
+                            else
+                                System.out.print("");
+                        }
+                    }
+                    catch (IOException ex)
+                    {
+                        Logger.getLogger(ReadCDF.class.getName()).log(Level.SEVERE, null, ex);
                     }
                 }
             }
@@ -150,6 +206,8 @@ public class ReadCDF extends Component
             }
 
             process(ncd);
+    
+            csvOutput();            
         }
         catch (IOException ioe)
         {
@@ -239,8 +297,6 @@ public class ReadCDF extends Component
                 file++;
             }
             r.read(args[file], header);
-    
-            r.csvOutput();
         }
         
     }
