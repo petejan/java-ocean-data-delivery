@@ -15,7 +15,9 @@ package org.imos.abos.dbms;
  */
 import java.math.BigDecimal;
 import java.sql.*;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.TimeZone;
 import java.util.Vector;
 import java.util.logging.Level;
@@ -866,6 +868,8 @@ public class ArrayInstrumentData  implements Cloneable
 
     protected boolean doInsert(PreparedStatement psql)
     {
+        Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
+        
         try
         {
             int i = 1;
@@ -873,7 +877,7 @@ public class ArrayInstrumentData  implements Cloneable
             psql.setInt(i++, sourceFileID);
             psql.setInt(i++, instrumentID);
             psql.setString(i++, mooringID);
-            psql.setTimestamp(i++, dataTimestamp);
+            psql.setTimestamp(i++, dataTimestamp, cal);
             psql.setDouble(i++, latitude);
             psql.setDouble(i++, longitude);
             psql.setDouble(i++, depth);
@@ -884,7 +888,10 @@ public class ArrayInstrumentData  implements Cloneable
 
             psql.setString(i++, qualityCode);
 
+            //System.out.println("ArrayInstrumentData::doInsert " + psql);
+            
             int affectedRows = psql.executeUpdate();
+            
             if(affectedRows == 1)
             {
                 isNew = false;
@@ -900,6 +907,7 @@ public class ArrayInstrumentData  implements Cloneable
         }
         catch (SQLException ex)
         {
+            //ex.printStackTrace();
             logger.error(ex);
             message = ex.getMessage();
             return false;

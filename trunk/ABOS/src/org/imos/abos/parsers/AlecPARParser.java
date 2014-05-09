@@ -14,6 +14,7 @@ import java.text.DecimalFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.NoSuchElementException;
+import java.util.StringTokenizer;
 import org.imos.abos.dbms.RawInstrumentData;
 import static org.imos.abos.parsers.AbstractDataParser.logger;
 import org.wiley.util.NullStringTokenizer;
@@ -55,6 +56,9 @@ public class AlecPARParser extends AbstractDataParser
     {
         SimpleDateFormat dateParser = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
 
+        ///   Sample YYYY/MM/DD hh:mm:ss     Day Light[Micromol]      Light 
+        //         1 2013/04/28 00:00:00      28       0.00          1 
+
         String sampleCount;
         String dateString;
         String timeString;
@@ -67,14 +71,14 @@ public class AlecPARParser extends AbstractDataParser
         Timestamp dataTimestamp = null;
         Double PARVal = null;
 
-        NullStringTokenizer st = new NullStringTokenizer(dataLine,",");
+        StringTokenizer st = new StringTokenizer(dataLine,", ");
         int tCount = st.countTokens();
         try
         {
             if (tCount > 4)
                 sampleCount = st.nextToken();
             
-            if (tCount >= 12)
+            if (tCount >= 4)
             {
                 dateString = st.nextToken();
                 timeString = st.nextToken();

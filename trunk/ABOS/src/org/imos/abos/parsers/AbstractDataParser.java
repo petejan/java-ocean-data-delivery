@@ -65,7 +65,7 @@ public abstract class AbstractDataParser
 
     public void AbstractDataParser()
     {
-        TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
+        TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
     }
 
     protected DecimalFormat deciFormat = new DecimalFormat("-######.0#");
@@ -394,5 +394,11 @@ public abstract class AbstractDataParser
 
     public static void main(String args[])
     {
+        if (args.length < 3)
+        {
+            System.err.println("Usage : parser.class <mooring> <instrument_id> <file....>");
+            
+            System.exit(-1);
+        }
     }
 }

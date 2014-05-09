@@ -50,5 +50,23 @@ public class WETLabsPARCalculator
         Double PARValue = constants.ImAnalogCoefficient * Math.pow(10, powerFactor);
         return PARValue;
     }
+    public static Double calculatePARValueCount(Double count)
+    {
+        if(constants == null)
+        {
+            logger.error("Cannot calculate PAR without calibration coefficients!");
+            return null;
+        }
+        if( count == null)
+        {
+            logger.error("Cannot calculate PAR without valid voltage value!");
+            return null;
+        }
+
+        Double powerFactor = (count - constants.A0DigitalCoefficient) / constants.A1DigitalCoefficient;
+
+        Double PARValue = constants.ImDigitalCoefficient * Math.pow(10, powerFactor);
+        return PARValue;
+    }
 
 }

@@ -239,7 +239,7 @@ public class WETLabsPARCalculationForm extends MemoryWindow implements DataProce
         //logger.debug(evt.getPropertyName());
         if(propertyName.equalsIgnoreCase("MOORING_SELECTED")) {
             Mooring selectedItem = (Mooring) evt.getNewValue();
-            sourceInstrumentCombo.setMooringParam(selectedItem, "PAR_VOLT");
+            sourceInstrumentCombo.setMooringParam(selectedItem, "ECO_PAR");
             targetInstrumentCombo.setMooring(selectedItem);
             calibrationFileCombo1.setMooring(selectedItem);
         }
@@ -336,13 +336,13 @@ public class WETLabsPARCalculationForm extends MemoryWindow implements DataProce
 
     public void calculateDataValues()
     {
-        String sql = "select data_timestamp, source_file_id, depth, parameter_value"
+        String sql = "select data_timestamp, source_file_id, depth, parameter_code, parameter_value"
                     + " FROM raw_instrument_data"
                     + " WHERE instrument_id = "
                     + sourceInstrument.getInstrumentID()
                     + " AND mooring_id = "
                     + StringUtilities.quoteString(selectedMooring.getMooringID())
-                    + " AND parameter_code = 'PAR_VOLT'"
+                    + " AND parameter_code IN ('PAR_VOLT', 'ECO_PAR')"
                     ;
 
         WETLabsPARConstants constants = new WETLabsPARConstants();
@@ -364,8 +364,6 @@ public class WETLabsPARCalculationForm extends MemoryWindow implements DataProce
 
                 PARData row = new PARData();
                 row.setData(currentRow);
-
-                row.calculatedPARValue = WETLabsPARCalculator.calculatePARValue(row.PARVoltage);
 
                 dataSet.add(row);
             }
@@ -453,7 +451,7 @@ public class WETLabsPARCalculationForm extends MemoryWindow implements DataProce
                 System.out.println(
                         row.dataTimestamp
                         + ","
-                        + row.PARVoltage
+                        + row.PARValue
                         + ","
                         + row.calculatedPARValue
                         );
@@ -461,7 +459,7 @@ public class WETLabsPARCalculationForm extends MemoryWindow implements DataProce
                 file.receiveLine(
                         row.dataTimestamp
                         + ","
-                        + row.PARVoltage
+                        + row.PARValue
                         + ","
                         + row.calculatedPARValue
                         );
@@ -582,7 +580,7 @@ public class WETLabsPARCalculationForm extends MemoryWindow implements DataProce
         public Integer sourceFileID;
         public Double instrumentDepth;
 
-        public Double PARVoltage;
+        public Double PARValue;
         public Double calculatedPARValue;
 
         public void setData(Vector row)
@@ -592,7 +590,14 @@ public class WETLabsPARCalculationForm extends MemoryWindow implements DataProce
             dataTimestamp = (Timestamp) row.elementAt(i++);
             sourceFileID = ((Number)row.elementAt(i++)).intValue();
             instrumentDepth = ((Number)row.elementAt(i++)).doubleValue();
-            PARVoltage = ((Number)row.elementAt(i++)).doubleValue();
+            String code = (String)row.elementAt(i++);
+            PARValue = ((Number)row.elementAt(i++)).doubleValue();
+            
+            if (code.startsWith("PAR_VOLT"))                
+                calculatedPARValue = WETLabsPARCalculator.calculatePARValue(PARValue);
+            else
+                calculatedPARValue = WETLabsPARCalculator.calculatePARValueCount(PARValue);
+
         }
     }
 
