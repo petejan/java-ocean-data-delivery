@@ -571,6 +571,7 @@ public class AanderraOptodeCalculationForm extends MemoryWindow implements DataP
         {
             optodeData row = dataSet.get(i);
             
+            //System.out.println(row);
             row.calculatedDissolvedOxygenPerKg = AanderraOptodeOxygenCalculator.UchidaCalculateDissolvedOxygenInUMolesPerKg(
                                                                                             row.optodeTemperatureValue,
                                                                                             row.optodeBPhaseValue,
@@ -787,6 +788,20 @@ public class AanderraOptodeCalculationForm extends MemoryWindow implements DataP
         public Double density;
 
         public Double calculatedDissolvedOxygenPerKg;
+
+        public String toString()
+        {
+            return dataTimestamp + 
+                    "," + sourceFileID + 
+                    "," + instrumentDepth + 
+                    "," + optodeTemperatureValue + 
+                    "," + optodeBPhaseValue + 
+                    "," + waterTemperature + 
+                    "," + pressureValue + 
+                    "," + psal + 
+                    "," + density + 
+                    "," + calculatedDissolvedOxygenPerKg ;
+        }
 
         public void setData(Vector row)
         {

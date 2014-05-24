@@ -93,11 +93,18 @@ public class AanderaaOptodeOxygen2BPhase
 
     public double calcOxygen()
     {
-        double[] c0coef = {4.537931E+03, -1.625950E+02, 3.295740E+00, -2.792849E-02};
-        double[] c1coef = {-2.509530E+02, 8.023220E+00, -1.583980E-01, 1.311410E-03};
-        double[] c2coef = {5.664169E+00, -1.596469E-01, 3.079099E-03, -2.462650E-05};
-        double[] c3coef = {-5.994490E-02, 1.483260E-03, -2.821099E-05, 2.151560E-07};
-        double[] c4coef = {2.436140E-04, -5.267590E-06, 1.000640E-07, -7.143200E-10};
+        //double[] c0coef = {4.537931E+03, -1.625950E+02, 3.295740E+00, -2.792849E-02};
+        //double[] c1coef = {-2.509530E+02, 8.023220E+00, -1.583980E-01, 1.311410E-03};
+        //double[] c2coef = {5.664169E+00, -1.596469E-01, 3.079099E-03, -2.462650E-05};
+        //double[] c3coef = {-5.994490E-02, 1.483260E-03, -2.821099E-05, 2.151560E-07};
+        //double[] c4coef = {2.436140E-04, -5.267590E-06, 1.000640E-07, -7.143200E-10};
+        
+        // SN1161 2008-05-30
+        double[] c0coef = {5.27602E+03, -1.78336E+02, 3.60337E+00, -3.17257E-02};        
+        double[] c1coef = {-2.83515E+02, 8.53926E+00, -1.70712E-01, 1.51927E-03};        
+        double[] c2coef = {6.14613E+00, -1.62949E-01, 3.25579E-03, -2.94146E-05};        
+        double[] c3coef = {-6.20004E-02, 1.43629E-03, -2.90879E-05, 2.67188E-07};
+        double[] c4coef = {2.39283E-04, -4.79250E-06, 1.00060E-07, -9.33184E-10};
         
         PolynomialFunction c0p = new PolynomialFunction(c0coef);
         PolynomialFunction c1p = new PolynomialFunction(c1coef);
@@ -126,7 +133,10 @@ public class AanderaaOptodeOxygen2BPhase
     {
         NewtonRaphsonSolver sol = new NewtonRaphsonSolver();
         
-        double[] phaseCoef = {-6.566452E+00 - dp, 1.187430E+00, 0.000000E+00, 0.000000E+00};
+        //double[] phaseCoef = {-6.566452E+00 - dp, 1.187430E+00, 0.000000E+00, 0.000000E+00};
+        
+        // SN1161 2009-02-24
+        double[] phaseCoef = {8.94295E-01 - dp, 1.10633E00, 0.00000E00, 0.00000E00};
         
         PolynomialFunction phasePoly = new PolynomialFunction(phaseCoef); // don't really nead to use this as its a 1st order function, but its clearer
         
@@ -144,9 +154,12 @@ public class AanderaaOptodeOxygen2BPhase
         Connection conn = null;
         Statement proc = null;
         ResultSet results = null;
-        selectedMooring = Mooring.selectByMooringID("Pulse-10-2013");
-        sourceInstrument = Instrument.selectByInstrumentID(740); // SBE16 6330
-        targetInstrument = Instrument.selectByInstrumentID(855); // Optode 1420
+        //selectedMooring = Mooring.selectByMooringID("Pulse-10-2013");
+        //sourceInstrument = Instrument.selectByInstrumentID(740); // SBE16 6330
+        //targetInstrument = Instrument.selectByInstrumentID(855); // Optode 1420
+        selectedMooring = Mooring.selectByMooringID("Pulse-6-2009");
+        sourceInstrument = Instrument.selectByInstrumentID(4); // SBE16 6331
+        targetInstrument = Instrument.selectByInstrumentID(620); // Optode 1161
         SimpleDateFormat ts = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         ts.setTimeZone(TimeZone.getTimeZone("UTC"));
 

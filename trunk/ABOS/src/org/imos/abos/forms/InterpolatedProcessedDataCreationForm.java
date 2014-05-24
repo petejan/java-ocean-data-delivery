@@ -483,8 +483,8 @@ public class InterpolatedProcessedDataCreationForm extends MemoryWindow implemen
         {        
             logger.info("----");
             logger.info("Processing " + p);
-            // ArrayList<InstrumentCalibrationValue> calValues = InstrumentCalibrationValue.selectByInstrumentAndMooring(p.instrument_id, selectedMooring.getMooringID());
-            ArrayList<InstrumentCalibrationValue> calValues = InstrumentCalibrationValue.selectByInstrument(p.instrument_id);
+            ArrayList<InstrumentCalibrationValue> calValues = InstrumentCalibrationValue.selectByInstrumentAndMooring(p.instrument_id, selectedMooring.getMooringID());
+            //ArrayList<InstrumentCalibrationValue> calValues = InstrumentCalibrationValue.selectByInstrument(p.instrument_id);
             
             // get any calibration values that should be applied to this paramter
             if(calValues != null && calValues.size() > 0)

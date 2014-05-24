@@ -89,7 +89,7 @@ public class WriteMRU_SOFS
         NetcdfFileWriter dataFile = null;
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         
-        ArrayList<InstrumentCalibrationValue> v = InstrumentCalibrationValue.selectByInstrumentAndMooring(2248, m.getMooringID());
+        ArrayList<InstrumentCalibrationValue> v = InstrumentCalibrationValue.selectByInstrumentAndMooring(2248, m.getMooringID()); // load cell
         double slope = Double.NaN;
         double offset = Double.NaN;
         for(InstrumentCalibrationValue i : v)
@@ -193,6 +193,29 @@ public class WriteMRU_SOFS
 
             ndf.writeGlobalAttributes();
             ndf.createCoordinateVariables(listOfFiles.size());      
+            
+            Variable vLon = dataFile.addVariable(null, "XPOS", DataType.DOUBLE, "TIME");
+            Variable vLat = dataFile.addVariable(null, "YPOS", DataType.DOUBLE, "TIME");
+            vLat.addAttribute(new Attribute("standard_name", "latitude"));
+            vLat.addAttribute(new Attribute("long_name", "latitude of float"));
+            vLat.addAttribute(new Attribute("units", "degrees_north"));
+            vLat.addAttribute(new Attribute("axis", "Y"));
+            vLat.addAttribute(new Attribute("valid_min", -90.0));
+            vLat.addAttribute(new Attribute("valid_max", 90.0));
+            vLat.addAttribute(new Attribute("reference", "WGS84"));
+            vLat.addAttribute(new Attribute("coordinate_reference_frame", "urn:ogc:crs:EPSG::4326"));
+
+            vLon.addAttribute(new Attribute("standard_name", "longitude"));
+            vLon.addAttribute(new Attribute("long_name", "longitude of float"));
+            vLon.addAttribute(new Attribute("units", "degrees_east"));
+            vLon.addAttribute(new Attribute("axis", "X"));
+            vLon.addAttribute(new Attribute("valid_min", -180.0));
+            vLon.addAttribute(new Attribute("valid_max", 180.0));
+            vLon.addAttribute(new Attribute("reference", "WGS84"));
+            vLon.addAttribute(new Attribute("coordinate_reference_frame", "urn:ogc:crs:EPSG::4326"));
+            
+            ArrayDouble.D1 lat = new ArrayDouble.D1(listOfFiles.size());
+            ArrayDouble.D1 lon = new ArrayDouble.D1(listOfFiles.size());
             
             Dimension sampleDim = dataFile.addDimension(null, "sample", NSAMPLE);
             Dimension specDim = dataFile.addDimension(null, "spectrum", NSPEC);
@@ -390,6 +413,12 @@ public class WriteMRU_SOFS
             
             ndf.writePosition(m.getLatitudeIn(), m.getLongitudeIn());            
             
+            //lat.set(0, latitudeIn);
+            //lon.set(0, longitudeOut);
+
+            dataFile.write(vLat, lat);
+            dataFile.write(vLon, lon);
+
             dataFile.write(ndf.vTime, ndf.times);
 
             Array dataSpecFreq = Array.factory(DataType.FLOAT, new int[]
