@@ -68,11 +68,14 @@ public class NetCDFcreateForm extends MemoryWindow
     
     protected NetcdfFileWriter dataFile = null;
     protected TimeZone tz = TimeZone.getTimeZone("UTC");
+    protected SimpleDateFormat netcdfDate;
     
     /** Creates new form SBE16CalculationForm */
     public NetCDFcreateForm()
     {
         TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
+        netcdfDate = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
+        netcdfDate.setTimeZone(tz);
     }
     
     @Override
@@ -417,7 +420,7 @@ public class NetCDFcreateForm extends MemoryWindow
 
             varNameQC[p] = qc;
             varQC[p] = dataFile.addVariable(null, qc, DataType.BYTE, timeAndDim);
-            varQC[p].addAttribute(new Attribute("long_name", "quality flag"));
+            varQC[p].addAttribute(new Attribute("long_name", "quality flag for " + varName[p]));
             if (authority.equals("IMOS"))
                 varQC[p].addAttribute(new Attribute("quality_control_conventions", "IMOS standard set using the IODE flags"));
             else
@@ -560,20 +563,31 @@ public class NetCDFcreateForm extends MemoryWindow
         tz = TimeZone.getTimeZone("GMT");
         GregorianCalendar cal = (GregorianCalendar) Calendar.getInstance();
         cal.setTimeZone(tz);
+        
+        cal.setTimeInMillis(endTime.getTime());
+        cal.set(Calendar.MINUTE, 59);
+        cal.set(Calendar.SECOND, 59);
+        cal.set(Calendar.MILLISECOND, 0);
+        java.util.Date endTs = cal.getTime();        
+        
         cal.setTimeInMillis(startTime.getTime());
         cal.set(Calendar.MINUTE, 0);
         cal.set(Calendar.SECOND, 0);
         cal.set(Calendar.MILLISECOND, 0);
         long baseMillis = cal.getTimeInMillis();
         Timestamp current = new Timestamp(baseMillis);
+        startTime = new Timestamp(baseMillis);
+        
         logger.debug("Starting timestamp is " + current);
-        while (current.before(endTime))
+        while (current.before(endTs))
         {
             timeArray.add(new Timestamp(baseMillis));
             baseMillis += 3600000;
             current.setTime(baseMillis);
         }
         timeArray.add(current);
+        endTime = current;
+        
         logger.debug("Finished generating time array, last timestamp was " + current + "\nTotal Elements: " + timeArray.size());
     }
 
@@ -690,7 +704,6 @@ public class NetCDFcreateForm extends MemoryWindow
         variable.addAttribute(new Attribute("sensor_name", sensor));
         variable.addAttribute(new Attribute("sensor_serial_number", serialNo));
             
-        
         if(param != null)
         {
             variable.addAttribute(new Attribute("name", param.getDescription()));
@@ -761,8 +774,15 @@ public class NetCDFcreateForm extends MemoryWindow
             f.setMooring(selectedMooring);
             f.setAuthority(authority);
             f.setSite(site);
+
+            dataFile.addGroupAttribute(null, new Attribute("time_deployment_start", netcdfDate.format(selectedMooring.getTimestampIn())));
+            dataFile.addGroupAttribute(null, new Attribute("time_deployment_end", netcdfDate.format(selectedMooring.getTimestampOut())));
+            
             f.writeGlobalAttributes();
 
+            dataFile.addGroupAttribute(null, new Attribute("timecoverage_start", netcdfDate.format(startTime)));
+            dataFile.addGroupAttribute(null, new Attribute("timecoverage_end", netcdfDate.format(endTime)));
+            
             // Define the coordinate variables.
             // Add TIME coordinate
             f.createCoordinateVariables(timeArray.size());
@@ -810,8 +830,12 @@ public class NetCDFcreateForm extends MemoryWindow
                                     matchedElements++;
                                     value = currentValue.val;
                                     ic.dataVar[p].set(record, d, value.floatValue());
-                                    byte b = 1;
-                                    if (currentValue.quality.trim().equals("BAD"))
+                                    byte b = 0;
+                                    if (currentValue.quality.trim().equals("RAW"))
+                                    {
+                                        b = 1;
+                                    }
+                                    else if (currentValue.quality.trim().equals("BAD"))
                                     {
                                         b = 4;
                                     }

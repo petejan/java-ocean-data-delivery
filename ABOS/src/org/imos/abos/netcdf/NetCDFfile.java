@@ -61,7 +61,7 @@ public class NetCDFfile
     {
         TimeZone.setDefault(tz);
         dataFile = d;        
-        netcdfDate = new SimpleDateFormat("yyyy-MM-DD'T'hh:mm:ss'Z'");
+        netcdfDate = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
         TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
         SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         anchorTime = 0;
@@ -183,7 +183,7 @@ public class NetCDFfile
         attributeSet = query.getData();
         addGlobal("DEPLOYMENT", attributeSet);
         
-        dataFile.addGroupAttribute(null, new Attribute("date_update", df.format(Calendar.getInstance().getTime())));
+        dataFile.addGroupAttribute(null, new Attribute("date_created", df.format(Calendar.getInstance().getTime())));
     }
 
     public void writeCoordinateVariableAttributes()
@@ -205,7 +205,7 @@ public class NetCDFfile
         vTime.addAttribute(new Attribute("calendar", "gregorian"));
 
         vLat.addAttribute(new Attribute("standard_name", "latitude"));
-        vLat.addAttribute(new Attribute("long_name", "latitude of measurement"));
+        vLat.addAttribute(new Attribute("long_name", "latitude of anchor"));
         vLat.addAttribute(new Attribute("units", "degrees_north"));
         vLat.addAttribute(new Attribute("axis", "Y"));
         vLat.addAttribute(new Attribute("valid_min", -90.0));
@@ -215,7 +215,7 @@ public class NetCDFfile
         vLat.addAttribute(new Attribute("comment", "Anchor Location"));   
         
         vLon.addAttribute(new Attribute("standard_name", "longitude"));
-        vLon.addAttribute(new Attribute("long_name", "longitude of measurement"));
+        vLon.addAttribute(new Attribute("long_name", "longitude of anchor"));
         vLon.addAttribute(new Attribute("units", "degrees_east"));
         vLon.addAttribute(new Attribute("axis", "X"));
         vLon.addAttribute(new Attribute("valid_min", -180.0));

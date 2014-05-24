@@ -397,11 +397,11 @@ public class MooringTable extends EditableBaseTable
 
         // TODO: fix underlying code so we don't have to cast to float
         
-        String SQL = "select instrument_id, depth, parameter_code, avg(parameter_value)::float, max(parameter_value)::float, min(parameter_value)::float, count(*), min(data_timestamp) AS first, max(data_timestamp) AS last, to_char(age(max(data_timestamp), min(data_timestamp)), 'DDD \"days\" HH24 \"hours\"') AS duration"
-                    + " from raw_instrument_data"
+        String SQL = "select instrument_id, make || '-' || model || '-' || serial_number AS instrument, depth, parameter_code, avg(parameter_value)::float, max(parameter_value)::float, min(parameter_value)::float, count(*), min(data_timestamp) AS first, max(data_timestamp) AS last, to_char(age(max(data_timestamp), min(data_timestamp)), 'DDD \"days\" HH24 \"hours\"') AS duration"
+                    + " from raw_instrument_data join instrument using (instrument_id)"
                     + " where mooring_id = "
                     + StringUtilities.quoteString(selectedRow.getMooringID())
-                    + " group by instrument_id, depth, parameter_code"
+                    + " group by instrument_id, make || '-' || model || '-' || serial_number, depth, parameter_code"
                     + " order by depth, instrument_id, parameter_code"
                     ;
 
@@ -434,7 +434,7 @@ public class MooringTable extends EditableBaseTable
         }
 
         String SQL = " select pid.instrument_id, "
-                    + " ins.make || '/' || ins.model as Make,"
+                    + " ins.make || '-' || ins.model || '-' || ins.serial_number as instrument,"
                     + " depth, parameter_code,"
                     + " avg(parameter_value)::float as avg_value,"
                     + " max(parameter_value)::float as max_value,"

@@ -121,7 +121,7 @@ public class InstrumentCalibrationFileTable extends EditableBaseTable
         collection.setParentFrame(this);
         setDataStore( collection );
 
-        StringEditor us = new StringEditor(new SettableCaseJTextField("UPPER"), collection);
+        StringEditor us = new StringEditor(new SettableCaseJTextField("MIXED"), collection);
 
         DateTimeEditor tsEdit = new DateTimeEditor(new DateTimeField(), collection);
 

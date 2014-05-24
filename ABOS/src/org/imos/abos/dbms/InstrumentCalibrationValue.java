@@ -687,7 +687,7 @@ public class InstrumentCalibrationValue implements Cloneable
             psql.setString(5, parameterCode);
 
             int affectedRows = psql.executeUpdate();
-            if(affectedRows == 1)
+            if(affectedRows >= 1)
             {
                 isNewRow = false;
                 isEdited = false;

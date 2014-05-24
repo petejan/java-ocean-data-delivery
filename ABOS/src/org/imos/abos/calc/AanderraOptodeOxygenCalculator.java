@@ -167,7 +167,7 @@ public class AanderraOptodeOxygenCalculator
         
         //logger.debug("Oxygen before salinity adjustment: " + dissolvedOxygen);
 
-        dissolvedOxygen = dissolvedOxygen * correctSalinity(salinity.doubleValue(), optodeTemperature);
+        dissolvedOxygen = dissolvedOxygen * correctSalinity(salinity, optodeTemperature);
 
         //logger.debug("salinity adjusted oxygen before density adjustment: " + dissolvedOxygen);
         

@@ -60,8 +60,8 @@ public class CrossTabData
     protected static SQLWrapper query = new SQLWrapper();
     protected static String mooring_id = "'SOFS-3-2012','SOFS-2-2011','SOFS-4-2013'";
     protected static String table = "raw_instrument_data";
-    //protected static String paramid = "parameter_code || '-' || trim(to_char(depth, 'MI009')) || 'm-' || model || '-' || serial_number";
-    protected static String paramid = "parameter_code || '-' || trim(to_char(depth, 'MI009')) || 'm-' || model";
+    protected static String paramid = "parameter_code || '-' || trim(to_char(depth, 'MI009')) || 'm-' || model || '-' || serial_number";
+    //protected static String paramid = "parameter_code || '-' || trim(to_char(depth, 'MI009')) || 'm-' || model";
     
     public void CrossTabData()
     {
@@ -103,6 +103,7 @@ public class CrossTabData
                     + " FROM "+table+" JOIN instrument USING (instrument_id) "
                     + " JOIN parameters ON (code = parameter_code)"
                     + " WHERE mooring_id IN (" + mooring_id + ")"
+                    + " OR (mooring_id LIKE 'Pulse%' AND parameter_code IN ('DOX2', 'TOTAL_GAS_PRESSURE'))"
                     + " ORDER BY "+paramid+"";
 //        logger.debug(SQL);
 
@@ -153,7 +154,7 @@ public class CrossTabData
             System.out.println(hdr);
             //System.out.println(name);
             //System.out.println(depth);
-            //System.out.println(units);
+            System.out.println(units);
 
 //        logger.debug("Searching for data");
             SQL = "SELECT date_trunc('hour', data_timestamp) AT TIME ZONE 'UTC',"
@@ -166,6 +167,7 @@ public class CrossTabData
                 SQL += " AND data_timestamp BETWEEN timestamp_in AND timestamp_out";
             }
             SQL +=  " AND mooring_id IN (" + mooring_id + ")" 
+                    + " OR (mooring_id LIKE 'Pulse%' AND parameter_code IN('DOX2', 'TOTAL_GAS_PRESSURE'))"                    
                     + " GROUP BY date_trunc('hour', data_timestamp), " + paramid
                     + " ORDER BY date_trunc('hour', data_timestamp), " + paramid;
 //        logger.debug(SQL);

@@ -113,7 +113,7 @@ public class InstrumentTable extends EditableBaseTable
         CompTypeBox typeSelector = new CompTypeBox();
         ComboBoxEditor cbe = new ComboBoxEditor(typeSelector, collection);
 
-        StringEditor us = new StringEditor(new SettableCaseJTextField("UPPER"), collection);
+        StringEditor us = new StringEditor(new SettableCaseJTextField("MIXED"), collection);
 
         DateTimeEditor tsEdit = new DateTimeEditor(new DateTimeField(), collection);
 

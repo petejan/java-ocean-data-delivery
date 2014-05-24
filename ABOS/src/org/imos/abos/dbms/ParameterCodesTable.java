@@ -82,7 +82,7 @@ public class ParameterCodesTable extends EditableBaseTable
         collection.loadFromPersistentStore();
         setDataStore( collection );
 
-        StringEditor us = new StringEditor(new SettableCaseJTextField("UPPER"), collection);
+        StringEditor us = new StringEditor(new SettableCaseJTextField("MIXED"), collection);
         BooleanEditor be = new BooleanEditor(new JCheckBox(), collection);
 
         TableColumnModel tm = getTable().getColumnModel();

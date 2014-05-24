@@ -135,7 +135,7 @@ public class SeabirdSBE16Parser extends AbstractDataParser
             volt5 = getDouble(volt5String);
             volt6 = getDouble(volt6String);
             GTDPressureVal = getDouble(GTDPressureString);
-            GTDTemperatureVal = getDouble(GTDTemperatureString);
+            GTDTemperatureVal = getDouble(GTDTemperatureString)/100000.0;
             //
             // ok, we have parsed out the values we need, can now construct the raw data class
             //

@@ -440,7 +440,7 @@ public class CalibrationValuesEntryForm extends MemoryWindow
 
         ComboBoxEditor cbe = new ComboBoxEditor(selector, collection);
 
-        StringEditor us = new StringEditor(new SettableCaseJTextField("UPPER"), collection);
+        StringEditor us = new StringEditor(new SettableCaseJTextField("MIXED"), collection);
 
         parameterDataTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
         TableColumnModel tm = parameterDataTable.getColumnModel();
