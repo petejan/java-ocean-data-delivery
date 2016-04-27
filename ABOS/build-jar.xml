@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<project default="create_run_jar" name="Create Runnable Jar for Project java-ocean-data-delivery">
+    <!--this file was created by Eclipse Runnable JAR Export Wizard-->
+    <!--ANT 1.7 is required                                        -->
+    <target name="create_run_jar">
+        <jar destfile="/Users/pete/ABOS/git/java-ocean-data-delivery/ABOS/dist/ABOS.jar" filesetmanifest="mergewithoutmain">
+            <manifest>
+                <attribute name="Main-Class" value="org.imos.abos.Main"/>
+                <attribute name="Class-Path" value="."/>
+            </manifest>
+            <fileset dir="/Users/pete/ABOS/git/java-ocean-data-delivery/ABOS/build/classes"/>
+            <zipfileset excludes="META-INF/*.SF" src="/Users/pete/ABOS/git/java-ocean-data-delivery/ABOS/lib/commons-lang3-3.1.jar"/>
+            <zipfileset excludes="META-INF/*.SF" src="/Users/pete/ABOS/git/java-ocean-data-delivery/ABOS/lib/commons-math3-3.2.jar"/>
+            <zipfileset excludes="META-INF/*.SF" src="/Users/pete/ABOS/git/java-ocean-data-delivery/ABOS/lib/jsr-275-1.0-beta-2.jar"/>
+            <zipfileset excludes="META-INF/*.SF" src="/Users/pete/ABOS/git/java-ocean-data-delivery/ABOS/lib/gt-opengis-10.0.jar"/>
+            <zipfileset excludes="META-INF/*.SF" src="/Users/pete/ABOS/git/java-ocean-data-delivery/ABOS/lib/gt-metadata-10.0.jar"/>
+            <zipfileset excludes="META-INF/*.SF" src="/Users/pete/ABOS/git/java-ocean-data-delivery/ABOS/lib/gt-referencing-10.0.jar"/>
+            <zipfileset excludes="META-INF/*.SF" src="/Users/pete/ABOS/git/java-ocean-data-delivery/ABOS/lib/itextpdf-5.4.2.jar"/>
+            <zipfileset excludes="META-INF/*.SF" src="/Users/pete/ABOS/git/java-ocean-data-delivery/ABOS/lib/jcommon-1.0.18.jar"/>
+            <zipfileset excludes="META-INF/*.SF" src="/Users/pete/ABOS/git/java-ocean-data-delivery/ABOS/lib/jfreechart-1.0.15.jar"/>
+            <zipfileset excludes="META-INF/*.SF" src="/Users/pete/ABOS/git/java-ocean-data-delivery/ABOS/lib/junit_4/junit-4.5.jar"/>
+            <zipfileset excludes="META-INF/*.SF" src="/Users/pete/ABOS/git/java-ocean-data-delivery/ABOS/lib/log4j-1.2.15.jar"/>
+            <zipfileset excludes="META-INF/*.SF" src="/Users/pete/ABOS/git/java-ocean-data-delivery/ABOS/lib/NeoNatalScreening.jar"/>
+            <zipfileset excludes="META-INF/*.SF" src="/Users/pete/ABOS/git/java-ocean-data-delivery/ABOS/lib/netcdfAll-4.3.jar"/>
+            <zipfileset excludes="META-INF/*.SF" src="/Users/pete/ABOS/git/java-ocean-data-delivery/ABOS/lib/nujan-1.4.1.jar"/>
+            <zipfileset excludes="META-INF/*.SF" src="/Users/pete/ABOS/git/java-ocean-data-delivery/ABOS/lib/postgresql-9.2-1003.jdbc4.jar"/>
+            <zipfileset excludes="META-INF/*.SF" src="/Users/pete/ABOS/git/java-ocean-data-delivery/ABOS/lib/swing-layout/swing-layout-1.0.4.jar"/>
+        </jar>
+    </target>
+</project>
