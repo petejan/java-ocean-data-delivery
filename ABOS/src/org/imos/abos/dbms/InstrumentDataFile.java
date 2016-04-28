@@ -493,7 +493,7 @@ public class InstrumentDataFile  implements Cloneable
         isNew = b;
 
         if(isNew)
-            setInstrumentID( InstrumentDataFile.getNextSequenceNumber() );
+            setDataFilePrimaryKey( InstrumentDataFile.getNextSequenceNumber() );
     }
 
     public boolean update()

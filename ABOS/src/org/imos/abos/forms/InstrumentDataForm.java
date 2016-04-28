@@ -331,7 +331,8 @@ public class InstrumentDataForm extends MemoryWindow
 
         if ( insertMode )
         {
-            editableItem.setDataFilePrimaryKey(InstrumentDataFile.getNextSequenceNumber());
+            
+            //editableItem.setDataFilePrimaryKey(InstrumentDataFile.getNextSequenceNumber());
             editableItem.setInstrumentID(parentInstrument.getInstrumentID()) ;
             editableItem.setMooringID(mooringCombo.getSelectedItem());
             editableItem.setProcessingStatus("UNPROCESSED");

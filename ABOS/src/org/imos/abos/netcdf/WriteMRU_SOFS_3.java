@@ -54,14 +54,16 @@ public class WriteMRU_SOFS_3
         // Create the file.
         File f = new File(args[0]);
         String filename = "SOFS-3-" + f.getName() + ".nc";
-        NetcdfFileWriter dataFile = null;
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         
-        NetCDFfile ndf = new NetCDFfile(dataFile);
+        NetCDFfile ndf = new NetCDFfile();
+        ndf.createFile(filename);
+        
         Mooring m = Mooring.selectByMooringID("SOFS-3-2012");
         ndf.setMooring(m);
         ndf.setAuthority("IMOS");
-        ndf.setSite("SOTS");
+        ndf.setFacility("ABOS-ASFS");
+        
 
         ArrayList<InstrumentCalibrationValue> v = InstrumentCalibrationValue.selectByInstrumentAndMooring(2248, m.getMooringID());
         double slope = Double.NaN;
@@ -151,46 +153,46 @@ public class WriteMRU_SOFS_3
             b.order(ByteOrder.BIG_ENDIAN);
 
             // Create new netcdf-3 file with the given filename
-            dataFile = NetcdfFileWriter.createNew(NetcdfFileWriter.Version.netcdf3, filename);
+            ndf.dataFile = NetcdfFileWriter.createNew(NetcdfFileWriter.Version.netcdf3, filename);
 
             SimpleDateFormat netcdfDate = new SimpleDateFormat("yyyy-MM-DD'T'hh:mm:ss'Z'");
             netcdfDate.setTimeZone(TimeZone.getTimeZone("UTC"));
 
-            dataFile.addGroupAttribute(null, new Attribute("platform_code", "SOFS"));
-            dataFile.addGroupAttribute(null, new Attribute("site", "SOUTHERN OCEAN FLUX STATION"));
-            dataFile.addGroupAttribute(null, new Attribute("date_created", netcdfDate.format(new Date())));
+            ndf.dataFile.addGroupAttribute(null, new Attribute("platform_code", "SOFS"));
+            ndf.dataFile.addGroupAttribute(null, new Attribute("site", "SOUTHERN OCEAN FLUX STATION"));
+            ndf.dataFile.addGroupAttribute(null, new Attribute("date_created", netcdfDate.format(new Date())));
 
-            Dimension timeDim = dataFile.addDimension(null, "TIME", NTIME);
-            Dimension sampleDim = dataFile.addDimension(null, "sample", NSAMPLE);
-            Dimension specDim = dataFile.addDimension(null, "spectrum", NSPEC);
-            Dimension vectorDim = dataFile.addDimension(null, "vector", 3);
+            Dimension timeDim = ndf.dataFile.addDimension(null, "TIME", NTIME);
+            Dimension sampleDim = ndf.dataFile.addDimension(null, "sample", NSAMPLE);
+            Dimension specDim = ndf.dataFile.addDimension(null, "spectrum", NSPEC);
+            Dimension vectorDim = ndf.dataFile.addDimension(null, "vector", 3);
 
-            Variable vTime = dataFile.addVariable(null, "TIME", DataType.INT, "TIME");
+            Variable vTime = ndf.dataFile.addVariable(null, "TIME", DataType.INT, "TIME");
             List<Dimension> vdims = new ArrayList<Dimension>();
             vdims.add(timeDim);
             vdims.add(sampleDim);
             vdims.add(vectorDim);
-            Variable vSpecFreq = dataFile.addVariable(null, "frequency", DataType.FLOAT, "spectrum");
-            Variable vSampleTime = dataFile.addVariable(null, "sampleT", DataType.FLOAT, "sample");
+            Variable vSpecFreq = ndf.dataFile.addVariable(null, "frequency", DataType.FLOAT, "spectrum");
+            Variable vSampleTime = ndf.dataFile.addVariable(null, "sampleT", DataType.FLOAT, "sample");
             vSpecFreq.addAttribute(new Attribute("units", "Hz"));
             vSampleTime.addAttribute(new Attribute("units", "s"));
 
-            Variable vAccel = dataFile.addVariable(null, "Acceleration", DataType.FLOAT, vdims);
-            Variable vMag = dataFile.addVariable(null, "Magnetic", DataType.FLOAT, vdims);
-            Variable vAttitude = dataFile.addVariable(null, "Attitude", DataType.FLOAT, vdims);
+            Variable vAccel = ndf.dataFile.addVariable(null, "Acceleration", DataType.FLOAT, vdims);
+            Variable vMag = ndf.dataFile.addVariable(null, "Magnetic", DataType.FLOAT, vdims);
+            Variable vAttitude = ndf.dataFile.addVariable(null, "Attitude", DataType.FLOAT, vdims);
 
             List<Dimension> dims = new ArrayList<Dimension>();
             dims.add(timeDim);
             dims.add(sampleDim);
 
-            Variable vLoad = dataFile.addVariable(null, "load", DataType.FLOAT, dims);
+            Variable vLoad = ndf.dataFile.addVariable(null, "load", DataType.FLOAT, dims);
 
             List<Dimension> dimSpec = new ArrayList<Dimension>();
             dimSpec.add(timeDim);
             dimSpec.add(specDim);
 
-            Variable vSpec = dataFile.addVariable(null, "wave_spectra", DataType.FLOAT, dimSpec);
-            Variable vSWH = dataFile.addVariable(null, "significant_wave_height", DataType.FLOAT, "TIME");
+            Variable vSpec = ndf.dataFile.addVariable(null, "wave_spectra", DataType.FLOAT, dimSpec);
+            Variable vSWH = ndf.dataFile.addVariable(null, "significant_wave_height", DataType.FLOAT, "TIME");
 
             // Define units attributes for coordinate vars. This attaches a
             // text attribute to each of the coordinate variables, containing
@@ -230,7 +232,7 @@ public class WriteMRU_SOFS_3
             });
 
             // Write the coordinate variable data. 
-            dataFile.create();
+            ndf.dataFile.create();
             Array dataTime = Array.factory(DataType.INT, new int[]
             {
                 NTIME
@@ -360,7 +362,7 @@ public class WriteMRU_SOFS_3
                 System.out.println("FILE " + args[fileNo] + " time " + ts + " wave height " + waveHeight + " load av " + loadStats.getMean() + " load max " + loadStats.getMax());
             }
 
-            dataFile.write(vTime, dataTime);
+            ndf.dataFile.write(vTime, dataTime);
 
             Array dataSpecFreq = Array.factory(DataType.FLOAT, new int[]
             {
@@ -371,9 +373,9 @@ public class WriteMRU_SOFS_3
                 dataSpecFreq.setFloat(i, (float) (i * WaveCalculator.DF));
             }
 
-            dataFile.write(vSWH, dataSWH);
-            dataFile.write(vSpecFreq, dataSpecFreq);
-            dataFile.write(vSpec, dataSpec);
+            ndf.dataFile.write(vSWH, dataSWH);
+            ndf.dataFile.write(vSpecFreq, dataSpecFreq);
+            ndf.dataFile.write(vSpec, dataSpec);
 
             Array dataSampleTime = Array.factory(DataType.FLOAT, new int[]
             {
@@ -384,12 +386,12 @@ public class WriteMRU_SOFS_3
                 dataSampleTime.setFloat(i, (float) (i * 0.2)); // 200ms sample time
             }
 
-            dataFile.write(vSampleTime, dataSampleTime);
-            dataFile.write(vAccel, dataAccel);
-            dataFile.write(vMag, dataMag);
-            dataFile.write(vAttitude, dataAttitude);
+            ndf.dataFile.write(vSampleTime, dataSampleTime);
+            ndf.dataFile.write(vAccel, dataAccel);
+            ndf.dataFile.write(vMag, dataMag);
+            ndf.dataFile.write(vAttitude, dataAttitude);
 
-            dataFile.write(vLoad, dataLoad);
+            ndf.dataFile.write(vLoad, dataLoad);
         }
         catch (IOException e)
         {
@@ -401,11 +403,11 @@ public class WriteMRU_SOFS_3
         }
         finally
         {
-            if (null != dataFile)
+            if (null != ndf.dataFile)
             {
                 try
                 {
-                    dataFile.close();
+                    ndf.dataFile.close();
                 }
                 catch (IOException ioe)
                 {

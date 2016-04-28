@@ -109,6 +109,8 @@ public class AsimetDecode
                 }
                 ts.add(Calendar.MINUTE, 1);
                 d = ts.getTime();
+                
+                outputNext();
             }
         }
 
@@ -152,7 +154,8 @@ public class AsimetDecode
             recordTs = createDate();
             return recordTs;
         }
-
+        
+        int lastMin = -1;
         public Date readLoggerTimestamp(ByteBuffer buf)
         {
             hour = buf.get(0) & 0xff;
@@ -162,6 +165,12 @@ public class AsimetDecode
             mon = buf.get(3) & 0xff;
             year = (buf.get(4) & 0xff) + 2000;
 
+//            if ((lastMin == 41) && (min == 32))
+//            {
+//                min = 42; // Hack for LSR23 on SOFS-1, some problem with minutes
+//            }
+            lastMin = min;
+            
             //System.out.println("day " + day + " Hour " + hour + " min " + min + " sec " + sec);
             recordTs = createDate();
             return recordTs;
@@ -500,7 +509,7 @@ public class AsimetDecode
             length = 1212;
             header = "we, wn, ws, wsMax, LastVane, LastCompass, TiltX, TiltY, GillSOS, GillTemp";
             headers = header.split(", ");
-            fmt = "%.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f";
+            fmt = "%.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f";
             fmts = fmt.split(", ");
         }
 

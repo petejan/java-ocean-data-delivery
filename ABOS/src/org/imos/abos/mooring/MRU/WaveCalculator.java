@@ -152,7 +152,8 @@ public class WaveCalculator
 			ByteBuffer buf = channel.map(MapMode.READ_ONLY, 0, is.available());
 
 			System.out.println("Significant Wave Height " + wd.read(buf));
-		} catch (FileNotFoundException e)
+		} 
+                catch (FileNotFoundException e)
 		{
 			// TODO Auto-generated catch block
 			e.printStackTrace();

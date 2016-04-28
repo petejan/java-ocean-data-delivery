@@ -13,12 +13,15 @@ package org.imos.abos.dbms;
  *
  * @author peter
  */
+import java.awt.Color;
+import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
+import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumnModel;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
@@ -492,5 +495,6 @@ public class MooringTable extends EditableBaseTable
             this.setSize(400, 600 );
             this.setVisible( true );
         }
+
     }
 }

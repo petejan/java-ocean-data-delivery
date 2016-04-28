@@ -294,7 +294,7 @@ public class MergeCDF
         
         vTime.addAttribute(new Attribute("name", "time"));
         vTime.addAttribute(new Attribute("long_name", "time"));
-        vTime.addAttribute(new Attribute("units", "days since 1950-01-01T00:00:00Z"));
+        vTime.addAttribute(new Attribute("units", "days since 1950-01-01T00:00:00 UTC"));
         vTime.addAttribute(new Attribute("axis", "T"));
         vTime.addAttribute(new Attribute("valid_min", 0.0));
         vTime.addAttribute(new Attribute("valid_max", 999999999));

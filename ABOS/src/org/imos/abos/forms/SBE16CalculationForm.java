@@ -385,12 +385,15 @@ public class SBE16CalculationForm extends MemoryWindow implements DataProcessor
             conn = Common.getConnection();
             conn.setAutoCommit(false);
             proc = conn.createStatement();
-            proc.execute("UPDATE raw_instrument_data SET instrument_id = " +  GTDInstrument.getInstrumentID() +
-                        " WHERE mooring_id = "+StringUtilities.quoteString(selectedMooring.getMooringID())+" AND instrument_id = "+ sourceInstrument.getInstrumentID() + " AND parameter_code = 'GTD_TEMPERATURE' " +
-                        "");
-            proc.execute("UPDATE raw_instrument_data SET instrument_id = " +  GTDInstrument.getInstrumentID() +
-                        " WHERE mooring_id = "+StringUtilities.quoteString(selectedMooring.getMooringID())+" AND instrument_id = "+ sourceInstrument.getInstrumentID() + " AND parameter_code = 'TOTAL_GAS_PRESSURE' " +
-                        "");
+            if (GTDInstrument != null)
+            {
+                proc.execute("UPDATE raw_instrument_data SET instrument_id = " +  GTDInstrument.getInstrumentID() +
+                            " WHERE mooring_id = "+StringUtilities.quoteString(selectedMooring.getMooringID())+" AND instrument_id = "+ sourceInstrument.getInstrumentID() + " AND parameter_code = 'GTD_TEMPERATURE' " +
+                            "");
+                proc.execute("UPDATE raw_instrument_data SET instrument_id = " +  GTDInstrument.getInstrumentID() +
+                            " WHERE mooring_id = "+StringUtilities.quoteString(selectedMooring.getMooringID())+" AND instrument_id = "+ sourceInstrument.getInstrumentID() + " AND parameter_code = 'TOTAL_GAS_PRESSURE' " +
+                            "");
+            }
             
             tab = "SELECT data_timestamp, source_file_id, instrument_id, depth, parameter_value as volt1 INTO TEMP sbe16 FROM raw_instrument_data WHERE parameter_code = 'VOLT1' AND mooring_id = "+StringUtilities.quoteString(selectedMooring.getMooringID())+" AND instrument_id = "+ sourceInstrument.getInstrumentID()+" ORDER BY data_timestamp";                
             proc.execute(tab);

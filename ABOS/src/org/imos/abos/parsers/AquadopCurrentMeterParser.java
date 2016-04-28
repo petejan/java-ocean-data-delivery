@@ -123,15 +123,15 @@ public class AquadopCurrentMeterParser extends AbstractDataParser
 
         String constructTimestamp;
 
-        StringTokenizer st = new StringTokenizer(dataLine,", ");
+        String[] st = dataLine.split(" +");
         try
         {
-            monthString = st.nextToken();
-            dayString = st.nextToken();
-            yearString = st.nextToken();
-            hourString = st.nextToken();
-            minuteString = st.nextToken();
-            secondString = st.nextToken();
+            monthString = st[0];
+            dayString = st[1];
+            yearString = st[2];
+            hourString = st[3];
+            minuteString = st[4];
+            secondString = st[5];
             
            
             constructTimestamp = yearString.trim() 
@@ -157,9 +157,9 @@ public class AquadopCurrentMeterParser extends AbstractDataParser
                 throw new ParseException("Timestamp parse failed for text '" + constructTimestamp + "'",0);
             }
 
-            U_Value = getDouble(st.nextToken());
-            V_Value = getDouble(st.nextToken());
-            W_Value = getDouble(st.nextToken());
+            U_Value = getDouble(st[8]);
+            V_Value = getDouble(st[9]);
+            W_Value = getDouble(st[10]);
             
             //
             // ok, we have parsed out the values we need, can now construct the raw data class
@@ -189,8 +189,36 @@ public class AquadopCurrentMeterParser extends AbstractDataParser
             
             ok = row.insert();
 
+            row.setParameterCode("PRES");
+            row.setParameterValue(getDouble(st[21]));
             
-
+            ok = row.insert();
+            
+            row.setParameterCode("TEMP");
+            row.setParameterValue(getDouble(st[22]));
+            
+            ok = row.insert();
+            
+            row.setParameterCode("COMPASS");
+            row.setParameterValue(getDouble(st[17]));
+            
+            ok = row.insert();
+            row.setParameterCode("PITCH");
+            row.setParameterValue(getDouble(st[18]));
+            
+            ok = row.insert();
+            row.setParameterCode("ROLL");
+            row.setParameterValue(getDouble(st[19]));
+            
+            ok = row.insert();
+            row.setParameterCode("CSPD");
+            row.setParameterValue(getDouble(st[25]));
+            
+            ok = row.insert();
+            row.setParameterCode("CDIR");
+            row.setParameterValue(getDouble(st[26]));
+            
+            ok = row.insert();
         }
         catch (NoSuchElementException nse)
         {

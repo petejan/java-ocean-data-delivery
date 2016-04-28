@@ -41,7 +41,7 @@ import ucar.nc2.Variable;
 public class TriAXYSDataParser extends AbstractDataParser
 {
 
-    String mooring = "SOFS-4-2013";
+    String mooring = "SOFS-2-2011";
     
     private TriAXYSDataParser(String string)
     {
@@ -53,7 +53,7 @@ public class TriAXYSDataParser extends AbstractDataParser
     {        
         Double zeroCrossings;
         Double averageHt;
-        Double averagePer;
+        Double Tz;
         Double maxHt;
         Double sigHt;
         Double sigPer;
@@ -85,32 +85,33 @@ public class TriAXYSDataParser extends AbstractDataParser
             if (split.length >= 14)
             {
                 ts = new Timestamp(df.parse(split[0]).getTime());
-                zeroCrossings = Double.parseDouble(split[3]);
-                averageHt = Double.parseDouble(split[4]);
-                averagePer = Double.parseDouble(split[5]);
-                maxHt = Double.parseDouble(split[6]);
-                sigHt = Double.parseDouble(split[7]);
-                sigPer = Double.parseDouble(split[8]);
-                Tp = Double.parseDouble(split[9]);
-                Tp5 = Double.parseDouble(split[10]);
-                HM0 = Double.parseDouble(split[11]);
-                meanTheta = Double.parseDouble(split[12]);
-                sigmaTheta = Double.parseDouble(split[13]);
                 
-                System.out.println("parse " + ts + " SWH " + sigHt);
+                zeroCrossings = Double.parseDouble(split[3]); // Number of waves detected by zero-crossing analysis of the wave elevation record.                
+                averageHt = Double.parseDouble(split[4]); // Average zero down-crossing wave height (m)
+                Tz = Double.parseDouble(split[5]); // Average zero down-crossing wave period (s)
+                maxHt = Double.parseDouble(split[6]); // Maximum zero down-crossing wave height (trough topeak) (m)
+                sigHt = Double.parseDouble(split[7]); // sig wave height, height of 1/3 of waves fro zero crossing analysis
+                sigPer = Double.parseDouble(split[8]); // Average period of the significant zero down-crossing waves (s).
+                Tp = Double.parseDouble(split[9]); // Peak wave period Tp in seconds.
+                Tp5 = Double.parseDouble(split[10]); // Peak wave period in seconds as computed by the Read method. Tp5 has less statistical variability than Tp because it is based on spectral moments.
+                HM0 = Double.parseDouble(split[11]); // sig wave height as 4 x sqrt(m0)
+                meanTheta = Double.parseDouble(split[12]); // Overall mean wave direction in degrees obtained by averaging the mean wave angle q over all frequencies with weighting function S(f). q is calculated by the KVH method.
+                sigmaTheta = Double.parseDouble(split[13]); // Overall directional spreading width in degrees obtained by averaging the spreading width sigma theta, sq, over all frequencies with weighting function S(f). sq is calculated by the KVH method.
+                
+                System.out.println("Summary parse " + ts + " SWH " + sigHt);
 
-//                if (ts.after(df.parse("2011/11/24 23:59")) & ts.before(df.parse("2012/07/22 23:00")))
+                if (ts.after(df.parse("2011/11/20 23:59")) & ts.before(df.parse("2012/07/31 23:00")))
                 {
-                    Sample s = Samples.get(ts);
+                    Sample s = samples.get(ts);
                     if (s == null)
                     {
                         s = new Sample();
-                        Samples.put(ts, s);
+                        samples.put(ts, s);
                         s.ts = (Timestamp)ts.clone();
                     }
                     s.zeroCrossings = zeroCrossings;
                     s.averageHt = averageHt;
-                    s.averagePer = averagePer;
+                    s.Tz = Tz;
                     s.maxHt = maxHt;
                     s.sigHt = sigHt;    
                     s.sigPer = sigPer;
@@ -137,7 +138,7 @@ public class TriAXYSDataParser extends AbstractDataParser
                 raw.setParameterValue(averageHt);
                 ok = raw.insert();
                 raw.setParameterCode("AVG_PERIOD");
-                raw.setParameterValue(averagePer);
+                raw.setParameterValue(Tz);
                 ok = raw.insert();
                 raw.setParameterCode("MAX_WAVE_HEIGHT");
                 raw.setParameterValue(maxHt);
@@ -184,13 +185,13 @@ public class TriAXYSDataParser extends AbstractDataParser
         Double spectralDensity[] = null;
         Double meanWaveDir = null;
         Double meanSpreadWidth = null;
-        Double spectralDirectionalDensity[] = null;
+        Double[] spectralDensity_MEANDIR = null;
         Double meanDirection[] = null;
         Double spreadWidth[] = null;  
         Double dirSpectrum[][] = null;
         Double zeroCrossings;
         Double averageHt;
-        Double averagePer;
+        Double Tz;
         Double maxHt;
         Double sigHt;
         Double sigPer;
@@ -201,7 +202,7 @@ public class TriAXYSDataParser extends AbstractDataParser
         Double sigmaTheta;        
     }
     
-    TreeMap<Timestamp,Sample> Samples = new TreeMap<Timestamp,Sample>();
+    TreeMap<Timestamp,Sample> samples = new TreeMap<Timestamp,Sample>();
     
     public class NonDirParser extends TriAXYSParser
     {
@@ -252,7 +253,7 @@ public class TriAXYSDataParser extends AbstractDataParser
         protected void commitData(RawInstrumentData raw)
         {            
 
-            Sample s = Samples.get(ts);
+            Sample s = samples.get(ts);
             if (s == null)
             {
 //                s = new Sample();
@@ -314,7 +315,7 @@ public class TriAXYSDataParser extends AbstractDataParser
             {
                 meanWaveDir = Double.parseDouble(value);
             }
-            else if (param.startsWith("S(f) WEIGHTED MEAN SPTp5ING WIDTH"))
+            else if (param.startsWith("S(f) WEIGHTED MEAN SPREAD WIDTH"))
             {
                 meanSpreadWidth = Double.parseDouble(value);
             }            
@@ -357,7 +358,7 @@ public class TriAXYSDataParser extends AbstractDataParser
         @Override
         protected void commitData(RawInstrumentData raw)
         {
-            Sample s = Samples.get(ts);
+            Sample s = samples.get(ts);
             if (s == null)
             {
 //                s = new Sample();
@@ -367,7 +368,7 @@ public class TriAXYSDataParser extends AbstractDataParser
             }
             else
             {
-                s.spectralDirectionalDensity = spectralDensity;
+                s.spectralDensity_MEANDIR = spectralDensity;
                 s.meanDirection = meanDirection;
                 s.spreadWidth = spreadWidth;
             }
@@ -484,7 +485,7 @@ public class TriAXYSDataParser extends AbstractDataParser
         @Override
         protected void commitData(RawInstrumentData raw)
         {
-            Sample s = Samples.get(ts);
+            Sample s = samples.get(ts);
             if (s == null)
             {
 //                s = new Sample();
@@ -579,7 +580,7 @@ public class TriAXYSDataParser extends AbstractDataParser
         TimeZone.setDefault(tz);
         sdf.setTimeZone(tz);
      
-        System.out.println("Header " + header + " : " + dataLine);
+        //System.out.println("Header " + header + " : " + dataLine);
         if (dataLine.startsWith("TRIAXYS BUOY DATA REPORT"))
         {
             header = 0;
@@ -691,55 +692,90 @@ public class TriAXYSDataParser extends AbstractDataParser
         {
 //            System.out.println("Data Record " + ts);
             
-            p.commitData(row);
+            //p.commitData(row);
         }
     }
     
     public void createNetCDF() throws ParseException
     {
-        // Create the file.
-        File f = new File(mooring + "-TriAXYS.nc");
-        String filename = f.getName();
-        NetcdfFileWriter dataFile = null;
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HHmmss");
+        System.out.println("Data Start " + samples.firstKey() + " end " + samples.lastKey());
 
+        Mooring m = Mooring.selectByMooringID(mooring);
+        
+        SimpleDateFormat nameFormatter = new SimpleDateFormat("yyyyMMdd'T'HHmmss'Z'");
+        nameFormatter.setTimeZone(TimeZone.getTimeZone("UTC"));
+        String filename = "IMOS_ABOS-ASFS_RW_" + nameFormatter.format(samples.firstKey()) + "_SOFS_FV00_" + m.getMooringID() + "-TriAXYS_END-" + nameFormatter.format(samples.lastKey())+ "_C-" + nameFormatter.format(new Date()) + ".nc";
+
+        // Create the file.
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");        
         sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
+        
+        NetCDFfile ndf = new NetCDFfile();
+        
         try
         {
             // Create new netcdf-3 file with the given filename
-            dataFile = NetcdfFileWriter.createNew(NetcdfFileWriter.Version.netcdf3, filename);
-
-            NetCDFfile ndf = new NetCDFfile(dataFile);
-            Mooring m = Mooring.selectByMooringID(mooring);
+            ndf.createFile(filename);
             ndf.setMooring(m);
             ndf.setAuthority("IMOS");
-            ndf.setSite("SOTS");
+            ndf.setFacility("ABOS-ASFS");
             
             ndf.writeGlobalAttributes();
+            ndf.dataFile.addGroupAttribute(null, new Attribute("time_coverage_start", sdf.format(samples.firstKey())));
+            ndf.dataFile.addGroupAttribute(null, new Attribute("time_coverage_end", sdf.format(samples.lastKey())));
 
-            ndf.createCoordinateVariables(Samples.size());
-            ndf.writeCoordinateVariables(new ArrayList(Samples.keySet()));
+            
+            ndf.dataFile.addGroupAttribute(null, new Attribute("time_deployment_start", sdf.format(m.getTimestampIn())));
+            ndf.dataFile.addGroupAttribute(null, new Attribute("time_deployment_end", sdf.format(m.getTimestampOut())));
+            ndf.dataFile.addGroupAttribute(null, new Attribute("file_version", "Level 0 - RAW data"));
+            //ndf.dataFile.addGroupAttribute(null, new Attribute("instrument", "AXYS Technologies Inc, TRIAXYS OEM Directional Wave Sensor, TAS04811"));
+            ndf.dataFile.addGroupAttribute(null, new Attribute("instrument", "AXYS Technologies Inc, TRIAXYS OEM Directional Wave Sensor, TAS03860"));
+            ndf.dataFile.addGroupAttribute(null, new Attribute("title", "SOFS TriAXYS Wave height, direction, and spectra"));
+            ndf.dataFile.addGroupAttribute(null, new Attribute("site_code", "SOTS"));
+            ndf.dataFile.addGroupAttribute(null, new Attribute("deployment_code", m.getMooringID()));
+            //ndf.dataFile.addGroupAttribute(null, new Attribute("abstract", "SOFS is an observing platform in the Sub-Antarctic Zone, approximately 350 nautical miles southwest of Tasmania.\nIt obtains frequent measurements of the surface and deep ocean properties that control the transfer of heat, moisture, energy and CO2 between the atmosphere and the upper ocean\nto improve understanding of climate and carbon processes.\nThe mooring was deployed in May 2013 at (-46.7S, 142E) and recovered in October 2013\nThis wave data was collected using a AXYS technologies TriAXYS OEM wave sensor deployed on a 3m WHOI surface float"));
+            ndf.dataFile.addGroupAttribute(null, new Attribute("abstract", "SOFS is an observing platform in the Sub-Antarctic Zone, approximately 350 nautical miles southwest of Tasmania.\nIt obtains frequent measurements of the surface and deep ocean properties that control the transfer of heat, moisture, energy and CO2 between the atmosphere and the upper ocean\nto improve understanding of climate and carbon processes.\nThe mooring was deployed in November 2011 at (-46.7S, 142E) and recovered in July 2012\nThis wave data was collected using a AXYS technologies TriAXYS OEM wave sensor deployed on a 3m WHOI surface float"));
+            ndf.dataFile.addGroupAttribute(null, new Attribute("keywords", "OCEANS > OCEAN WAVES > SIGNIFICANT WAVE HEIGHT\nOCEANS > OCEAN WAVES > WAVE HEIGHT\nOCEANS > OCEAN WAVES > WAVE SPECTRA\nOCEANS > OCEAN WAVES > WAVE FREQUENCY\nOCEANS > OCEAN WAVES > WAVE PERIOD"));
+            ndf.dataFile.addGroupAttribute(null, new Attribute("geospatial_vertical_max", new Double(0)));
+            ndf.dataFile.addGroupAttribute(null, new Attribute("geospatial_vertical_min", new Double(0)));
+            ndf.dataFile.addGroupAttribute(null, new Attribute("comment", "RAW heave, horizontal displacement and velocities are also avaliable upon request"));
+            
+            ndf.createCoordinateVariables(samples.size());
+            ndf.writeCoordinateVariables(new ArrayList(samples.keySet()));
             ndf.writeCoordinateVariableAttributes();
             
-//            Dimension timeDim = dataFile.addDimension(null, "TIME", Samples.size());
+//            Dimension timeDim = ndf.dataFile.addDimension(null, "TIME", Samples.size());
             Dimension frequencyDim = null;
             Dimension dirDim = null;
             List<Dimension> dimSpec = null;
             List<Dimension> dimSpecDir = null;
             if (nFreq > 0)
             {
-                frequencyDim = dataFile.addDimension(null, "frequency", nFreq);
+                frequencyDim = ndf.dataFile.addDimension(null, "frequency", nFreq);
                 dimSpec = new ArrayList<Dimension>();
                 dimSpec.add(ndf.timeDim);
                 dimSpec.add(frequencyDim);			
-                dirDim = dataFile.addDimension(null, "direction", nDir);
+                dirDim = ndf.dataFile.addDimension(null, "direction", nDir);
                 dimSpecDir = new ArrayList<Dimension>();
                 dimSpecDir.add(ndf.timeDim);
                 dimSpecDir.add(frequencyDim);			
                 dimSpecDir.add(dirDim);			
             }
+            Variable vFrequency = null;
+            Variable vDir = null;
+            
+            if (nFreq > 0)
+            {
+                vFrequency = ndf.dataFile.addVariable(null, "frequency", DataType.FLOAT, "frequency");
+                vFrequency.addAttribute(new Attribute("long_name", "spectral_frequency"));
+                vFrequency.addAttribute(new Attribute("units", "Hz"));   
 
-//            Variable vTime = dataFile.addVariable(null, "TIME", DataType.INT, "TIME");
+                vDir = ndf.dataFile.addVariable(null, "direction", DataType.FLOAT, "direction");
+                vDir.addAttribute(new Attribute("long_name", "spectral_direction"));
+                vDir.addAttribute(new Attribute("units", "degrees_true"));   
+            }
+
+//            Variable vTime = ndf.dataFile.addVariable(null, "TIME", DataType.INT, "TIME");
             // Define units attributes for coordinate vars. This attaches a
             // text attribute to each of the coordinate variables, containing
             // the units.
@@ -748,71 +784,91 @@ public class TriAXYSDataParser extends AbstractDataParser
 //            vTime.addAttribute(new Attribute("calendar", "gregorian"));
 
             
-//        Double zeroCrossings;
-//--        Double averageHt;
-//--        Double averagePer;
-//--        Double maxHt;
-//--        Double sigHt;
-//--        Double sigPer;
-//--        Double Tp;
-//--        Double Tp5;
-//--        Double HM0;
-//--        Double meanTheta;
-//--        Double sigmaTheta;        
-            
-            
-            Variable vSWH = dataFile.addVariable(null, "significant_wave_height", DataType.FLOAT, "TIME");
+            Variable vSWH = ndf.dataFile.addVariable(null, "H13", DataType.FLOAT, "TIME");
             vSWH.addAttribute(new Attribute("units", "metre"));
-            Variable vSWPer = dataFile.addVariable(null, "significant_wave_period", DataType.FLOAT, "TIME");
+            vSWH.addAttribute(new Attribute("standard_name", "sea_surface_wave_significant_height"));
+            vSWH.addAttribute(new Attribute("_FillValue", Float.NaN));
+            
+            Variable vSWPer = ndf.dataFile.addVariable(null, "T13", DataType.FLOAT, "TIME");
             vSWPer.addAttribute(new Attribute("units", "sec"));
+            vSWPer.addAttribute(new Attribute("standard_name", "sea_surface_wind_wave_period"));
+            vSWPer.addAttribute(new Attribute("_FillValue", Float.NaN));
             
-            Variable vAvgH = dataFile.addVariable(null, "average_wave_height", DataType.FLOAT, "TIME");
+            Variable vAvgH = ndf.dataFile.addVariable(null, "HAV", DataType.FLOAT, "TIME");
             vAvgH.addAttribute(new Attribute("units", "metre"));
-            Variable vAvgPer = dataFile.addVariable(null, "average_wave_period", DataType.FLOAT, "TIME");
-            vAvgPer.addAttribute(new Attribute("units", "sec"));
-            Variable vMaxH = dataFile.addVariable(null, "max_wave_height", DataType.FLOAT, "TIME");
-            vMaxH.addAttribute(new Attribute("units", "metre"));
-            Variable vTp = dataFile.addVariable(null, "peak_wave_period", DataType.FLOAT, "TIME");
-            vTp.addAttribute(new Attribute("units", "sec"));
-            Variable vHM0 = dataFile.addVariable(null, "Hm0", DataType.FLOAT, "TIME");
-            vHM0.addAttribute(new Attribute("units", "m"));
-            Variable vTp5 = dataFile.addVariable(null, "Tp5", DataType.FLOAT, "TIME");
-            vTp5.addAttribute(new Attribute("units", "sec"));
-            Variable vZC = dataFile.addVariable(null, "zero_crossings", DataType.FLOAT, "TIME");
-            vZC.addAttribute(new Attribute("units", "count"));
+            vAvgH.addAttribute(new Attribute("long_name", "average_wave_height"));
+            vAvgH.addAttribute(new Attribute("_FillValue", Float.NaN));
             
-            Variable vMeanTheta = dataFile.addVariable(null, "mean_theta", DataType.FLOAT, "TIME");
-            vMeanTheta.addAttribute(new Attribute("units", "degrees_true"));
-            Variable vSigmaTheta = dataFile.addVariable(null, "sigma_theta", DataType.FLOAT, "TIME");
-            vSigmaTheta.addAttribute(new Attribute("units", "degrees_true"));
+            Variable vAvgPer = ndf.dataFile.addVariable(null, "TZ", DataType.FLOAT, "TIME");
+            vAvgPer.addAttribute(new Attribute("units", "sec"));
+            vAvgPer.addAttribute(new Attribute("long_name", "average_wave_period"));
+            vAvgPer.addAttribute(new Attribute("_FillValue", Float.NaN));
+            vAvgPer.addAttribute(new Attribute("comment", "Estimated period from spectral moments m0 and m2, where Tz = SQRT(m0/m2)"));
 
-            Variable vFrequency = null;
-            Variable vDir = null;
+            Variable vMaxH = ndf.dataFile.addVariable(null, "HMAX", DataType.FLOAT, "TIME");
+            vMaxH.addAttribute(new Attribute("long_name", "max_wave_height"));
+            vMaxH.addAttribute(new Attribute("units", "metre"));
+            vMaxH.addAttribute(new Attribute("_FillValue", Float.NaN));
+            vMaxH.addAttribute(new Attribute("comment", "Maximum zero down-crossing wave height (trough to peak)"));
+            
+            Variable vTp = ndf.dataFile.addVariable(null, "TP", DataType.FLOAT, "TIME");
+            vTp.addAttribute(new Attribute("units", "sec"));
+            vTp.addAttribute(new Attribute("long_name", "peak_wave_period"));
+            vTp.addAttribute(new Attribute("_FillValue", Float.NaN));
+            
+            Variable vHM0 = ndf.dataFile.addVariable(null, "HM0", DataType.FLOAT, "TIME");
+            vHM0.addAttribute(new Attribute("units", "m"));
+            vHM0.addAttribute(new Attribute("standard_name", "sea_surface_wave_significant_height"));
+            vHM0.addAttribute(new Attribute("_FillValue", Float.NaN));
+
+            Variable vTp5 = ndf.dataFile.addVariable(null, "TP5", DataType.FLOAT, "TIME");
+            vTp5.addAttribute(new Attribute("units", "sec"));
+            vTp5.addAttribute(new Attribute("long_name", "peak_wave_period"));
+            vTp5.addAttribute(new Attribute("comment", "Peak wave period in seconds as computed by the Read method"));
+            vTp5.addAttribute(new Attribute("_FillValue", Float.NaN));
+            
+            Variable vZC = ndf.dataFile.addVariable(null, "ZC", DataType.FLOAT, "TIME");
+            vZC.addAttribute(new Attribute("units", "count"));
+            vZC.addAttribute(new Attribute("standard_name", "sea_surface_wave_zero_upcrossing_period"));
+            vZC.addAttribute(new Attribute("_FillValue", Float.NaN));
+            
+            Variable vMeanTheta = ndf.dataFile.addVariable(null, "DIR", DataType.FLOAT, "TIME");
+            vMeanTheta.addAttribute(new Attribute("units", "degrees_true"));
+            vMeanTheta.addAttribute(new Attribute("_FillValue", Float.NaN));
+            vMeanTheta.addAttribute(new Attribute("long_name", "mean_wave_direction"));
+            vMeanTheta.addAttribute(new Attribute("comment", "Overall mean wave direction in degrees obtained by averaging the mean wave angle q over all frequencies with weighting function S(f). q is calculated by the KVH method"));
+
+            Variable vSigmaTheta = ndf.dataFile.addVariable(null, "SIGMA_DIR", DataType.FLOAT, "TIME");
+            vSigmaTheta.addAttribute(new Attribute("long_name", "mean_wave_direction_spread"));
+            vSigmaTheta.addAttribute(new Attribute("units", "degrees"));
+            vSigmaTheta.addAttribute(new Attribute("_FillValue", Float.NaN));
+            vSigmaTheta.addAttribute(new Attribute("comment", "Overall directional spreading width in degrees obtained by averaging the spreading width sigma theta, sq, over all frequencies with weighting function S(f). sq is calculated by the KVH method."));
+
             Variable vSpectralDensity = null;
             Variable vMeanWaveDir = null;
-            //Variable vSpectralDirectionalDensity = null;
-            Variable vMeanDirection = null;
             Variable vSpreadWidth = null;
             Variable vDirSpectrum = null;
             if (nFreq > 0)
             {
-                vFrequency = dataFile.addVariable(null, "frequency", DataType.FLOAT, "frequency");
-                vFrequency.addAttribute(new Attribute("units", "Hz"));   
-                vDir = dataFile.addVariable(null, "direction", DataType.FLOAT, "direction");
-                vDir.addAttribute(new Attribute("units", "degrees_true"));   
+                vSpectralDensity = ndf.dataFile.addVariable(null, "spectral_density", DataType.FLOAT, dimSpec);
+                vSpectralDensity.addAttribute(new Attribute("long_name", "wave_spectral_density"));
+                vSpectralDensity.addAttribute(new Attribute("units", "m^2/Hz"));
+                vSpectralDensity.addAttribute(new Attribute("_FillValue", Float.NaN));
                 
-                vSpectralDensity = dataFile.addVariable(null, "spectral_density", DataType.FLOAT, dimSpec);
-                vSpectralDensity.addAttribute(new Attribute("units", "M^2/Hz"));
-                vMeanWaveDir = dataFile.addVariable(null, "mean_wave_dir", DataType.FLOAT, dimSpec);
-                vMeanWaveDir.addAttribute(new Attribute("units", "degrees"));
-                //vSpectralDirectionalDensity = dataFile.addVariable(null, "spectral_dir_density", DataType.FLOAT, dimSpec);
-                //vSpectralDirectionalDensity.addAttribute(new Attribute("units", "M^2/Hz"));
-                vMeanDirection = dataFile.addVariable(null, "mean_direction", DataType.FLOAT, dimSpec);
-                vMeanDirection.addAttribute(new Attribute("units", "degrees"));
-                vSpreadWidth = dataFile.addVariable(null, "mean_direction_spread", DataType.FLOAT, dimSpec);
+                vMeanWaveDir = ndf.dataFile.addVariable(null, "mean_wave_dir", DataType.FLOAT, dimSpec);
+                vMeanWaveDir.addAttribute(new Attribute("long_name", "mean_wave_direction"));
+                vMeanWaveDir.addAttribute(new Attribute("units", "degrees_true"));
+                vMeanWaveDir.addAttribute(new Attribute("_FillValue", Float.NaN));
+
+                vSpreadWidth = ndf.dataFile.addVariable(null, "mean_direction_spread", DataType.FLOAT, dimSpec);
+                vSpreadWidth.addAttribute(new Attribute("long_name", "mean_direction_spread"));
                 vSpreadWidth.addAttribute(new Attribute("units", "degrees"));
-                vDirSpectrum = dataFile.addVariable(null, "directional_sprectrum", DataType.FLOAT, dimSpecDir);
-                vDirSpectrum.addAttribute(new Attribute("units", "M^2/Hz"));
+                vSpreadWidth.addAttribute(new Attribute("_FillValue", Float.NaN));
+
+                vDirSpectrum = ndf.dataFile.addVariable(null, "directional_sprectrum", DataType.FLOAT, dimSpecDir);
+                vDirSpectrum.addAttribute(new Attribute("long_name", "directional_sprectrum"));
+                vDirSpectrum.addAttribute(new Attribute("units", "degrees_true"));
+                vDirSpectrum.addAttribute(new Attribute("_FillValue", Float.NaN));
             }
 
 //            Array dataTime = Array.factory(DataType.INT, new int[] { timeDim.getLength() });
@@ -833,18 +889,8 @@ public class TriAXYSDataParser extends AbstractDataParser
             Index frequencyIndex = null;
             Index frequencyDirIndex = null;
 
-//        Double spectralDensity[] = null;
-//        Double meanWaveDir = null;
-//        Double meanSpreadWidth = null;
-//        Double spectralDirectionalDensity[] = null;
-//        Double meanDirection[] = null;
-//        Double spreadWidth[] = null;  
-//        Double dirSpectrum[][] = null;
-
             Array dataSpectralDensity = null;
             Array dataMeanWaveDir = null;
-            //Array dataSpectralDirectionalDensity = null;
-            Array dataMeanDirection = null;
             Array dataSpreadWidth = null;
             Array dataDirSpectrum = null;
             
@@ -860,8 +906,6 @@ public class TriAXYSDataParser extends AbstractDataParser
                 frequencyIndex = new Index2D(specDim);
                 dataSpectralDensity = Array.factory(DataType.FLOAT, specDim );
                 dataMeanWaveDir = Array.factory(DataType.FLOAT, specDim );
-                //dataSpectralDirectionalDensity = Array.factory(DataType.FLOAT, specDim );
-                dataMeanDirection = Array.factory(DataType.FLOAT, specDim );
                 dataSpreadWidth = Array.factory(DataType.FLOAT, specDim );
                 
                 dataDirection = Array.factory(DataType.FLOAT, new int[] { dirDim.getLength() });
@@ -875,21 +919,19 @@ public class TriAXYSDataParser extends AbstractDataParser
             }
 
             // Write the coordinate variable data. 
-            dataFile.create();
-            ndf.writePosition(m.getLatitudeIn(), m.getLongitudeIn());
-            
-            long tz = sdf.parse("2000-01-01T000000").getTime();
+            ndf.dataFile.create();
+            //long tz = sdf.parse("2000-01-01T000000").getTime();
 
-            Date ts = null;
+            //Date ts = null;
 
             int i = 0;
-            for (Sample s : Samples.values())
+            for (Sample s : samples.values())
             {                
 //                dataTime.setInt(i, (int) ((s.ts.getTime() - tz) / 1000));
 
                 dataSWH.setFloat(i, s.sigHt.floatValue());
                 dataAvgH.setFloat(i, s.averageHt.floatValue());
-                dataAvgPer.setFloat(i, s.averagePer.floatValue());
+                dataAvgPer.setFloat(i, s.Tz.floatValue());
                 dataMaxH.setFloat(i, s.maxHt.floatValue());
                 dataTp.setFloat(i, s.Tp.floatValue());
                 dataHM0.setFloat(i, s.HM0.floatValue());
@@ -906,8 +948,6 @@ public class TriAXYSDataParser extends AbstractDataParser
                         {
                             dataSpectralDensity.setFloat(frequencyIndex, s.spectralDensity[j].floatValue());
                             dataMeanWaveDir.setFloat(frequencyIndex, s.meanDirection[j].floatValue());
-                            //dataSpectralDirectionalDensity.setFloat(frequencyIndex, s.spectralDirectionalDensity[j].floatValue());
-                            dataMeanDirection.setFloat(frequencyIndex, s.meanDirection[j].floatValue());
                             dataSpreadWidth.setFloat(frequencyIndex, s.spreadWidth[j].floatValue());
                             for(int k=0;k<nDir;k++)
                             {
@@ -925,29 +965,31 @@ public class TriAXYSDataParser extends AbstractDataParser
                 i++;
             }
 
-            dataFile.write(ndf.vTime, ndf.times);
-
-            dataFile.write(vSWH, dataSWH);
-            dataFile.write(vAvgH, dataAvgH);
-            dataFile.write(vAvgPer, dataAvgPer);
-            dataFile.write(vMaxH, dataMaxH);
-            dataFile.write(vTp, dataTp);
-            dataFile.write(vHM0, dataHM0);
-            dataFile.write(vTp5, dataTp5);
-            dataFile.write(vZC, dataZC);
-            dataFile.write(vMeanTheta, dataMeanTheta);
-            dataFile.write(vSigmaTheta, dataSigmaTheta);
-            
+            ndf.dataFile.write(ndf.vTime, ndf.times);
+            ndf.writePosition(m.getLatitudeIn(), m.getLongitudeIn());
             if (nFreq > 0)
             {
-                dataFile.write(vFrequency, dataFrequency);
-                dataFile.write(vDir, dataDirection);
-                dataFile.write(vSpectralDensity, dataSpectralDensity);
-                dataFile.write(vMeanWaveDir, dataMeanWaveDir);
-                //dataFile.write(vSpectralDirectionalDensity, dataSpectralDirectionalDensity);
-                dataFile.write(vMeanDirection, dataMeanDirection);
-                dataFile.write(vSpreadWidth, dataSpreadWidth);
-                dataFile.write(vDirSpectrum, dataDirSpectrum);
+                ndf.dataFile.write(vFrequency, dataFrequency);
+                ndf.dataFile.write(vDir, dataDirection);
+            }
+            
+            ndf.dataFile.write(vSWH, dataSWH);
+            ndf.dataFile.write(vAvgH, dataAvgH);
+            ndf.dataFile.write(vAvgPer, dataAvgPer);
+            ndf.dataFile.write(vMaxH, dataMaxH);
+            ndf.dataFile.write(vTp, dataTp);
+            ndf.dataFile.write(vHM0, dataHM0);
+            ndf.dataFile.write(vTp5, dataTp5);
+            ndf.dataFile.write(vZC, dataZC);
+            ndf.dataFile.write(vMeanTheta, dataMeanTheta);
+            ndf.dataFile.write(vSigmaTheta, dataSigmaTheta);
+
+            if (nFreq > 0)
+            {
+                ndf.dataFile.write(vSpectralDensity, dataSpectralDensity);
+                ndf.dataFile.write(vMeanWaveDir, dataMeanWaveDir);
+                ndf.dataFile.write(vSpreadWidth, dataSpreadWidth);
+                ndf.dataFile.write(vDirSpectrum, dataDirSpectrum);
             }
 
         }
@@ -961,11 +1003,11 @@ public class TriAXYSDataParser extends AbstractDataParser
         }
         finally
         {
-            if (null != dataFile)
+            if (null != ndf.dataFile)
             {
                 try
                 {
-                    dataFile.close();
+                    ndf.dataFile.close();
                 }
                 catch (IOException ioe)
                 {

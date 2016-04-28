@@ -103,7 +103,7 @@ public class CrossTabData
                     + " FROM "+table+" JOIN instrument USING (instrument_id) "
                     + " JOIN parameters ON (code = parameter_code)"
                     + " WHERE mooring_id IN (" + mooring_id + ")"
-                    + " OR (mooring_id LIKE 'Pulse%' AND parameter_code IN ('DOX2', 'TOTAL_GAS_PRESSURE'))"
+//                    + " OR (mooring_id LIKE 'Pulse%' AND parameter_code IN ('DOX2', 'TOTAL_GAS_PRESSURE'))"
                     + " ORDER BY "+paramid+"";
 //        logger.debug(SQL);
 
@@ -167,7 +167,7 @@ public class CrossTabData
                 SQL += " AND data_timestamp BETWEEN timestamp_in AND timestamp_out";
             }
             SQL +=  " AND mooring_id IN (" + mooring_id + ")" 
-                    + " OR (mooring_id LIKE 'Pulse%' AND parameter_code IN('DOX2', 'TOTAL_GAS_PRESSURE'))"                    
+//                    + " OR (mooring_id LIKE 'Pulse%' AND parameter_code IN('DOX2', 'TOTAL_GAS_PRESSURE'))"                    
                     + " GROUP BY date_trunc('hour', data_timestamp), " + paramid
                     + " ORDER BY date_trunc('hour', data_timestamp), " + paramid;
 //        logger.debug(SQL);

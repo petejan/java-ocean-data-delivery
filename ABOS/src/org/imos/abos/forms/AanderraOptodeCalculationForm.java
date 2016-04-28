@@ -353,7 +353,7 @@ public class AanderraOptodeCalculationForm extends MemoryWindow implements DataP
         //logger.debug(evt.getPropertyName());
         if(propertyName.equalsIgnoreCase("MOORING_SELECTED")) {
             Mooring selectedItem = (Mooring) evt.getNewValue();
-            sourceInstrumentCombo.setMooringParam(selectedItem, "OPTODE_BPHASE");
+            sourceInstrumentCombo.setMooringParam(selectedItem, "OPTODE_BPHASE%");
             targetInstrumentCombo.setMooring(selectedItem);
             calibrationFileCombo1.setMooring(selectedItem);
         }
@@ -400,7 +400,8 @@ public class AanderraOptodeCalculationForm extends MemoryWindow implements DataP
             proc.execute(tab);            
             tab = "ALTER TABLE aanderra ADD optode_temp  numeric";
             proc.execute(tab);            
-            tab = "UPDATE aanderra SET optode_temp = d.parameter_value FROM raw_instrument_data d WHERE d.data_timestamp = aanderra.data_timestamp AND parameter_code = 'OPTODE_TEMP' AND d.instrument_id = "+ sourceInstrument.getInstrumentID();
+            //tab = "UPDATE aanderra SET optode_temp = d.parameter_value FROM raw_instrument_data d WHERE d.data_timestamp = aanderra.data_timestamp AND parameter_code = 'OPTODE_TEMP' AND d.instrument_id = "+ sourceInstrument.getInstrumentID();
+            tab = "UPDATE aanderra SET optode_temp = d.parameter_value FROM raw_instrument_data d WHERE d.data_timestamp = aanderra.data_timestamp AND parameter_code = 'TEMP' AND d.instrument_id = "+ sourceInstrument.getInstrumentID();
                 
             proc.execute(tab);
             

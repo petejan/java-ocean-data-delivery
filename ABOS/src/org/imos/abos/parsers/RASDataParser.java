@@ -46,6 +46,7 @@ public class RASDataParser extends AbstractDataParser
         DecimalFormat deciFormat = new DecimalFormat("-######.0#");
 
         SimpleDateFormat df = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss");
+        df.setTimeZone(TimeZone.getTimeZone("UTC"));
         
         String timestamp;
         String sEvent;
@@ -82,7 +83,7 @@ public class RASDataParser extends AbstractDataParser
             row.setLatitude(currentMooring.getLatitudeIn());
             row.setLongitude(currentMooring.getLongitudeIn());
             row.setMooringID(currentMooring.getMooringID());
-            row.setParameterCode("RAS_SAMPLE");
+            row.setParameterCode("WATER_SAMPLE");
             row.setParameterValue(event);
             row.setSourceFileID(currentFile.getDataFilePrimaryKey());
             row.setQualityCode("RAW");

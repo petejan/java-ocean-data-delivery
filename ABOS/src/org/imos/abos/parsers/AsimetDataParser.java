@@ -59,7 +59,8 @@ public class AsimetDataParser extends AbstractDataParser
             }
             else
             {
-                System.out.println("AsimetDinaryDecode::output() unknown obs " + obs);
+                if (rowCount < 100)
+                    System.out.println("AsimetDinaryDecode::output() unknown obs " + hdr);
             }
         }
         public void outputNext()
@@ -74,7 +75,7 @@ public class AsimetDataParser extends AbstractDataParser
             
         }
         
-         public void outputNewTs(String t)
+        public void outputNewTs(String t)
         {
             
         }
@@ -84,17 +85,6 @@ public class AsimetDataParser extends AbstractDataParser
     
     protected void processFile(File dataFile)
     {
-        String header;
-
-        header = "we, wn, wsavg, wmax, wmin, wdavg, compass, bp, rh, AirT, sr, dome, body, tpile, lwflux, prlev, sct, scc"; //, op_param, bat1, bat2, bat3, bat4";
-
-        header = "bpr";
-        header = "prc";
-        header = "AirT, rh";
-        header = "we, wn, WSpeed, WSMax, LastVane, LastCompass, TiltX, TiltY";
-        header = "we, wn, ws, wsMax, LastVane, LastCompass, TiltX, TiltY, GillSOS, GillTemp";
-        header = "temp_dome, temp_body, volts_pile, lw_flux";
-
         hm.put("we", "UWND");
         hm.put("wn", "VWND");
         hm.put("wsavg", "WSPD");
@@ -105,6 +95,7 @@ public class AsimetDataParser extends AbstractDataParser
         hm.put("bp", "CAPH");
         hm.put("rh", "RELH");
         hm.put("AirT", "AIRT");
+        
         hm.put("sr", "SW");
         hm.put("dome", "TDOME");
         hm.put("body", "TBODY");
@@ -116,7 +107,7 @@ public class AsimetDataParser extends AbstractDataParser
         
         hm.put("bpr", "CAPH");
 
-        hm.put("prc", "RAIN");
+        hm.put("prc", "RAIT");
 
         hm.put("WSpeed", "WSPD");
         hm.put("WSMax", "WSPD_MAX");
@@ -127,8 +118,12 @@ public class AsimetDataParser extends AbstractDataParser
 
         hm.put("wsMax", "WSPD_MAX");
         hm.put("LastVane", "WDIR");
-        hm.put("GillSOS", "SOS");
-        hm.put("GillTemp", "TEMP");
+        hm.put("ws", "WSPD");
+
+        //hm.put("GillSOS", "SOS");
+        //hm.put("GillTemp", "TEMP");
+
+        hm.put("swr", "SW");
 
         hm.put("temp_dome", "TDOME");
         hm.put("temp_body", "TBODY");
@@ -148,7 +143,44 @@ public class AsimetDataParser extends AbstractDataParser
         String filename = dataFile.getAbsolutePath();
         try
         {
-            ad.read(dataFile.getName().substring(0, 3), filename);
+            String fName = dataFile.getName();
+            String type = "UNKNOWN";
+            
+            if (fName.contains("LSR"))
+            {
+                type = "LSR";
+            }
+            else if (fName.matches("L\\d\\d\\..*"))
+            {
+                type = "LSR";
+            }
+            else if (fName.contains("BPR"))
+            {
+                type = "BPR";
+            }
+            else if (fName.contains("HRH"))
+            {
+                type = "HRH";
+            }
+            else if (fName.contains("PRC"))
+            {
+                type = "PRC";
+            }
+            else if (fName.contains("LWR"))
+            {
+                type = "LWR";
+            }
+            else if (fName.contains("SWR"))
+            {
+                type = "SWR";
+            }
+            else if (fName.contains("SWND"))
+            {
+                type = "SWND"; // SOFS-1 uses the old WND format for the Sonic Wind Sensors
+            }
+            logger.info("File Type : " + type);
+            
+            ad.read(type, filename);
         }
         catch (IOException ex)
         {

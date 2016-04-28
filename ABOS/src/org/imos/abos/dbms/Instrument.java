@@ -637,7 +637,7 @@ public class Instrument  implements Cloneable
                         + " where instrument_id in "
                         + "("
                         + " select distinct instrument_id from raw_instrument_data "
-                        + " where parameter_code = "
+                        + " where parameter_code LIKE "
                         + StringUtilities.quoteString(param)
                         + " AND mooring_id = "
                         + StringUtilities.quoteString(mooringID)

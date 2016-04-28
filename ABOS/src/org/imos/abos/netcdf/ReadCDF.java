@@ -40,7 +40,7 @@ import ucar.nc2.time.CalendarDate;
  * this is not a general netCDF reader, but intended only to read the generated NetCDF 
  * 
  */
-public class ReadCDF extends Component
+public class ReadCDF
 {
     SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
     ArrayList<Variable> timeVars;
@@ -135,14 +135,16 @@ public class ReadCDF extends Component
                 Dimension dDepth = v.getDimension(1);
                 //System.out.print("Dim : " + dDepth.getShortName());
                 Variable vDepth = ncd.findVariable(dDepth.getShortName());
-                ArrayFloat.D1 depths;
+                Array depths;
                 try 
                 {
-                    depths = (ArrayFloat.D1)vDepth.read();
+                    depths = vDepth.read();
+                    Index idx = depths.getIndex();
                     for(int i=0;i<depths.getSize();i++)
                     {
                         System.out.print(",");
-                        System.out.print(name + "(" + depths.get(i) + ")");
+                        idx.set(i);
+                        System.out.print(name + "(" + String.format("%4.2f", depths.getFloat(idx)) + ")");
                     }
                 }
                 catch (IOException ex) 
@@ -168,16 +170,19 @@ public class ReadCDF extends Component
                 Variable v = it.next();
                 if (!auxVarNames.contains(v.getShortName()))
                 {
-                    ArrayFloat.D2 data;
+                    ArrayFloat data;
                     try
                     {
-                        data = (ArrayFloat.D2) v.read();
+                        data = (ArrayFloat) v.read();
+                        Index idx = data.getIndex();
 
                         int[] shape = data.getShape();
+                        idx.set0(i);
                         for(int j=0;j<shape[1];j++)
                         {
                             System.out.print(",");
-                            d = data.get(i, j);
+                            idx.set(j);
+                            d = data.get(idx);
                             if (!Float.isNaN(d))
                                 System.out.print(d);
                             else
@@ -269,25 +274,25 @@ public class ReadCDF extends Component
                 }                   
             }
             
-            int returnVal = fc.showOpenDialog(r);
-            if (returnVal == JFileChooser.APPROVE_OPTION) 
-            {
-                File f = fc.getSelectedFile();
-                try
-                {
-                    r.read(f.getCanonicalPath(), true);
-                    
-                    p.setProperty("cdf-dir", "" + f.getParent());
-                    BufferedWriter br = new BufferedWriter(new FileWriter(optionsFile));
-                    p.store(br, "ABOS user config");
-                                        
-                    r.csvOutput();
-                }
-                catch (IOException ex)
-                {
-                    Logger.getLogger(ReadCDF.class.getName()).log(Level.SEVERE, null, ex);
-                }
-            }
+//            int returnVal = fc.showOpenDialog(r);
+//            if (returnVal == JFileChooser.APPROVE_OPTION) 
+//            {
+//                File f = fc.getSelectedFile();
+//                try
+//                {
+//                    r.read(f.getCanonicalPath(), true);
+//                    
+//                    p.setProperty("cdf-dir", "" + f.getParent());
+//                    BufferedWriter br = new BufferedWriter(new FileWriter(optionsFile));
+//                    p.store(br, "ABOS user config");
+//                                        
+//                    r.csvOutput();
+//                }
+//                catch (IOException ex)
+//                {
+//                    Logger.getLogger(ReadCDF.class.getName()).log(Level.SEVERE, null, ex);
+//                }
+//            }
         }
         else
         {

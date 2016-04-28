@@ -39,9 +39,9 @@ import ucar.nc2.dataset.VariableDS;
  */
 public class ReadCTDcDF extends Component
 {
-    ArrayList binArrays = new ArrayList();
-    ArrayList headers = new ArrayList();
-    float press[];
+    ArrayList arrays = new ArrayList();
+    Array press;
+    String varVertical = "bin";
 
     public ReadCTDcDF()
     {
@@ -52,7 +52,7 @@ public class ReadCTDcDF extends Component
         Variable varPress = ncd.findVariable("pressure");
         if (varPress == null)
         {
-            System.err.println("No pressure variable, giving up");
+            System.err.println("No "+varVertical+" variable, giving up");
 
             return;
         }
@@ -63,24 +63,39 @@ public class ReadCTDcDF extends Component
 
         System.err.println("Pressure type " + tunit.getDataType() + " value " + tunit.toString());
 
-        press = (float[]) varPress.read().copyTo1DJavaArray();
+        press = varPress.read();
 
         // iterate over all variables, extracting the time based ones
         for (Variable var : ncd.getVariables())
         {
             System.err.println("Var " + var.getShortName());
-            if (var.getShortName().compareTo("pressure") != 0)
+            if (var.getShortName().compareTo(varVertical) != 0)
             {
-                for (Dimension d : var.getDimensions())
+                int pI = var.findDimensionIndex(varVertical);
+                System.err.println("Pressure Index " + pI);
+                if (pI >= 0)
                 {
-                    if (d.getShortName().compareTo("bin") == 0)
-                    {
-                        System.err.println(" Has bin dimension");
-                        headers.add(var.getShortName());
-                        binArrays.add(var.read());
-                    }
+                    System.err.println(" Has pressure dimension");
+                    Array a = var.read();
+                    arrays.add(new Var(var.getShortName(), a, a.getIndex(), pI));
                 }
             }
+        }
+    }
+    
+    private class Var
+    {
+        String hdr;
+        Array array;
+        Index idx;
+        int pressureIndex;
+        
+        private Var(String h, Array a, Index i, int pI)
+        {
+            hdr = h;
+            array = a;
+            idx = i;
+            pressureIndex = pI;
         }
     }
     
@@ -88,10 +103,10 @@ public class ReadCTDcDF extends Component
     {   
         // print header
         System.out.print("DEPTH,");
-        for (ListIterator<String> it = headers.listIterator(); it.hasNext();)
+        for (ListIterator<Var> it = arrays.listIterator(); it.hasNext();)
         {
-            String v = it.next();
-            System.out.print(v);
+            Var v = it.next();
+            System.out.print(v.hdr);
             if (it.hasNext())
             {
                 System.out.print(",");
@@ -100,17 +115,16 @@ public class ReadCTDcDF extends Component
         System.out.println();
         
         // print data
-        for(int i=0;i<press.length;i++)
+        for(int i=0;i<press.getSize();i++)
         {
-            System.out.print(press[i] + ",");
-            for (ListIterator<Array> it = binArrays.listIterator(); it.hasNext();)
+            System.out.print(press.getDouble(i) + ",");
+            for (ListIterator<Var> it = arrays.listIterator(); it.hasNext();)
             {
-                Array v = it.next();
+                Var v = it.next();
                 //System.out.println("Var " + v.shapeToString());
                 
-                Index ix = v.getIndex();
-                ix.set0(i);
-                System.out.print(v.getDouble(ix));
+                v.idx.setDim(v.pressureIndex, i);
+                System.out.print(v.array.getDouble(v.idx));
                 if (it.hasNext())
                 {
                     System.out.print(",");

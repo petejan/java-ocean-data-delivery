@@ -509,7 +509,7 @@ public class InstrumentCalibrationFile  implements Cloneable
         isNew = b;
 
         if(isNew)
-            setInstrumentID( InstrumentCalibrationFile.getNextSequenceNumber() );
+            setDataFilePrimaryKey( InstrumentCalibrationFile.getNextSequenceNumber() );
     }
 
     public boolean update()

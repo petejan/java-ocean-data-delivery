@@ -68,8 +68,7 @@ public class InterpolatedWaterParamsDataCreationForm extends MemoryWindow implem
      */
     @SuppressWarnings("unchecked")
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
-    private void initComponents()
-    {
+    private void initComponents() {
 
         jPanel2 = new javax.swing.JPanel();
         runButton = new javax.swing.JButton();
@@ -81,10 +80,8 @@ public class InterpolatedWaterParamsDataCreationForm extends MemoryWindow implem
         sourceInstrumentCombo = new org.imos.abos.dbms.fields.InstrumentSelectorCombo();
         targetInstrumentCombo = new org.imos.abos.dbms.fields.InstrumentSelectorCombo();
 
-        addWindowListener(new java.awt.event.WindowAdapter()
-        {
-            public void windowClosing(java.awt.event.WindowEvent evt)
-            {
+        addWindowListener(new java.awt.event.WindowAdapter() {
+            public void windowClosing(java.awt.event.WindowEvent evt) {
                 formWindowClosing(evt);
             }
         });
@@ -92,20 +89,16 @@ public class InterpolatedWaterParamsDataCreationForm extends MemoryWindow implem
         jPanel2.setBorder(javax.swing.BorderFactory.createEtchedBorder());
 
         runButton.setText("Run");
-        runButton.addActionListener(new java.awt.event.ActionListener()
-        {
-            public void actionPerformed(java.awt.event.ActionEvent evt)
-            {
+        runButton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
                 runButtonActionPerformed(evt);
             }
         });
         jPanel2.add(runButton);
 
         quitButton.setText("Quit");
-        quitButton.addActionListener(new java.awt.event.ActionListener()
-        {
-            public void actionPerformed(java.awt.event.ActionEvent evt)
-            {
+        quitButton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
                 quitButtonActionPerformed(evt);
             }
         });
@@ -114,20 +107,16 @@ public class InterpolatedWaterParamsDataCreationForm extends MemoryWindow implem
         jPanel1.setBorder(javax.swing.BorderFactory.createEtchedBorder());
 
         mooringCombo1.setOrientation(0);
-        mooringCombo1.addPropertyChangeListener(new java.beans.PropertyChangeListener()
-        {
-            public void propertyChange(java.beans.PropertyChangeEvent evt)
-            {
+        mooringCombo1.addPropertyChangeListener(new java.beans.PropertyChangeListener() {
+            public void propertyChange(java.beans.PropertyChangeEvent evt) {
                 mooringCombo1PropertyChange(evt);
             }
         });
 
         deleteDataBox.setSelected(true);
         deleteDataBox.setText("Delete any existing processed data for target instrument & parameter");
-        deleteDataBox.addActionListener(new java.awt.event.ActionListener()
-        {
-            public void actionPerformed(java.awt.event.ActionEvent evt)
-            {
+        deleteDataBox.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
                 deleteDataBoxActionPerformed(evt);
             }
         });
@@ -323,14 +312,60 @@ public class InterpolatedWaterParamsDataCreationForm extends MemoryWindow implem
                                                     selectedMooring.getMooringID(),
                                                     "PRES"
                                                     );
+        long startTs = 0, endTs = 0;
+
+        RawInstrumentData srcInst = waterTemp.get(0);
+
+        double xTemp[] = new double[waterTemp.size()];
+        double yTemp[] = new double[waterTemp.size()];
+
+        RawInstrumentData t;
+        for(int i = 0; i < waterTemp.size(); i++)
+        {
+            t = waterTemp.get(i);
+            xTemp[i] = t.getDataTimestamp().getTime();
+            yTemp[i] = t.getParameterValue();
+        }            
+        double xCond[] = new double[waterCond.size()];
+        double yCond[] = new double[waterCond.size()];
+
+        for(int i = 0; i < waterCond.size(); i++)
+        {
+            t = waterCond.get(i);
+            xCond[i] = t.getDataTimestamp().getTime();
+            yCond[i] = t.getParameterValue();
+        }            
+        double xPres[] = new double[waterPressure.size()];
+        double yPres[] = new double[waterPressure.size()];
+
+        for(int i = 0; i < waterPressure.size(); i++)
+        {
+            t = waterPressure.get(i);
+            xPres[i] = t.getDataTimestamp().getTime();
+            yPres[i] = t.getParameterValue();
+        }          
+        startTs = waterCond.get(0).getDataTimestamp().getTime();
+        endTs = waterCond.get(waterCond.size()-1).getDataTimestamp().getTime();
+
+        UnivariateInterpolator iTemp = new SplineInterpolator();
+        UnivariateInterpolator iPres = new SplineInterpolator();
+        UnivariateInterpolator iCond = new SplineInterpolator();
+        UnivariateFunction fTemp = iTemp.interpolate(xTemp, yTemp);
+        UnivariateFunction fPres = null;
+        if (!waterPressure.isEmpty())
+        {
+               fPres = iPres.interpolate(xPres, yPres);
+        }
+        UnivariateFunction fCond = iCond.interpolate(xCond, yCond);
         
         // get the target instrument parameter to select the time stamps on
-        String SQL = "SELECT parameter_code FROM raw_instrument_data WHERE mooring_id = "
+        String SQL = "SELECT DISTINCT(data_timestamp) FROM raw_instrument_data WHERE mooring_id = "
                         + StringUtilities.quoteString(selectedMooring.getMooringID())
-                        + " AND instrument_id = " + targetInstrument.getInstrumentID() + " LIMIT 1";
+                        + " AND instrument_id = " + targetInstrument.getInstrumentID() + " order by data_timestamp";
         Connection conn = Common.getConnection();
         Statement proc;
-        String param = "";
+        Timestamp param;
+        
         int count = 0;
         try
         {
@@ -338,71 +373,15 @@ public class InterpolatedWaterParamsDataCreationForm extends MemoryWindow implem
             conn.setAutoCommit(false);
             proc.execute(SQL);  
             ResultSet results = (ResultSet) proc.getResultSet();
-            results.next();
-            param = results.getString(1);
-        
-        ArrayList<RawInstrumentData> data = RawInstrumentData.selectInstrumentAndMooringAndParameter
-                                                    (
-                                                    targetInstrument.getInstrumentID(),
-                                                    selectedMooring.getMooringID(),
-                                                    param
-                                                    );
-        
-        if (data != null && data.size() > 0)
-        {
-            long startTs = 0, endTs = 0;
             
-            RawInstrumentData srcInst = waterTemp.get(0);
-
-            logger.info("Data points " + data.size());
-            double xTemp[] = new double[waterTemp.size()];
-            double yTemp[] = new double[waterTemp.size()];
-
-            RawInstrumentData t;
-            for(int i = 0; i < waterTemp.size(); i++)
+            while(results.next())
             {
-                t = waterTemp.get(i);
-                xTemp[i] = t.getDataTimestamp().getTime();
-                yTemp[i] = t.getParameterValue();
-            }            
-            double xCond[] = new double[waterCond.size()];
-            double yCond[] = new double[waterCond.size()];
-
-            for(int i = 0; i < waterCond.size(); i++)
-            {
-                t = waterCond.get(i);
-                xCond[i] = t.getDataTimestamp().getTime();
-                yCond[i] = t.getParameterValue();
-            }            
-            double xPres[] = new double[waterPressure.size()];
-            double yPres[] = new double[waterPressure.size()];
-
-            for(int i = 0; i < waterPressure.size(); i++)
-            {
-                t = waterPressure.get(i);
-                xPres[i] = t.getDataTimestamp().getTime();
-                yPres[i] = t.getParameterValue();
-            }          
-            startTs = waterCond.get(0).getDataTimestamp().getTime();
-            endTs = waterCond.get(waterCond.size()-1).getDataTimestamp().getTime();
             
-            UnivariateInterpolator iTemp = new SplineInterpolator();
-            UnivariateInterpolator iPres = new SplineInterpolator();
-            UnivariateInterpolator iCond = new SplineInterpolator();
-            UnivariateFunction fTemp = iTemp.interpolate(xTemp, yTemp);
-            UnivariateFunction fPres = null;
-            if (!waterPressure.isEmpty())
-            {
-                   fPres = iPres.interpolate(xPres, yPres);
-            }
-            UnivariateFunction fCond = iCond.interpolate(xCond, yCond);
+                param = results.getTimestamp(1);
         
-            for(int i = 0; i < data.size(); i++)
-            {
                 RawInstrumentData rid = new RawInstrumentData();
 
-                RawInstrumentData o = data.get(i);
-                long ts = o.getDataTimestamp().getTime();
+                long ts = param.getTime();
                 
                 if ((ts > startTs) && (ts < endTs))
                 {
@@ -460,8 +439,7 @@ public class InterpolatedWaterParamsDataCreationForm extends MemoryWindow implem
 //                    conn.commit();
                     count++;
                 }
-            }   
-        }
+            }
         }
         catch (SQLException ex)
         {
@@ -502,7 +480,7 @@ public class InterpolatedWaterParamsDataCreationForm extends MemoryWindow implem
         if(propertyName.equalsIgnoreCase("MOORING_SELECTED"))
         {
             Mooring selectedItem = (Mooring) evt.getNewValue();
-            sourceInstrumentCombo.setMooringParam(selectedItem, "CNDC");
+            sourceInstrumentCombo.setMooringParam(selectedItem, "CNDC%");
             targetInstrumentCombo.setMooring(selectedItem);
         }
 }//GEN-LAST:event_mooringCombo1PropertyChange

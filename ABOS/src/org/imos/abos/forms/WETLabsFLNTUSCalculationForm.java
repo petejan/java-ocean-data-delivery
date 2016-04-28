@@ -240,7 +240,7 @@ public class WETLabsFLNTUSCalculationForm extends MemoryWindow implements DataPr
         //logger.debug(evt.getPropertyName());
         if(propertyName.equalsIgnoreCase("MOORING_SELECTED")) {
             Mooring selectedItem = (Mooring) evt.getNewValue();
-            sourceInstrumentCombo.setMooringParam(selectedItem, "ECO_FLNTUS_CHL");
+            sourceInstrumentCombo.setMooringParam(selectedItem, "ECO_FLNTUS_CHL%");
             targetInstrumentCombo.setMooring(selectedItem);
             calibrationFileCombo1.setMooring(selectedItem);
         }
@@ -362,11 +362,12 @@ public class WETLabsFLNTUSCalculationForm extends MemoryWindow implements DataPr
             
             tab = "SELECT DISTINCT(data_timestamp) AS data_timestamp, source_file_id, instrument_id, depth INTO flntus FROM raw_instrument_data WHERE  mooring_id = "+
                     StringUtilities.quoteString(selectedMooring.getMooringID())+
+                    " AND quality_code != 'BAD' " + 
                     " AND instrument_id = "+ sourceInstrument.getInstrumentID()+" ORDER BY data_timestamp";
             proc.execute(tab);
             tab = "ALTER TABLE flntus ADD ntuV numeric";
             proc.execute(tab);            
-            tab = "UPDATE flntus SET ntuV = d.parameter_value FROM raw_instrument_data d WHERE d.data_timestamp = flntus.data_timestamp AND parameter_code = 'ECO_FLNTUS_TURB_VOLT' AND d.instrument_id = flntus.instrument_id";
+            tab = "UPDATE flntus SET ntuV = d.parameter_value FROM raw_instrument_data d WHERE d.data_timestamp = flntus.data_timestamp AND parameter_code = 'ECO_FLNTUS_TURB_VOLT' AND d.instrument_id = flntus.instrument_id AND d.quality_code != 'BAD'";
             proc.execute(tab);
 
             tab = "ALTER TABLE flntus ADD ntu numeric";
@@ -381,7 +382,7 @@ public class WETLabsFLNTUSCalculationForm extends MemoryWindow implements DataPr
 
             tab = "ALTER TABLE flntus ADD chlV numeric";
             proc.execute(tab);            
-            tab = "UPDATE flntus SET chlV = d.parameter_value FROM raw_instrument_data d WHERE d.data_timestamp = flntus.data_timestamp AND parameter_code = 'ECO_FLNTUS_CHL_VOLT' AND d.instrument_id = flntus.instrument_id";
+            tab = "UPDATE flntus SET chlV = d.parameter_value FROM raw_instrument_data d WHERE d.data_timestamp = flntus.data_timestamp AND parameter_code = 'ECO_FLNTUS_CHL_VOLT' AND d.instrument_id = flntus.instrument_id AND d.quality_code != 'BAD'";
             proc.execute(tab);
             
             proc.execute("SELECT data_timestamp, source_file_id, depth, chl, chlV, ntu, ntuV FROM flntus");
@@ -507,8 +508,21 @@ public class WETLabsFLNTUSCalculationForm extends MemoryWindow implements DataPr
 
             row.setParameterCode("CPHL");
             row.setParameterValue(flntus.calculatedChlorophyllValue);
-
             ok = row.insert();
+            
+            // put in the counts if they were not there
+            if (!flntus.haveCcount)
+            {
+                row.setParameterCode("ECO_FLNTUS_CHL");
+                row.setParameterValue(flntus.chlorophyll);                
+                ok = row.insert();
+            }
+            if (!flntus.haveTcount)
+            {
+                row.setParameterCode("ECO_FLNTUS_TURB");
+                row.setParameterValue(flntus.turbidity);                
+                ok = row.insert();
+            }
 
         }
     }
@@ -540,29 +554,9 @@ public class WETLabsFLNTUSCalculationForm extends MemoryWindow implements DataPr
             {
                 FLNTUData row = dataSet.get(i);
 
-                System.out.println(
-                        row.dataTimestamp
-                        + ","
-                        + row.chlorophyllVoltage
-                        + ","
-                        + row.turbidityVoltage
-                        + ","
-                        + row.calculatedChlorophyllValue
-                        + ","
-                        + row.calculatedTurbidityValue
-                        );
+                System.out.println(row);
 
-                file.receiveLine(
-                        row.dataTimestamp
-                        + ","
-                        + row.chlorophyllVoltage
-                        + ","
-                        + row.turbidityVoltage
-                        + ","
-                        + row.calculatedChlorophyllValue
-                        + ","
-                        + row.calculatedTurbidityValue
-                        );
+                file.receiveLine(row.toString());
             }
 
             file.close();
@@ -696,10 +690,14 @@ public class WETLabsFLNTUSCalculationForm extends MemoryWindow implements DataPr
         public Double turbidityVoltage = null;
         public Double chlorophyll = null;
         public Double turbidity = null;
+        public boolean haveTcount = false;
+        public boolean haveCcount = false;
 
         public Double calculatedChlorophyllValue;
         public Double calculatedTurbidityValue;
 
+        // SELECT data_timestamp, source_file_id, depth, chl, chlV, ntu, ntuV FROM flntus
+                
         public void setData(Vector row)
         {
             int i = 0;
@@ -710,29 +708,37 @@ public class WETLabsFLNTUSCalculationForm extends MemoryWindow implements DataPr
             Object o = row.elementAt(i++);
             if (o != null)
             {
+                haveCcount = true;
                 chlorophyll = ((Number)o).doubleValue();
-                calculatedChlorophyllValue = WETLabsFLNTUSCalculator.calculateChlorophyllCount(chlorophyll);
+                calculatedChlorophyllValue = WETLabsFLNTUSCalculator.calculateChlorophyllValue(chlorophyll);
             }
             o = row.elementAt(i++);
-            if (o != null)
+            if ((o != null) && (haveCcount == false))
             {
                 chlorophyllVoltage = ((Number)o).doubleValue();
-                calculatedChlorophyllValue = WETLabsFLNTUSCalculator.calculateChlorophyllValue(chlorophyllVoltage);
+                chlorophyll = WETLabsFLNTUSCalculator.calculateChlorophyllCount(chlorophyllVoltage);
+                calculatedChlorophyllValue = WETLabsFLNTUSCalculator.calculateChlorophyllValue(chlorophyll);
             }
             o = row.elementAt(i++);
             if (o != null)
             {
+                haveTcount = true;
                 turbidity = ((Number)o).doubleValue();
-                calculatedTurbidityValue = WETLabsFLNTUSCalculator.calculateTurbidityCount(turbidity);                
+                calculatedTurbidityValue = WETLabsFLNTUSCalculator.calculateTurbidityValue(turbidity);                
             }
             o = row.elementAt(i++);
-            if (o != null)
+            if ((o != null) && (haveTcount == false))
             {
                 turbidityVoltage = ((Number)o).doubleValue();
-                calculatedTurbidityValue = WETLabsFLNTUSCalculator.calculateTurbidityValue(turbidityVoltage);                
+                turbidity = WETLabsFLNTUSCalculator.calculateTurbidityCount(turbidityVoltage);    
+                calculatedTurbidityValue = WETLabsFLNTUSCalculator.calculateTurbidityValue(turbidity);                
             }
 
-            System.out.println(dataTimestamp + " CHL Count " + chlorophyll + " CHL V " + chlorophyllVoltage + " CHL " + calculatedChlorophyllValue + " NTU Count " + turbidity + " NTU V" + turbidityVoltage + " NTU " + calculatedTurbidityValue);
+        }
+        
+        public String toString()
+        {
+            return (dataTimestamp + " CHL Count " + chlorophyll + " CHL V " + chlorophyllVoltage + " CHL " + calculatedChlorophyllValue + " NTU Count " + turbidity + " NTU V" + turbidityVoltage + " NTU " + calculatedTurbidityValue);            
         }
     }
 }

@@ -311,7 +311,7 @@ public class InterpolatedProcessedDataCreationForm extends MemoryWindow implemen
             pid.setDataTimestamp(new Timestamp((long) t * outputPeriod));
             pid.setParameterValue(function.value(t * outputPeriod) * p.coeffs[1] + p.coeffs[0]);
             i++;
-            //System.out.println(pid.getDataTimestamp() + " ," + pid.getParameterValue());
+            //logger.debug(pid.getDataTimestamp() + " ," + pid.getParameterValue());
 
             boolean ok = pid.insert();
         }
@@ -371,7 +371,7 @@ public class InterpolatedProcessedDataCreationForm extends MemoryWindow implemen
                 pid.setQualityCode(q);
                 pid.setDataTimestamp(new Timestamp((long)t * outputPeriod));
                 pid.setParameterValue(valueStats.getMean() * p.coeffs[1] + p.coeffs[0]);
-                System.out.println(pid.getDataTimestamp() + " ," + pid.getParameterValue() + ": " + valueStats.getN() + " " + valueStats.getMean());
+                //logger.debug(pid.getDataTimestamp() + " ," + pid.getParameterValue() + ": " + valueStats.getN() + " " + valueStats.getMean());
                 
                 valueStats.clear();
                 
@@ -439,17 +439,20 @@ public class InterpolatedProcessedDataCreationForm extends MemoryWindow implemen
         // TODO: NTRI has issues because we have many samples per hour (40 sec burst), need to make a NTRI averaged product
         
         String SQL = "SELECT depth, parameter_code, instrument_id, count(*), min(data_timestamp), max(data_timestamp) " + 
-                        "FROM raw_instrument_data " + 
+                        "FROM raw_instrument_data JOIN parameters ON (parameter_code = code) " + 
                         "WHERE mooring_id = " + StringUtilities.quoteString(selectedMooring.getMooringID()) + " " +
-                        " AND parameter_code in ('TEMP', 'CNDC', 'PSAL', 'DENSITY', 'OXSOL', 'SBE43_OXY_VOLTAGE', 'OPTODE_BPHASE', 'OPTODE_TEMP', 'DOX2', 'PRES', " +
-                                                "'TOTAL_GAS_PRESSURE', 'GTD_TEMPERATURE', 'PAR', 'NTU', 'CAPH', 'NTRI', 'CPHL', 'ECO_FLNTUS_CHL', 'TURB', 'XPOS', 'YPOS', 'SIG_WAVE_HEIGHT'" +
-                                                "'PCO2', 'PCO2_AIR', 'MLD', 'WSPD', 'AIRT') " +
+//                        " AND parameter_code in ('TEMP', 'CNDC', 'PSAL', 'DENSITY', 'OXSOL', 'SBE43_OXY_VOLTAGE', 'OPTODE_BPHASE', 'OPTODE_TEMP', 'OPTODE_VOLT', 'DOX2', 'PRES', " +
+//                                                "'TOTAL_GAS_PRESSURE', 'GTD_TEMPERATURE', 'PAR', 'NTU', 'CAPH', 'NTRI', 'CPHL', 'ECO_FLNTUS_CHL', 'ECO_FLNTUS_TURB', 'TURB', 'XPOS', "+
+//                                                "'YPOS', 'SIG_WAVE_HEIGHT', " +
+//                                                "'PCO2', 'PCO2_AIR', 'MLD', 'WSPD', 'AIRT') " +
+//                        " AND parameter_code in ('XPOS', 'YPOS') " +                
+                        " AND process = 'Y' " +
                         " AND quality_code != 'BAD'" +
                         " AND quality_code != 'INTERPOLATED'" +                
                         " GROUP BY depth, parameter_code, instrument_id " +
                         "ORDER BY depth, parameter_code";
         
-        System.out.println(SQL);
+        logger.debug(SQL);
         
         query.setConnection(Common.getConnection());
         query.executeQuery(SQL);
@@ -505,7 +508,7 @@ public class InterpolatedProcessedDataCreationForm extends MemoryWindow implemen
                             {
                                 Double d = new Double(s);
                                 p.addCalCoef(j, d);
-                                System.out.println("calculateDataValues::calibration:parseData: " + j + " input " + s + " " + p.coeffs[j]);
+                                logger.debug("calculateDataValues::calibration:parseData: " + j + " input " + s + " " + p.coeffs[j]);
                                 j++;
                             }
                             catch(NumberFormatException nex)
@@ -520,36 +523,50 @@ public class InterpolatedProcessedDataCreationForm extends MemoryWindow implemen
                         
             // get the data sampling time and sample interval
             
-            SQL = "SELECT avg(date_part('epoch', data_timestamp)::integer % (24*3600)) " + 
+            SQL = "SELECT min(timestamp_in) AS in, " +
+                    "	max(timestamp_out)AS out, " +
+                    "	date_trunc('hour', data_timestamp) AS hour, "+
+                    "   count(*), " +
+                    "	min(((date_part('epoch', data_timestamp)::integer) + 1800) % 3600) -1800 as sample_time_min, " +
+                    "	avg(((date_part('epoch', data_timestamp)::integer) + 1800) % 3600) -1800 as sample_time_avg, " +
+                    "	max(((date_part('epoch', data_timestamp)::integer) + 1800) % 3600) -1800 as sample_time_max " + 
                             "FROM raw_instrument_data JOIN mooring USING (mooring_id) " + 
                             "WHERE mooring_id = " + StringUtilities.quoteString(selectedMooring.getMooringID()) + " " +
                             " AND parameter_code = " + StringUtilities.quoteString(p.param) + " " +
                             " AND instrument_id = " + p.instrument_id +
-//                            " AND depth = " + p.depth +
                             " AND quality_code != 'BAD'" +
                             " AND data_timestamp BETWEEN timestamp_in AND timestamp_out "+
-                            " GROUP BY date_part('epoch', data_timestamp)::integer % (24*3600)/20 " +
-                            " HAVING count(*) > 10 " +
-                            "ORDER BY 1";
+                            " GROUP BY date_trunc('hour', data_timestamp) " +
+                            "ORDER BY 3";
 
-            System.out.println(SQL);
+            logger.debug(SQL);
 
             query.setConnection(Common.getConnection());
             query.executeQuery(SQL);
             attributeSet = query.getData();
+            Timestamp sample_1 = null;
+            Timestamp sample_N = null;
+            double sampleTime = 0.0;
+            double hourCount = 0;
 
             if (attributeSet != null && attributeSet.size() > 2)
             {
-                Vector row = (Vector) attributeSet.get(0);
-                int sampleTime = ((Number)(row.get(0))).intValue(); 
-                p.addSampleTime(sampleTime);
-                row = (Vector)attributeSet.get(1);
-                p.addSampleInterval(((Number)(row.get(0))).intValue() - sampleTime);
-            }
-            else
-            {
-                logger.info("Samples less than every 24 hours, not processing parameter " + p);
-                continue;
+                for (int i = 0; i < attributeSet.size(); i++)
+                {
+                    Vector row = (Vector) attributeSet.get(i);
+                    if (sample_1 == null)
+                    {
+                        sample_1 = (Timestamp) row.get(2);
+                    }
+                    sample_N = (Timestamp) row.get(2);
+                
+                    sampleTime = ((Number)(row.get(5))).doubleValue();
+                    hourCount += ((Number)(row.get(3))).doubleValue();
+                }
+                long interval = sample_N.getTime()/1000 - sample_1.getTime()/1000;
+                    
+                p.addSampleTime((int) sampleTime);
+                p.addSampleInterval((int) (interval/hourCount));
             }
                         
             logger.info("Data Points     : " + p.count);
@@ -562,46 +579,48 @@ public class InterpolatedProcessedDataCreationForm extends MemoryWindow implemen
             ResultSet results = null;
 
             // now finally select the data
-            try
+            if (p.count > 100)
             {
-                String tab;
-                conn = Common.getConnection();
-                proc = conn.createStatement();
-
-                tab = "SELECT data_timestamp, source_file_id, depth, latitude, longitude, parameter_value, quality_code FROM raw_instrument_data " +
-                        " WHERE mooring_id = " + StringUtilities.quoteString(selectedMooring.getMooringID()) + " " +
-                                " AND parameter_code = " + StringUtilities.quoteString(p.param) + " " +
-                                " AND instrument_id = " + p.instrument_id +
-//                                " AND depth = " + p.depth +                    
-                                " AND quality_code != 'BAD'" +
-                        " ORDER BY data_timestamp";
-
-                System.out.println(tab);
-                
-                proc.execute(tab);
-                results = (ResultSet) proc.getResultSet();
-
-                conn.setAutoCommit(false);
-                results.setFetchSize(50);
-                
-                count = 0;
-                if ((p.sampleInterval > 10 * 60) || (p.count < 8000)) // should use (p.end - p.start) in hours maybe
+                try
                 {
-                    count = interpolate(p, results);
-                    logger.info("interpolate count " + count);
+                    String tab;
+                    conn = Common.getConnection();
+                    proc = conn.createStatement();
+
+                    tab = "SELECT data_timestamp, source_file_id, depth, latitude, longitude, parameter_value, quality_code FROM raw_instrument_data " +
+                            " WHERE mooring_id = " + StringUtilities.quoteString(selectedMooring.getMooringID()) + " " +
+                                    " AND parameter_code = " + StringUtilities.quoteString(p.param) + " " +
+                                    " AND instrument_id = " + p.instrument_id +
+                                    " AND quality_code != 'BAD'" +
+                            " ORDER BY data_timestamp";
+
+                    logger.debug(tab);
+
+                    proc.execute(tab);
+                    results = (ResultSet) proc.getResultSet();
+
+                    conn.setAutoCommit(false);
+                    results.setFetchSize(50);
+
+                    count = 0;
+                    if ((p.sampleInterval > (10 * 60)) || (p.count < 8000)) // should use (p.end - p.start) in hours maybe
+                    {
+                        count = interpolate(p, results);
+                        logger.info("interpolate count " + count);
+                    }
+                    else
+                    {
+                        count = decimate(p, results);
+                        logger.info("decimate count " + count);
+                    }
+                    totalCount += count;
+
+                    // conn.commit();
                 }
-                else
+                catch(SQLException sex)
                 {
-                    count = decimate(p, results);
-                    logger.info("decimate count " + count);
+                    logger.error(sex);
                 }
-                totalCount += count;
-                
-                // conn.commit();
-            }
-            catch(SQLException sex)
-            {
-                logger.error(sex);
             }
         }                    
         

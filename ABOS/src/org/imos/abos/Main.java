@@ -85,20 +85,16 @@ public class Main
             Common.closeConnection();
             Common.build(home + "/ABOS/ABOS.properties");
         }
-        System.out.println("Common.getDBMSUser " + Common.getDBMSUser());
+        log.debug("Common.getDBMSUser " + Common.getDBMSUser());
 
         TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
         
         startMenu mm = new startMenu();
 
         mm.setUDPBroadcasts(false);
-        mm.setSize(640,450);
+        mm.setSize(1060, 650);
 
-        Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
-        Dimension frameSize = mm.getSize();
-
-        mm.setLocation( (screenSize.width - frameSize.width) / 2,
-                         (screenSize.height - frameSize.height) / 2);
+        mm.setLocationRelativeTo(null);
 
         mm.setTitle("ABOS Main Menu");
         mm.setVisible( true );
@@ -198,6 +194,13 @@ public class Main
           // load up the menus
           //
           mm.buildMenus();
+          Dimension s = mm.getSize();
+          MooringTable table = new MooringTable();
+          table.initialise();
+          table.setSize(s.width-100, s.height-100);
+          
+          mm.addComponent(table.getContentPane());
+          table.setVisible(false);          
         }
     }
 

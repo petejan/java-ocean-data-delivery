@@ -65,7 +65,7 @@ public class DecodeOpenLogFile
         long fileSize = roChannel.size();
         ByteBuffer readOnlyBuffer = roChannel.map(FileChannel.MapMode.READ_ONLY, 0, (int) fileSize);
 
-        System.err.println("read File " + filename + " file size " + fileSize);
+        //System.err.println("read File " + filename + " file size " + fileSize);
 
         SummaryStatistics ssLoad = new SummaryStatistics();
 
@@ -187,14 +187,18 @@ public class DecodeOpenLogFile
                             int i = 0;
                             while (readOnlyBuffer.position() < (dataSize + endOfLine))
                             {
-                                //System.out.print(sdf.format(ts.getTime()) + " ,");
-                                ts.add(Calendar.MILLISECOND, 200);
-
                                 mruRecord mr = mruDecode.read(readOnlyBuffer);
-                                mruStabQ v = (mruStabQ) mr;
-                                zAccel[i++] = v.accelWorld.z;
-                                double load = readOnlyBuffer.getFloat();
-                                ssLoad.addValue(load);
+
+                                if (mr != null)
+                                {
+                                    //System.out.print(sdf.format(ts.getTime()) + " ,");
+                                    ts.add(Calendar.MILLISECOND, 200);
+
+                                    mruStabQ v = (mruStabQ) mr;
+                                    zAccel[i++] = v.accelWorld.z;
+                                    //double load = readOnlyBuffer.getFloat();
+                                    //ssLoad.addValue(load);
+                                }
 
                                 //System.out.println(" Load " + load);
                             }
@@ -232,7 +236,8 @@ public class DecodeOpenLogFile
                             bb.putFloat((float) 0.0);
                             WaveCalculator wd = new WaveCalculator();
                             wd.decode(bb);
-                            System.out.println(sdf.format(startDate) + ",swh=" + wd.calculate(WaveCalculator.DF, logSpec) + " ,minLoad=" + ssLoad.getMin()+ " ,meanLoad=" + ssLoad.getMean()+ " ,maxLoad=" + ssLoad.getMax());
+                            //System.out.println(sdf.format(startDate) + ",swh=" + wd.calculate(WaveCalculator.DF, logSpec) + " ,minLoad=" + ssLoad.getMin()+ " ,meanLoad=" + ssLoad.getMean()+ " ,maxLoad=" + ssLoad.getMax());
+                            System.out.println(sdf.format(startDate) + ",swh=" + String.format("%6.3f", wd.calculate(WaveCalculator.DF, logSpec)));
 
                             readOnlyBuffer.get();
                             readOnlyBuffer.get();

@@ -62,7 +62,7 @@ public class SeabirdSBE37Parser extends AbstractDataParser
 
         String temperatureString;
         String CNDCString;
-        String pressureString;
+        String pressureString = null;
 
 
         String dateString;
@@ -77,11 +77,13 @@ public class SeabirdSBE37Parser extends AbstractDataParser
         String constructTimestamp;
 
         StringTokenizer st = new StringTokenizer(dataLine,",");
+        int tCount = st.countTokens();
         try
         {
             temperatureString = st.nextToken();
             CNDCString  = st.nextToken();
-            pressureString  = st.nextToken();
+            if (tCount > 4)
+                pressureString  = st.nextToken();
             dateString = st.nextToken();
             timeString = st.nextToken();
 
@@ -115,21 +117,24 @@ public class SeabirdSBE37Parser extends AbstractDataParser
                 }
             }
 
-            try
-            {
-                pressure = new Double(pressureString.trim());
-            }
-
-            catch(NumberFormatException pex)
+            if (tCount > 5)
             {
                 try
                 {
-                    Number n = deciFormat.parse(pressureString.trim());
-                    pressure = n.doubleValue();
+                    pressure = new Double(pressureString.trim());
                 }
-                catch(ParseException pexx)
+
+                catch(NumberFormatException pex)
                 {
-                    throw new ParseException("parse failed for text '" + pressureString + "'",0);
+                    try
+                    {
+                        Number n = deciFormat.parse(pressureString.trim());
+                        pressure = n.doubleValue();
+                    }
+                    catch(ParseException pexx)
+                    {
+                        throw new ParseException("parse failed for text '" + pressureString + "'",0);
+                    }
                 }
             }
 
@@ -168,12 +173,15 @@ public class SeabirdSBE37Parser extends AbstractDataParser
 
             boolean ok = row.insert();
 
-            row.setParameterCode("PRES");
-            row.setParameterValue(pressure);
-            row.setSourceFileID(currentFile.getDataFilePrimaryKey());
-            row.setQualityCode("RAW");
+            if (pressure != null)
+            {
+                row.setParameterCode("PRES");
+                row.setParameterValue(pressure);
+                row.setSourceFileID(currentFile.getDataFilePrimaryKey());
+                row.setQualityCode("RAW");
 
-            ok = row.insert();
+                ok = row.insert();
+            }
 
             row.setParameterCode("CNDC");
             row.setParameterValue(CNDC);

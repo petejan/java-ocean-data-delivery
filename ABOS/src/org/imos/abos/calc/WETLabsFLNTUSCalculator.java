@@ -27,7 +27,8 @@ public class WETLabsFLNTUSCalculator
         constants = c;
     }
 
-    public static Double calculateChlorophyllValue(Double voltage)
+    // calculate the digital value from voltage
+    public static Double calculateChlorophyllCount(Double voltage)
     {
         if(constants == null)
         {
@@ -40,28 +41,13 @@ public class WETLabsFLNTUSCalculator
             return null;
         }
 
-        Double chlorophyllValue = constants.ChlorophyllAnalogScaleFactor * (voltage - constants.ChlorophyllAnalogDarkCount);
-        return chlorophyllValue;
+
+        Double count = constants.ChlorophyllDigitalMaxOutput * ((voltage - constants.ChlorophyllAnalogDarkCount)/constants.ChlorophyllAnalogMaxOutput) + constants.ChlorophyllDigitalDarkCount;
+        return (double) Math.round(count);
     }
 
-    public static Double calculateTurbidityValue(Double voltage)
-    {
-        if(constants == null)
-        {
-            logger.error("Cannot calculate turbidity without calibration coefficients!");
-            return null;
-        }
-        if( voltage == null)
-        {
-            logger.error("Cannot calculate turbidity without valid voltage value!");
-            return null;
-        }
-
-        Double turbidityValue = constants.TurbidityAnalogScaleFactor * (voltage - constants.TurbidityAnalogDarkCount);
-        return turbidityValue;
-    }
-    
-    public static Double calculateChlorophyllCount(Double count)
+    // calculate the chlorophyll from the counts
+    public static Double calculateChlorophyllValue(Double count)
     {
         if(constants == null)
         {
@@ -78,7 +64,24 @@ public class WETLabsFLNTUSCalculator
         return chlorophyllValue;
     }
 
-    public static Double calculateTurbidityCount(Double count)
+    public static Double calculateTurbidityCount(Double voltage)
+    {
+        if(constants == null)
+        {
+            logger.error("Cannot calculate turbidity without calibration coefficients!");
+            return null;
+        }
+        if( voltage == null)
+        {
+            logger.error("Cannot calculate turbidity without valid voltage value!");
+            return null;
+        }
+
+        Double count = constants.TurbidityDigitalMaxOutput * ((voltage - constants.TurbidityAnalogDarkCount)/constants.TurbidityAnalogMaxOutput) + constants.TurbidityDigitalDarkCount;
+        return (double) Math.round(count);
+    }
+    
+    public static Double calculateTurbidityValue(Double count)
     {
         if(constants == null)
         {
@@ -87,7 +90,7 @@ public class WETLabsFLNTUSCalculator
         }
         if( count == null)
         {
-            logger.error("Cannot calculate turbidity without valid voltage value!");
+            logger.error("Cannot calculate turbidity without valid count value!");
             return null;
         }
 

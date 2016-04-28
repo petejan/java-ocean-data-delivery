@@ -43,6 +43,7 @@ public class Mooring  implements Cloneable
             60,
             60,
             60,
+            60,
             60
         };
     }
@@ -96,6 +97,7 @@ public class Mooring  implements Cloneable
 
     private String mooringID;
     private String shortDescription;
+    private String facility;
     private Timestamp timestampIn;
     private Timestamp timestampOut;
     private Double latitudeIn;
@@ -107,6 +109,7 @@ public class Mooring  implements Cloneable
     {
         "Mooring ID",
         "Description",
+        "Facility",
         "Time In",
         "Time Out",
         "Lat In",
@@ -123,6 +126,7 @@ public class Mooring  implements Cloneable
 
     private static Class[] columnClasses = new Class[]
     {
+        String.class,
         String.class,
         String.class,
         Timestamp.class,
@@ -142,6 +146,7 @@ public class Mooring  implements Cloneable
     private static String selectSQL = "select"
                 + " mooring_id,"
                 + " short_description,"
+                + " facility,"
                 + " timestamp_in,"
                 + " timestamp_out,"
                 + " latitude_in,"
@@ -156,6 +161,7 @@ public class Mooring  implements Cloneable
             + "("
             + " mooring_id,"
             + " short_description,"
+            + " facility,"
             + " timestamp_in,"
             + " timestamp_out,"
             + " latitude_in,"
@@ -179,6 +185,7 @@ public class Mooring  implements Cloneable
     {
         return "update Mooring set "
                 + " short_description = ?,"
+                + " facility = ?,"
                 + " timestamp_in = ?,"
                 + " timestamp_out = ?,"
                 + " latitude_in = ?,"
@@ -307,16 +314,18 @@ public class Mooring  implements Cloneable
         else if(columnIndex == 1)
             return shortDescription;
         else if(columnIndex == 2)
-            return timestampIn;
+            return facility;
         else if(columnIndex == 3)
-            return timestampOut;
+            return timestampIn;
         else if(columnIndex == 4)
-            return latitudeIn;
+            return timestampOut;
         else if(columnIndex == 5)
-            return longitudeIn;
+            return latitudeIn;
         else if(columnIndex == 6)
-            return latitudeOut;
+            return longitudeIn;
         else if(columnIndex == 7)
+            return latitudeOut;
+        else if(columnIndex == 8)
             return longitudeOut;
         else
             return null;
@@ -352,16 +361,18 @@ public class Mooring  implements Cloneable
         else if(aColumn == 1)
             return setShortDescription(value);
         else if(aColumn == 2)
-            return setTimestampIn(value);
+            return setFacility(value);
         else if(aColumn == 3)
-            return setTimestampOut(value);
+            return setTimestampIn(value);
         else if(aColumn == 4)
-            return setLatitudeIn(value);
+            return setTimestampOut(value);
         else if(aColumn == 5)
-            return setLongitudeIn(value);
+            return setLatitudeIn(value);
         else if(aColumn == 6)
-            return setLatitudeOut(value);
+            return setLongitudeIn(value);
         else if(aColumn == 7)
+            return setLatitudeOut(value);
+        else if(aColumn == 8)
             return setLongitudeOut(value);
         else
             return false;
@@ -428,6 +439,7 @@ public class Mooring  implements Cloneable
             int i = 1;
 
             psql.setString(i++, shortDescription);
+            psql.setString(i++, facility);
 
             if(timestampIn != null)
                 psql.setTimestamp(i++, timestampIn);
@@ -490,12 +502,13 @@ public class Mooring  implements Cloneable
     {
         setMooringID( (String) currentRow.elementAt(0) );
         setShortDescription((String) currentRow.elementAt(1));
-        setTimestampIn((Timestamp) currentRow.elementAt(2));
-        setTimestampOut((Timestamp) currentRow.elementAt(3));
-        setLatitudeIn((Number) currentRow.elementAt(4));
-        setLongitudeIn((Number) currentRow.elementAt(5));
-        setLatitudeOut((Number) currentRow.elementAt(6));
-        setLongitudeOut((Number) currentRow.elementAt(7));
+        setFacility((String) currentRow.elementAt(2));
+        setTimestampIn((Timestamp) currentRow.elementAt(3));
+        setTimestampOut((Timestamp) currentRow.elementAt(4));
+        setLatitudeIn((Number) currentRow.elementAt(5));
+        setLongitudeIn((Number) currentRow.elementAt(6));
+        setLatitudeOut((Number) currentRow.elementAt(7));
+        setLongitudeOut((Number) currentRow.elementAt(8));
 
         isNew = false;
         isEdited = false;
@@ -607,6 +620,7 @@ public class Mooring  implements Cloneable
 
             psql.setString(i++, mooringID);
             psql.setString(i++, shortDescription);
+            psql.setString(i++, facility);
 
             if(timestampIn != null)
                 psql.setTimestamp(i++, timestampIn);
@@ -675,17 +689,17 @@ public class Mooring  implements Cloneable
             return null;
     }
 
-    public boolean setMake(String string)
+    public String getFacility()
     {
-        isEdited = true;
-
-        if(string != null)
+        if(facility != null)
         {
-            shortDescription = string.trim();
-            return true;
+            if(facility.trim().isEmpty())
+                return null;
+            else
+                return facility.trim();
         }
         else
-            return true;
+            return null;
     }
 
     public Timestamp getTimestampIn()
@@ -753,7 +767,54 @@ public class Mooring  implements Cloneable
         }
         else if(value instanceof String)
         {
-            return setMake((String) value);
+            return setShortDescription((String) value);
+        }
+        else
+            return false;
+    }
+
+    public boolean setShortDescription(String value)
+    {
+        if(value == null)
+        {
+            shortDescription = null;
+            return true;
+        }
+        else if(value instanceof String)
+        {
+            shortDescription = value;
+            
+            return true;
+        }
+        else
+            return false;
+    }
+
+    public boolean setFacility(Object value)
+    {
+        if(value == null)
+        {
+            facility = null;
+            return true;
+        }
+        else if(value instanceof String)
+        {
+            return setFacility((String) value);
+        }
+        else
+            return false;
+    }
+    public boolean setFacility(String value)
+    {
+        if(value == null)
+        {
+            facility = null;
+            return true;
+        }
+        else if(value instanceof String)
+        {
+            facility = value;
+            return true;
         }
         else
             return false;

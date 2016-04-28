@@ -67,8 +67,8 @@ public class SeabirdSBE16Parser extends AbstractDataParser
         String volt4String;
         String volt5String;
         String volt6String;
-        String GTDPressureString;
-        String GTDTemperatureString;
+        String GTDPressureString = null;
+        String GTDTemperatureString = null;
 
         String dateString;
 
@@ -91,6 +91,8 @@ public class SeabirdSBE16Parser extends AbstractDataParser
 
         StringTokenizer st = new StringTokenizer(dataLine,",");
         int tokenCount = st.countTokens();
+        boolean gtd = false;
+        if (tokenCount >= 12) gtd = true;
         try
         {
             temperatureString = st.nextToken();
@@ -103,9 +105,12 @@ public class SeabirdSBE16Parser extends AbstractDataParser
             volt4String = st.nextToken();
             volt5String = st.nextToken();
             volt6String = st.nextToken();
-            GTDPressureString = st.nextToken();
-            GTDTemperatureString = st.nextToken();
-            if (tokenCount > 12)
+            if (gtd)
+            {
+                GTDPressureString = st.nextToken();
+                GTDTemperatureString = st.nextToken();
+            }
+            //if (tokenCount > 12)
             {
                 st.nextToken();
             }
@@ -134,8 +139,11 @@ public class SeabirdSBE16Parser extends AbstractDataParser
             volt4 = getDouble(volt4String);
             volt5 = getDouble(volt5String);
             volt6 = getDouble(volt6String);
-            GTDPressureVal = getDouble(GTDPressureString);
-            GTDTemperatureVal = getDouble(GTDTemperatureString)/100000.0;
+            if (gtd)
+            {
+                GTDPressureVal = getDouble(GTDPressureString);
+                GTDTemperatureVal = getDouble(GTDTemperatureString)/100000.0;
+            }
             //
             // ok, we have parsed out the values we need, can now construct the raw data class
             //
@@ -206,19 +214,22 @@ public class SeabirdSBE16Parser extends AbstractDataParser
             row.setQualityCode("RAW");
             ok = row.insert();
 
-            row.setParameterCode("TOTAL_GAS_PRESSURE");
-            row.setParameterValue(GTDPressureVal);
-            row.setSourceFileID(currentFile.getDataFilePrimaryKey());
-            row.setQualityCode("RAW");
+            if (gtd)
+            {
+                row.setParameterCode("TOTAL_GAS_PRESSURE");
+                row.setParameterValue(GTDPressureVal);
+                row.setSourceFileID(currentFile.getDataFilePrimaryKey());
+                row.setQualityCode("RAW");
 
-            ok = row.insert();
+                ok = row.insert();
 
-            row.setParameterCode("GTD_TEMPERATURE");
-            row.setParameterValue(GTDTemperatureVal);
-            row.setSourceFileID(currentFile.getDataFilePrimaryKey());
-            row.setQualityCode("RAW");
+                row.setParameterCode("GTD_TEMPERATURE");
+                row.setParameterValue(GTDTemperatureVal);
+                row.setSourceFileID(currentFile.getDataFilePrimaryKey());
+                row.setQualityCode("RAW");
 
-            ok = row.insert();
+                ok = row.insert();
+            }
 
         }
         catch (NoSuchElementException nse)

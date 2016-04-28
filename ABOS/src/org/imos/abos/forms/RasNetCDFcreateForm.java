@@ -64,9 +64,8 @@ public class RasNetCDFcreateForm extends MemoryWindow
     private Mooring selectedMooring = null;
     
     private String authority = "OS";
-    private String site = "SOTS";
+    private String facility = "ABOS-SOTS";
     
-    protected NetcdfFileWriter dataFile = null;
     protected TimeZone tz = TimeZone.getTimeZone("UTC");
     
     /** Creates new form SBE16CalculationForm */
@@ -286,8 +285,8 @@ public class RasNetCDFcreateForm extends MemoryWindow
             // IMOS_ABOS-SOTS_20110803T115900Z_PULSE_FV01_PULSE-8-2011_END-20120719T214600Z_C-20130724T051434Z.nc
             filename = //System.getProperty("user.home")
                             //+ "/"
-                            authority 
-                            + "_ABOS-" + site + "_"
+                                                        authority 
+                            + "_ABOS-" + facility + "_"
                             + nameFormatter.format(startTime)
                             + "_" + mooring.toUpperCase() + "_FV01"
                             + "_" + deployment.toUpperCase() + "-RAS-NUTRIENTS"
@@ -301,7 +300,7 @@ public class RasNetCDFcreateForm extends MemoryWindow
         else if (authority.equals("OS"))
         {
             filename = "OS"
-                        + "_" + site
+                        + "_" + facility
                         + "_" + deployment.toUpperCase()
                         + "_D"
                         + ".nc"
@@ -407,7 +406,7 @@ public class RasNetCDFcreateForm extends MemoryWindow
             varName[p] = pt;
             dataVar[p] = dataTemp;
             dataVarQC[p] = dataTempQC;
-            var[p] = dataFile.addVariable(null, pt, DataType.FLOAT, timeAndDim);
+            var[p] = f.dataFile.addVariable(null, pt, DataType.FLOAT, timeAndDim);
             var[p].addAttribute(new Attribute("sensor_depth", getDepthsString()));
             addVariableAttributes(this, p);
 
@@ -416,7 +415,7 @@ public class RasNetCDFcreateForm extends MemoryWindow
             var[p].addAttribute(new Attribute("coordinates", "TIME " + getDimensionName() + " LATITUDE LONGITUDE"));
 
             varNameQC[p] = qc;
-            varQC[p] = dataFile.addVariable(null, qc, DataType.BYTE, timeAndDim);
+            varQC[p] = f.dataFile.addVariable(null, qc, DataType.BYTE, timeAndDim);
             varQC[p].addAttribute(new Attribute("long_name", "quality flag"));
             varQC[p].addAttribute(new Attribute("conventions", "OceanSITES reference table 2"));
             b = -128;
@@ -443,11 +442,11 @@ public class RasNetCDFcreateForm extends MemoryWindow
 
         private void createDimension()
         {
-                dim = dataFile.addDimension(null, getDimensionName(), depths.length);
+                dim = f.dataFile.addDimension(null, getDimensionName(), depths.length);
                 dimList = new ArrayList<Dimension>();
                 dimList.add(dim);
                 
-                dimVar = dataFile.addVariable(null, getDimensionVariableName(), DataType.FLOAT, dimList);
+                dimVar = f.dataFile.addVariable(null, getDimensionVariableName(), DataType.FLOAT, dimList);
                 variable = new ArrayFloat.D1(dim.getLength());
                 for (int j = 0; j < dim.getLength(); j++)
                 {
@@ -722,7 +721,7 @@ public class RasNetCDFcreateForm extends MemoryWindow
             
             variable.addAttribute(new Attribute("_FillValue", Float.NaN));
             variable.addAttribute(new Attribute("quality_control_set", 1.0f));
-            //dataFile.addVariableAttribute(variable, "csiro_instrument_id", instrumentID);
+            //f.dataFile.addVariableAttribute(variable, "csiro_instrument_id", instrumentID);
         }
         
         // TODO: Should include instrument_id select also
@@ -764,14 +763,14 @@ public class RasNetCDFcreateForm extends MemoryWindow
     {
         String filename = getFileName();
         int RECORD_COUNT = timeArray.size();
+        f = new NetCDFfile();
         try
         {
             // Create new netcdf-3 file with the given filename
-            dataFile = NetcdfFileWriter.createNew(NetcdfFileWriter.Version.netcdf3, filename);
-            f = new NetCDFfile(dataFile);
+            f.createFile(filename);
             f.setMooring(selectedMooring);
             f.setAuthority(authority);
-            f.setSite(site);
+            f.setFacility(facility);
             f.writeGlobalAttributes();
 
             // Define the coordinate variables.
@@ -836,12 +835,12 @@ public class RasNetCDFcreateForm extends MemoryWindow
                 }
             }
             //Create the file. At this point the (empty) file will be written to disk
-            dataFile.create();
+            f.dataFile.create();
             for(InstanceCoord dc : instanceCoords)
             {
-                dataFile.write(dc.dimVar, dc.variable);
+                f.dataFile.write(dc.dimVar, dc.variable);
             }
-            dataFile.write(f.vTime, f.times);
+            f.dataFile.write(f.vTime, f.times);
 
             f.writePosition(selectedMooring.getLatitudeIn(), selectedMooring.getLongitudeIn());
             
@@ -849,8 +848,8 @@ public class RasNetCDFcreateForm extends MemoryWindow
             {
                 for(int p=0;p<dc.dataVar.length;p++)
                 {
-                    dataFile.write(dc.var[p], dc.dataVar[p]);
-                    dataFile.write(dc.varQC[p], dc.dataVarQC[p]);
+                    f.dataFile.write(dc.var[p], dc.dataVar[p]);
+                    f.dataFile.write(dc.varQC[p], dc.dataVarQC[p]);
                 }
             }
         }
@@ -864,11 +863,11 @@ public class RasNetCDFcreateForm extends MemoryWindow
         }
         finally
         {
-            if (dataFile != null)
+            if (f.dataFile != null)
             {
                 try
                 {
-                    dataFile.close();
+                    f.dataFile.close();
                 }
                 catch (IOException ioe)
                 {

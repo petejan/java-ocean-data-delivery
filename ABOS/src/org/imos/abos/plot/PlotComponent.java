@@ -179,7 +179,7 @@ public class PlotComponent extends MemoryWindow
 
                 statement = connection.createStatement();
                 // used source_file_id to select different sensors, maynot work for two DOX2 measurements from the same file on different instruments
-                resultSet = statement.executeQuery("SELECT * FROM (SELECT DISTINCT ON (instrument_id, parameter_code ) depth, instrument_id, parameter_code, model, serial_number FROM " + table + " JOIN instrument USING (instrument_id) WHERE " + where + ") AS a ORDER BY depth, parameter_code, model");
+                resultSet = statement.executeQuery("SELECT * FROM (SELECT DISTINCT ON (instrument_id, mooring_id, parameter_code ) depth, instrument_id, parameter_code, model, serial_number, mooring_id FROM " + table + " JOIN instrument USING (instrument_id) WHERE " + where + ") AS a ORDER BY depth, parameter_code, model");
 
                 // double depths[] = {30, 100, 160};
                 ArrayList<DepthParam> depths = new ArrayList<DepthParam>();
@@ -728,7 +728,7 @@ public class PlotComponent extends MemoryWindow
         this.pack();
         this.setLocationRelativeTo(null);
         this.setVisible(true);
-        this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);        
+        this.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);        
     }
     
     public static void main(String[] args)
