@@ -290,7 +290,8 @@ public class WriteAWCP
                 distance[i] = ndf.dataFile.addVariable(null, "depth_"+an.freq[i], DataType.FLOAT, dimsd);
                 distance[i].addAttribute(new Attribute("sample_rate_sps", (float)an.rate[i]));            
                 distance[i].addAttribute(new Attribute("frequency_kHz", (float)an.freq[i]));            
-                distance[i].addAttribute(new Attribute("pulse_length_us", (float)an.pulseLen[i]));            
+                distance[i].addAttribute(new Attribute("pulse_length_us", (float)an.pulseLen[i]));      
+                
                 distance[i].addAttribute(new Attribute("units", "m"));
                 distance[i].addAttribute(new Attribute("standard_name", "depth"));
                 distance[i].addAttribute(new Attribute("comment", "distance from instrument plus instrument depth"));
@@ -323,14 +324,23 @@ public class WriteAWCP
                 vABSI[i].addAttribute(new Attribute("sample_rate_sps", (float)an.rate[i]));            
                 vABSI[i].addAttribute(new Attribute("frequency_kHz", (float)an.freq[i]));            
                 vABSI[i].addAttribute(new Attribute("pulse_length_us", (float)an.pulseLen[i]));   
-                vABSI[i].addAttribute(new Attribute("alpha_dBpm", (float)an.alpha[i]));          
-                vABSI[i].addAttribute(new Attribute("units", "dB"));
-                vABSI[i].addAttribute(new Attribute("long_name", "volume_scattering"));
-                vABSI[i].addAttribute(new Attribute("name", "acoustic return signal"));
+                vABSI[i].addAttribute(new Attribute("alpha_dBpm", (double)an.alpha[i]));          
+                vABSI[i].addAttribute(new Attribute("units", "counts"));
+                vABSI[i].addAttribute(new Attribute("long_name", "acoustic_return_counts"));
+                vABSI[i].addAttribute(new Attribute("name", "acoustic return signal counts"));
                 vABSI[i].addAttribute(new Attribute("coordinates", "TIME LATITUDE LONGITUDE depth_"+an.freq[i]));
                 vABSI[i].addAttribute(new Attribute("_FillValue", Float.NaN));                                
-                vABSI[i].addAttribute(new Attribute("valid_min", -200f));
-                vABSI[i].addAttribute(new Attribute("valid_max", 0f));
+                vABSI[i].addAttribute(new Attribute("valid_min", 0f));
+                vABSI[i].addAttribute(new Attribute("valid_max", 65536f));
+
+                vABSI[i].addAttribute(new Attribute("sv_calculation", "Sv = ELmax –2.5/ds + N/(26214·ds) – TVR – 20·logVTX + 20·logR + 2·α·R – 10log(1⁄2c·τ·Ψ)"));
+
+                vABSI[i].addAttribute(new Attribute("tvr_transmit_voltage_response", (double)an.tvr[i]));      
+                vABSI[i].addAttribute(new Attribute("vtx_transmit_voltage", (double)an.vtx[i]));      
+                vABSI[i].addAttribute(new Attribute("bp_beam_pattern_factor", (double)an.bp[i]));      
+                vABSI[i].addAttribute(new Attribute("ds_detector_slope", (double)an.ds[i]));      
+                vABSI[i].addAttribute(new Attribute("el_echo_level_max", (double)an.el[i]));      
+                                                               
 //                vABSI[i].addAttribute(new Attribute("sensor_depth", 30f));
 //                vABSI[i].addAttribute(new Attribute("sensor_name", "ASL AZFP"));
 //                vABSI[i].addAttribute(new Attribute("sensor_serial_number", String.format("%d", an.serialNo)));
