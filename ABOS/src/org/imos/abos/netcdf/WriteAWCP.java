@@ -335,11 +335,11 @@ public class WriteAWCP
 
                 vABSI[i].addAttribute(new Attribute("sv_calculation", "Sv = ELmax –2.5/ds + N/(26214·ds) – TVR – 20·logVTX + 20·logR + 2·α·R – 10log(1⁄2c·τ·Ψ)"));
 
-                vABSI[i].addAttribute(new Attribute("tvr_transmit_voltage_response", (double)an.tvr[i]));      
-                vABSI[i].addAttribute(new Attribute("vtx_transmit_voltage", (double)an.vtx[i]));      
-                vABSI[i].addAttribute(new Attribute("bp_beam_pattern_factor", (double)an.bp[i]));      
-                vABSI[i].addAttribute(new Attribute("ds_detector_slope", (double)an.ds[i]));      
-                vABSI[i].addAttribute(new Attribute("el_echo_level_max", (double)an.el[i]));      
+                vABSI[i].addAttribute(new Attribute("tvr_transmit_voltage_response", (double)an.getTvr()[i]));      
+                vABSI[i].addAttribute(new Attribute("vtx_transmit_voltage", (double)an.getVtx()[i]));      
+                vABSI[i].addAttribute(new Attribute("bp_beam_pattern_factor", (double)an.getBp()[i]));      
+                vABSI[i].addAttribute(new Attribute("ds_detector_slope", (double)an.getDs()[i]));      
+                vABSI[i].addAttribute(new Attribute("el_echo_level_max", (double)an.getEl()[i]));      
                                                                
 //                vABSI[i].addAttribute(new Attribute("sensor_depth", 30f));
 //                vABSI[i].addAttribute(new Attribute("sensor_name", "ASL AZFP"));

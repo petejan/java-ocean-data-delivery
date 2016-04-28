@@ -266,7 +266,32 @@ public class RawAWCPdata
         return sv;
     }
     
-    FileInputStream fileInputStream;
+    public double[] getTvr()
+	{
+		return tvr;
+	}
+
+	public double[] getVtx()
+	{
+		return vtx;
+	}
+
+	public double[] getBp()
+	{
+		return bp;
+	}
+
+	public double[] getEl()
+	{
+		return el;
+	}
+
+	public double[] getDs()
+	{
+		return ds;
+	}
+
+	FileInputStream fileInputStream;
     FileChannel in;
     MappedByteBuffer buffer;
     long recSize = -1;
