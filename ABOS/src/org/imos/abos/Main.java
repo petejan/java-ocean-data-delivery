@@ -12,12 +12,17 @@ package org.imos.abos;
 import java.awt.Dimension;
 import java.awt.Toolkit;
 import java.util.TimeZone;
+
+import javax.swing.JFrame;
 import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JTable;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
 import org.imos.abos.dbms.MooringTable;
+import org.imos.abos.dbms.SQLtable;
 import org.wiley.core.Common;
 import org.wiley.core.dbms.Staff;
 import org.wiley.core.startMenu;
@@ -42,8 +47,7 @@ public class Main
         try
         {
 	    // Set cross-platform Java L&F (also called "Metal")
-            UIManager.setLookAndFeel(
-            UIManager.getCrossPlatformLookAndFeelClassName());
+            UIManager.setLookAndFeel(UIManager.getCrossPlatformLookAndFeelClassName());
         }
         catch (UnsupportedLookAndFeelException e)
         {
@@ -194,13 +198,25 @@ public class Main
           // load up the menus
           //
           mm.buildMenus();
-          Dimension s = mm.getSize();
-          MooringTable table = new MooringTable();
-          table.initialise();
-          table.setSize(s.width-100, s.height-100);
+//          Dimension s = mm.getSize();
+//          MooringTable table = new MooringTable();
+//          table.initialise();
+//          table.setSize(s.width-100, s.height-100);
           
-          mm.addComponent(table.getContentPane());
-          table.setVisible(false);          
+          SQLtable tab;
+          try
+          {
+        	  tab = new SQLtable("SELECT * FROM mooring");
+        	  JTable table = tab.getTable();
+        	  mm.addComponent(new JScrollPane(table));
+          }
+          catch (Exception e)
+          {
+        	  // TODO Auto-generated catch block
+        	  e.printStackTrace();
+          }
+
+
         }
     }
 

@@ -38,3 +38,12 @@ update processed_instrument_data set quality_code = 'BAD' where
 UPDATE processed_instrument_data SET quality_code = 'BAD' WHERE quality_code != 'BAD' AND mooring_id = 'Pulse-10-2013' AND parameter_code = 'PRES' AND source_file_id = 200470 AND (data_timestamp > '2013-10-03 13:55:00');
 -- Pulse-10-2013 oxygen @100m, 200m failed
 UPDATE processed_instrument_data SET quality_code = 'BAD' WHERE quality_code != 'BAD' AND mooring_id = 'Pulse-10-2013' AND parameter_code = 'DOX2' AND parameter_value < 230 ;
+
+-- Pulse-11-2015 SWH spike
+
+update processed_instrument_data set quality_code = 'BAD' where data_timestamp between '2016-02-27 07:00:00'  AND '2016-02-27 08:00:00' and instrument_id = 1638;
+update raw_instrument_data set quality_code = 'BAD' where data_timestamp between '2016-02-27 07:00:00'  AND '2016-02-27 07:20:00' and instrument_id = 1638;
+
+update raw_instrument_data set quality_code = 'BAD' where data_timestamp = '2015-10-26 19:30:36' and instrument_id = 2402 AND parameter_code not in ('TEMP');
+update raw_instrument_data set quality_code = 'BAD' where data_timestamp = '2015-08-06 19:00:36' and instrument_id = 2218 AND parameter_code in ('DOX2');
+update processed_instrument_data set quality_code = 'BAD' where data_timestamp = '2015-08-06 19:00:00' and instrument_id = 2218 AND parameter_code in ('DOX2');

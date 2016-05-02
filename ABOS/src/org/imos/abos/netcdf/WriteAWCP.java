@@ -73,7 +73,7 @@ public class WriteAWCP
                             @Override
                             public boolean accept(File dir, String name)
                             {
-                                return name.endsWith(".01A");
+                                return name.matches(".*0\\dA$"); //.endsWith(".01A");
                             }
                         });
 
@@ -198,19 +198,19 @@ public class WriteAWCP
 
             ndf.writeGlobalAttributes();
             ndf.createCoordinateVariables((int)len);  
-            ndf.dataFile.addGroupAttribute(null, new Attribute("serial_number", String.format("%d", an.serialNo)));
-            ndf.dataFile.addGroupAttribute(null, new Attribute("featureType", "timeSeriesProfile"));
-            ndf.dataFile.addGroupAttribute(null, new Attribute("cdm_data_type", "Profile"));
-            ndf.dataFile.addGroupAttribute(null, new Attribute("geospatial_vertical_min", 30f));
-            ndf.dataFile.addGroupAttribute(null, new Attribute("geospatial_vertical_max", 220f));
-            ndf.dataFile.addGroupAttribute(null, new Attribute("geospatial_vertical_positive", "down"));
-            ndf.dataFile.addGroupAttribute(null, new Attribute("time_coverage_start", ndf.netcdfDate.format(tsStart)));
-            ndf.dataFile.addGroupAttribute(null, new Attribute("time_coverage_end", ndf.netcdfDate.format(tsEnd)));
-            ndf.dataFile.addGroupAttribute(null, new Attribute("instrument_nominal_depth", 30f));
-            ndf.dataFile.addGroupAttribute(null, new Attribute("instrument", "ASL AZFP"));
-            ndf.dataFile.addGroupAttribute(null, new Attribute("instrument_serial_numbe", String.format("%d", an.serialNo)));
-            ndf.dataFile.addGroupAttribute(null, new Attribute("file_version", "Level 0 – Raw data"));
-            ndf.dataFile.addGroupAttribute(null, new Attribute("history", ndf.netcdfDate.format(new Date()) + " File Created"));
+            ndf.addGroupAttribute(null, new Attribute("serial_number", String.format("%d", an.serialNo)));
+            ndf.addGroupAttribute(null, new Attribute("featureType", "timeSeriesProfile"));
+            ndf.addGroupAttribute(null, new Attribute("cdm_data_type", "Profile"));
+            ndf.addGroupAttribute(null, new Attribute("geospatial_vertical_min", 30f));
+            ndf.addGroupAttribute(null, new Attribute("geospatial_vertical_max", 220f));
+            ndf.addGroupAttribute(null, new Attribute("geospatial_vertical_positive", "down"));
+            ndf.addGroupAttribute(null, new Attribute("time_coverage_start", ndf.netcdfDate.format(tsStart)));
+            ndf.addGroupAttribute(null, new Attribute("time_coverage_end", ndf.netcdfDate.format(tsEnd)));
+            ndf.addGroupAttribute(null, new Attribute("instrument_nominal_depth", 30f));
+            ndf.addGroupAttribute(null, new Attribute("instrument", "ASL AZFP"));
+            ndf.addGroupAttribute(null, new Attribute("instrument_serial_numbe", String.format("%d", an.serialNo)));
+            ndf.addGroupAttribute(null, new Attribute("file_version", "Level 0 – Raw data"));
+            ndf.addGroupAttribute(null, new Attribute("history", ndf.netcdfDate.format(new Date()) + " File Created"));
             
             List<Dimension> dims = new ArrayList<Dimension>();
             dims.add(ndf.timeDim);
@@ -373,7 +373,8 @@ public class WriteAWCP
                     for(int k=0;k<4;k++)
                     {
                         Index idx = dataABSI[k].getIndex();
-                        double[] sv = an.getSV(k);
+                        
+                        double[] sv = an.getData(k);
                         for(int j=0;j<an.bins[k];j++)
                         {
                             idx.set(i, j);
@@ -391,7 +392,7 @@ public class WriteAWCP
             ndf.writeCoordinateVariableAttributes();
 
             // Write the coordinate variable data. 
-            ndf.dataFile.create();
+            ndf.create();
 
             ndf.dataFile.write(ndf.vTime, ndf.times);
 

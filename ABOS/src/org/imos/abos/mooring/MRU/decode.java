@@ -192,7 +192,7 @@ public class decode
 
             if (msgs >= 1)
             {
-                System.out.println("pry, " + r.pry + ", " + r.accel + ", " + r.gyro + ", " + r.accelWorld);
+                System.out.println("pry ," + r.pry + ",accel ," + r.accel + " , gyro ," + r.gyro + " ,accel-w ," + r.accelWorld);
             }
 
             ret = r;

@@ -8,7 +8,11 @@
 	<classpathentry kind="lib" path="lib/gt-referencing-10.0.jar"/>
 	<classpathentry kind="lib" path="lib/itextpdf-5.4.2.jar"/>
 	<classpathentry exported="true" kind="lib" path="lib/jcommon-1.0.18.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/jfreechart-1.0.15.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/jfreechart-1.0.15.jar">
+		<attributes>
+			<attribute name="javadoc_location" value="http://www.jfree.org/jfreechart/api/javadoc"/>
+		</attributes>
+	</classpathentry>
 	<classpathentry kind="lib" path="lib/jsr-275-1.0-beta-2.jar"/>
 	<classpathentry kind="lib" path="lib/junit_4/junit-4.5.jar"/>
 	<classpathentry exported="true" kind="lib" path="lib/log4j-1.2.15.jar"/>

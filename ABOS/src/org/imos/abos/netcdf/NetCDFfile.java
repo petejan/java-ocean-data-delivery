@@ -12,7 +12,10 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
+import java.util.List;
 import java.util.TimeZone;
 import java.util.Vector;
 import org.apache.commons.lang3.StringUtils;
@@ -33,6 +36,7 @@ import ucar.ma2.DataType;
 import ucar.ma2.InvalidRangeException;
 import ucar.nc2.Attribute;
 import ucar.nc2.Dimension;
+import ucar.nc2.Group;
 import ucar.nc2.NetcdfFileWriter;
 import ucar.nc2.Variable;
 
@@ -42,7 +46,6 @@ import ucar.nc2.Variable;
  */
 public class NetCDFfile
 {
-
     protected TimeZone tz = TimeZone.getTimeZone("UTC");
     private static Logger logger = Logger.getLogger(NetCDFfile.class.getName());
     public NetcdfFileWriter dataFile;
@@ -53,6 +56,8 @@ public class NetCDFfile
     private String deployment = null;
 
     private Mooring mooring = null;
+    
+    public boolean fileOrderTimeDepth = false;
 
     public Variable vTime;
 //    public Variable vPos;
@@ -86,8 +91,8 @@ public class NetCDFfile
     }
     public void createFile(String filename) throws IOException
     {
-        dataFile = NetcdfFileWriter.createNew(NetcdfFileWriter.Version.netcdf3, filename);
-        //dataFile = NetcdfFileWriter.createNew(NetcdfFileWriter.Version.netcdf4, filename);       
+        //dataFile = NetcdfFileWriter.createNew(NetcdfFileWriter.Version.netcdf3, filename);
+        dataFile = NetcdfFileWriter.createNew(NetcdfFileWriter.Version.netcdf4, filename);       
     }
 
     public void setMooring(Mooring m)
@@ -117,6 +122,51 @@ public class NetCDFfile
         return deployment;
     }
 
+    List <Attribute> groupAttributeList = new Vector<Attribute>();
+    
+    public void create() throws IOException
+    {
+    	Comparator comparator = new Comparator<Attribute>() 
+    	{
+    	    public int compare(Attribute o1, Attribute o2) 
+    	    {
+    	        return o1.getFullName().compareTo(o2.getFullName());
+    	    }
+    	};
+    	
+    	Collections.sort(groupAttributeList, comparator);
+    	
+    	Attribute lastAtt = null;
+    	for(Attribute a : groupAttributeList)
+    	{
+    		//logger.debug("Sorted Attributes "  + a);
+    		if (lastAtt == null)
+    		{
+    			lastAtt = a;
+    		}
+    		if (lastAtt.getFullName().compareTo(a.getFullName()) != 0)
+    		{
+        		//logger.debug("Add Attributes "  + lastAtt + " = " + lastAtt.getStringValue());
+    			dataFile.addGroupAttribute(null, lastAtt);
+    			lastAtt = a;
+    		}
+    		else
+    		{
+    			if (!lastAtt.getStringValue().trim().contains(a.getStringValue().trim()))
+    			{
+    				lastAtt = new Attribute(lastAtt.getFullName(), lastAtt.getStringValue() + "; " + a.getStringValue());
+    			}
+    		}    		
+    	}
+		dataFile.addGroupAttribute(null, lastAtt);
+    	dataFile.create();
+    }
+    
+    public void addGroupAttribute(Group gp, Attribute at)
+    {
+    	groupAttributeList.add(at);    	
+    }
+    
     private void addGlobal(String from, Vector attributeSet)
     {
         if (attributeSet != null && attributeSet.size() > 0)
@@ -132,11 +182,11 @@ public class NetCDFfile
 
                 if (type.startsWith("NUMBER"))
                 {
-                    dataFile.addGroupAttribute(null, new Attribute(name.trim(), new Double(value.trim())));
+                    addGroupAttribute(null, new Attribute(name.trim(), new Double(value.trim())));
                 }
                 else
                 {
-                    dataFile.addGroupAttribute(null, new Attribute(name.trim(), value.replaceAll("\\\\n", "\n").trim()));
+                    addGroupAttribute(null, new Attribute(name.trim(), value.replaceAll("\\\\n", "\n").trim()));
                 }
             }
         }
@@ -202,11 +252,11 @@ public class NetCDFfile
 
         if (authority.equals("IMOS"))
         {
-            dataFile.addGroupAttribute(null, new Attribute("date_update", df.format(Calendar.getInstance().getTime())));
+            addGroupAttribute(null, new Attribute("date_update", df.format(Calendar.getInstance().getTime())));
         }
         else
         {
-            dataFile.addGroupAttribute(null, new Attribute("date_created", df.format(Calendar.getInstance().getTime())));
+            addGroupAttribute(null, new Attribute("date_created", df.format(Calendar.getInstance().getTime())));
         }
     }
 
@@ -641,15 +691,33 @@ public class NetCDFfile
         public String createParams(int RECORD_COUNT)
         {
             String pt = params.trim();
-            ArrayFloat.D2 dataTemp = new ArrayFloat.D2(RECORD_COUNT, depths.length);
-            ArrayByte.D2 dataTempQC = new ArrayByte.D2(RECORD_COUNT, depths.length);
+            ArrayFloat.D2 dataTemp;
+            ArrayByte.D2 dataTempQC;
+            if (fileOrderTimeDepth)
+            {
+            	dataTemp = new ArrayFloat.D2(RECORD_COUNT, depths.length);
+            	dataTempQC = new ArrayByte.D2(RECORD_COUNT, depths.length);            	
+            }
+            else
+            {
+            	dataTemp = new ArrayFloat.D2(depths.length, RECORD_COUNT);
+            	dataTempQC = new ArrayByte.D2(depths.length, RECORD_COUNT);
+            }
             byte b = 9; // missing value
             for (int i = 0; i < RECORD_COUNT; i++)
             {
                 for (int j = 0; j < depths.length; j++)
                 {
-                    dataTemp.set(i, j, Float.NaN);
-                    dataTempQC.set(i, j, b);
+                	if (fileOrderTimeDepth)
+                	{
+                		dataTemp.set(i, j, Float.NaN);
+                		dataTempQC.set(i, j, b);
+                	}
+                	else
+                	{
+                		dataTemp.set(j, i, Float.NaN);
+                		dataTempQC.set(j, i, b);
+                	}
                 }
             }
             varName = pt;

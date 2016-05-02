@@ -67,9 +67,15 @@ public class RawAWCPdata
         
         // hacked values based on 55046 data from SOFS-4 to make average constant with distance
         alpha[0] = -0.0101;
-        alpha[1] = -0.025; // was 0.04
-        alpha[2] = -0.03; // was 0.05
+        alpha[1] = -0.025; 
+        alpha[2] = -0.03; 
         alpha[3] = -0.065;
+
+        // From http://resource.npl.co.uk/acoustics/techguides/seaabsorption/ t = 10C, depth = 0.05, sal = 35, ph=8, (Ainslie and McColm 1998)
+        alpha[0] = 10.298; 
+        alpha[1] = 40.583; 
+        alpha[2] = 55.674; 
+        alpha[3] = 116.741;
         
         for(int i=0;i<4;i++)
         {
@@ -264,6 +270,17 @@ public class RawAWCPdata
             
         }
         return sv;
+    }
+    public double[] getData(int ch)
+    {
+        double[] data = new double[bins[ch]];
+        
+        for(int i=0;i<bins[ch];i++)
+        {
+            data[i] = this.data[ch][i];
+            
+        }
+        return data;
     }
     
     public double[] getTvr()

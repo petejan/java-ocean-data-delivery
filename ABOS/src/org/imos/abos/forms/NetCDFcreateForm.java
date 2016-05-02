@@ -351,7 +351,7 @@ public class NetCDFcreateForm extends MemoryWindow
         String mooring = deployment.substring(0, deployment.indexOf("-"));
         if (sourceInstrument != null)
         {
-            deployment += "_" + sourceInstrument.getModel().toUpperCase();
+            deployment += "_" + sourceInstrument.getModel();
         }
         if (authority.equals("IMOS"))
         {
@@ -364,7 +364,7 @@ public class NetCDFcreateForm extends MemoryWindow
                             + "_" + facility + "_" 
                             + "RTSCP_"
                             + nameFormatter.format(dataStartTime)
-                            + "_" + mooring.toUpperCase() ;
+                            + "_" + mooring;
                     
             if (table.startsWith("raw"))
             {
@@ -374,7 +374,7 @@ public class NetCDFcreateForm extends MemoryWindow
             {
                 filename        += "_FV01";                
             }
-            filename        += "_" + deployment.toUpperCase()
+            filename        += "_" + deployment
                             + "_END-"
                             + nameFormatter.format(dataEndTime)
                             + "_C-"               
@@ -386,7 +386,7 @@ public class NetCDFcreateForm extends MemoryWindow
         {
             filename = "OS"
                         + "_" + facility
-                        + "_" + deployment.toUpperCase()
+                        + "_" + deployment
                         + "_D"
                         + ".nc"
                         ;
@@ -681,23 +681,23 @@ public class NetCDFcreateForm extends MemoryWindow
             f.setAuthority(authority);
             f.setFacility(selectedMooring.getFacility());
 
-            f.dataFile.addGroupAttribute(null, new Attribute("time_deployment_start", netcdfDate.format(mooringInWaterTime)));
-            f.dataFile.addGroupAttribute(null, new Attribute("time_deployment_end", netcdfDate.format(mooringOutWaterTime)));
+            f.addGroupAttribute(null, new Attribute("time_deployment_start", netcdfDate.format(mooringInWaterTime)));
+            f.addGroupAttribute(null, new Attribute("time_deployment_end", netcdfDate.format(mooringOutWaterTime)));
             
             // Set the file_version, not sure how we're going to do Derived product?
             if (table.startsWith("raw"))
             {   
-                f.dataFile.addGroupAttribute(null, new Attribute("file_version", "Level 0 - RAW data "));                
+                f.addGroupAttribute(null, new Attribute("file_version", "Level 0 - RAW data "));                
             }
             else
             {
-                f.dataFile.addGroupAttribute(null, new Attribute("file_version", "Level 1 - Quality Controlled data "));                                
+                f.addGroupAttribute(null, new Attribute("file_version", "Level 1 - Quality Controlled data "));                                
             }
             
             f.writeGlobalAttributes();
 
-            f.dataFile.addGroupAttribute(null, new Attribute("time_coverage_start", netcdfDate.format(dataStartTime)));
-            f.dataFile.addGroupAttribute(null, new Attribute("time_coverage_end", netcdfDate.format(dataEndTime)));
+            f.addGroupAttribute(null, new Attribute("time_coverage_start", netcdfDate.format(dataStartTime)));
+            f.addGroupAttribute(null, new Attribute("time_coverage_end", netcdfDate.format(dataEndTime)));
             
             // Define the coordinate variables.
             // Add TIME coordinate
@@ -775,8 +775,16 @@ public class NetCDFcreateForm extends MemoryWindow
 
                 logger.debug("Create Dimension " + dimensionName + " " + f.timeDim.getLength() + " x " + dim.getLength());
                 ArrayList dims = new ArrayList();
-                dims.add(f.timeDim);
-                dims.add(dim);
+                if (f.fileOrderTimeDepth)
+                {
+                	dims.add(f.timeDim);
+                	dims.add(dim);
+                }
+                else
+                {
+                	dims.add(dim);
+                	dims.add(f.timeDim);
+                }
                 
                 for(InstanceCoord ic : sameD)
                 {
@@ -825,7 +833,14 @@ public class NetCDFcreateForm extends MemoryWindow
                                 {
                                     matchedElements++;
                                     value = currentValue.val;
-                                    ic.dataVar.set(record, d, value.floatValue());
+                                    if (f.fileOrderTimeDepth)
+                                    {
+                                    	ic.dataVar.set(record, d, value.floatValue());
+                                    }
+                                    else
+                                    {
+                                    	ic.dataVar.set(d, record, value.floatValue());
+                                    }
                                     byte b = 0;
                                     if (table.startsWith("raw"))
                                     {
@@ -861,7 +876,14 @@ public class NetCDFcreateForm extends MemoryWindow
                                             b = 4;
                                         }
                                     }
-                                    ic.dataVarQC.set(record, d, b);
+                                    if (f.fileOrderTimeDepth)
+                                    {
+                                    	ic.dataVarQC.set(record, d, b);                                    	
+                                    }
+                                    else
+                                    {
+                                    	ic.dataVarQC.set(d, record, b);
+                                    }
                                 }
                                 //record++;                                                
                             }
@@ -873,10 +895,10 @@ public class NetCDFcreateForm extends MemoryWindow
             if (f.addGlobalInstrument)
             {
                 for (Attribute a: f.globalAttribute)
-                    f.dataFile.addGroupAttribute(null, a);                
+                    f.addGroupAttribute(null, a);                
             }
             //Create the file. At this point the (empty) file will be written to disk
-            f.dataFile.create();
+            f.create();
             
             // this is a problem as only unique dims need adding
             for(ArrayList<InstanceCoord> dc : dimensionCoords.values())

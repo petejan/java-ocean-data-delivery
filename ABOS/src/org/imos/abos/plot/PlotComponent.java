@@ -31,6 +31,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Timestamp;
 import java.text.DecimalFormat;
+import java.text.NumberFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -66,6 +67,8 @@ import org.jfree.chart.entity.ChartEntity;
 import org.jfree.chart.entity.XYItemEntity;
 import org.jfree.chart.event.ChartChangeEvent;
 import org.jfree.chart.event.ChartChangeListener;
+import org.jfree.chart.labels.StandardXYItemLabelGenerator;
+import org.jfree.chart.labels.StandardXYToolTipGenerator;
 import org.jfree.chart.plot.XYPlot;
 import org.jfree.chart.renderer.xy.XYItemRenderer;
 import org.jfree.chart.renderer.xy.XYLineAndShapeRenderer;
@@ -113,17 +116,22 @@ public class PlotComponent extends MemoryWindow
         {
             dataset = createDataset();
             chart = createChart(dataset);
+            
             chartPanel = new ChartPanel(chart);
             chartPanel.addChartMouseListener(new MouseClick());
             chartPanel.setPreferredSize(new java.awt.Dimension(1500, 1100));
             chartPanel.setMouseZoomable(true, false);
             chart.addChangeListener(cc);
+            
             plot = chart.getXYPlot();
             plot.setBackgroundPaint(Color.WHITE);
             plot.setDomainGridlinePaint(Color.GRAY);
             plot.setDomainGridlinesVisible(true);
             plot.setRangeGridlinePaint(Color.GRAY);
             plot.setAxisOffset(RectangleInsets.ZERO_INSETS);
+            XYItemRenderer r = plot.getRenderer();
+            r.setBaseToolTipGenerator(new StandardXYToolTipGenerator(StandardXYToolTipGenerator.DEFAULT_TOOL_TIP_FORMAT, new SimpleDateFormat("yyyy-MM-dd HH:mm:ss"), new DecimalFormat("#0.999")));
+            
             chart.getLegend().setPosition(RectangleEdge.RIGHT);
 
             final DateAxis axis = (DateAxis) plot.getDomainAxis();
@@ -149,7 +157,7 @@ public class PlotComponent extends MemoryWindow
 
         protected TimeSeriesCollection createDataset()
         {
-            final TimeSeriesCollection collection = new TimeSeriesCollection();
+            final TimeSeriesCollection collection = new TimeSeriesCollection(TimeZone.getTimeZone("UTC"));
 
             //        SwingUtilities.invokeLater(new Runnable() 
             //        {
@@ -777,6 +785,7 @@ public class PlotComponent extends MemoryWindow
             String u = args[2].trim();  
 
             PlotComponent pl = new PlotComponent();
+            
             pl.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);       
             pl.mooring.add(m);
             pl.parameter_code.add(p);

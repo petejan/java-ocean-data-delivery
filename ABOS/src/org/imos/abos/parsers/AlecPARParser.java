@@ -54,7 +54,8 @@ public class AlecPARParser extends AbstractDataParser
     @Override
     protected void parseData(String dataLine) throws ParseException, NoSuchElementException
     {
-        SimpleDateFormat dateParser = new SimpleDateFormat("MM/dd/yyyy kk:mm:ss aa"); // Alec data files are dependant on conversion machine settings
+//        SimpleDateFormat dateParser = new SimpleDateFormat("MM/dd/yyyy hh:mm:ss aa"); // Alec data files are dependant on conversion machine settings
+        SimpleDateFormat dateParser = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss"); // Alec data files are dependant on conversion machine settings
 
         ///   Sample YYYY/MM/DD hh:mm:ss     Day Light[Micromol]      Light 
         //         1 2013/04/28 00:00:00      28       0.00          1 
@@ -65,6 +66,13 @@ public class AlecPARParser extends AbstractDataParser
 //         3 3/22/2015  12:02:00 AM    22       0.00          1 
 //         4 3/22/2015  12:03:00 AM    22       0.00          1 
         
+//        [Item]
+//        		TimeStamp,Quantum [umol/(m^2s)],Batt. [V],
+//        		2015/03/22 00:00:00,1.2,1.5,
+//        		2015/03/22 00:01:00,1.2,1.5,
+//        		2015/03/22 00:02:00,1.2,1.5,
+//        		2015/03/22 00:03:00,1.1,1.5,
+                
         
         String sampleCount;
         String dateString;
@@ -85,12 +93,18 @@ public class AlecPARParser extends AbstractDataParser
             if (tCount > 4)
                 sampleCount = st.nextToken();
             
-            if (tCount >= 4)
+            if (tCount > 4)
             {
                 dateString = st.nextToken();
                 timeString = st.nextToken();
                 String AMPMString = st.nextToken();
                 constructTimestamp = dateString.trim() + " " + timeString.trim() + " " + AMPMString;
+            }
+            else if (tCount == 4)
+            {
+                dateString = st.nextToken();
+                timeString = st.nextToken();
+                constructTimestamp = dateString.trim() + " " + timeString.trim();
             }
             else
             {
@@ -103,7 +117,6 @@ public class AlecPARParser extends AbstractDataParser
             
             if (tCount > 4)
                 lightVal  = st.nextToken();
-
 
             try
             {

@@ -270,6 +270,7 @@ public class AsimetDecode
                 if (used == 0xa5a5)
                 {
                     recordsProcessed++;
+                    //System.out.println("bytes read " + inChannel.position());
                     print();
                     outputNext();
                 }
