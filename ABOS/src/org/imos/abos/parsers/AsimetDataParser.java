@@ -101,7 +101,7 @@ public class AsimetDataParser extends AbstractDataParser
         hm.put("body", "TBODY");
         hm.put("tpile", "VPILE");
         hm.put("lwflux", "LW");
-        hm.put("prlev", "RAIN");
+        hm.put("prlev", "RAIT");
         hm.put("sct", "TEMP");
         hm.put("scc", "CNDC");
         

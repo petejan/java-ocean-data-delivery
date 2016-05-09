@@ -22,6 +22,8 @@ import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumnModel;
 
+import org.apache.log4j.Logger;
+import org.imos.abos.Main;
 import org.imos.abos.forms.EditDialog;
 
 public class SQLtable
@@ -29,7 +31,9 @@ public class SQLtable
 	JTable table;
 	ListSelectionModel listSelectionModel;
 	boolean editable = false;
-	
+
+	private static org.apache.log4j.Logger log = Logger.getLogger(Main.class);
+
 	public void resizeColumnWidth(JTable table)
 	{
 		final TableColumnModel columnModel = table.getColumnModel();
@@ -45,10 +49,10 @@ public class SQLtable
 			columnModel.getColumn(column).setPreferredWidth(width);
 		}
 	}
-	
-	public SQLtable(String select) throws Exception
+
+	public SQLtable(String db, String select) throws Exception
 	{
-		table = new JTable(myModel(select));
+		table = new JTable(myModel(db, select));
 
 		table.setDefaultRenderer(Object.class, new TableCellRenderer()
 		{
@@ -70,7 +74,7 @@ public class SQLtable
 			}
 
 		});
-		
+
 		table.setShowGrid(true);
 		table.setGridColor(Color.LIGHT_GRAY);
 		table.setAutoCreateRowSorter(true);
@@ -81,10 +85,10 @@ public class SQLtable
 		table.setColumnSelectionAllowed(false);
 		table.setRowSelectionAllowed(true);
 		table.setSelectionForeground(Color.RED);
-		
+
 		resizeColumnWidth(table);		
 	}
-	
+
 	public void setEditable(boolean edit)
 	{
 		editable = edit;
@@ -106,26 +110,26 @@ public class SQLtable
 						labels.add(table.getColumnName(i));
 						values.add(table.getValueAt(row, i));
 					}
-					
+
 					EditDialog ed = new EditDialog(labels, values);
 
 				}
 			}
 		});
-				
+
 		listSelectionModel = table.getSelectionModel();
-        listSelectionModel.addListSelectionListener(new SharedListSelectionHandler());
-        table.setSelectionModel(listSelectionModel);		
+		listSelectionModel.addListSelectionListener(new SharedListSelectionHandler());
+		table.setSelectionModel(listSelectionModel);		
 	}
-	
+
 	public JTable getTable()
 	{
 		return table;
 	}
 
 	static Connection con = null;
-	
-	public static FillTable myModel(String select) throws Exception
+
+	public static FillTable myModel(String db, String select) throws Exception
 	{
 		try
 		{
@@ -138,26 +142,26 @@ public class SQLtable
 
 		if (con == null)
 		{
-			con = DriverManager.getConnection("jdbc:postgresql://localhost/ABOS", "peter", "");
+			con = DriverManager.getConnection(db);
 		}
 		DatabaseMetaData dm = con.getMetaData( );
 		ResultSet rs = dm.getPrimaryKeys( "" , "" , "mooring" );
-		
+
 		while( rs.next( ) ) 
 		{    
-		  String pkey = rs.getString("COLUMN_NAME");
-		  
-		  System.out.println("primary key = " + pkey);
+			String pkey = rs.getString("COLUMN_NAME");
+
+			log.debug("primary key = " + pkey);
 		}
 
 		Statement st = con.createStatement();
 		ResultSet rs1 = st.executeQuery(select);
-		
+
 		FillTable model = new FillTable(rs1);
-		
+
 		return model;
 	}
-	
+
 	class SharedListSelectionHandler implements ListSelectionListener
 	{
 		public void valueChanged(ListSelectionEvent e)
@@ -167,7 +171,7 @@ public class SQLtable
 			int firstIndex = e.getFirstIndex();
 			int lastIndex = e.getLastIndex();
 			boolean isAdjusting = e.getValueIsAdjusting();
-			
+
 			System.out.print("Event for indexes " + firstIndex + " - " + lastIndex + "; isAdjusting is " + isAdjusting + "; selected indexes:");
 
 			if (lsm.isSelectionEmpty())
@@ -186,9 +190,9 @@ public class SQLtable
 						System.out.print(" " + i);
 					}
 				}
-				
+
 				System.out.println();
 			}
 		}
-    }
+	}
 }

@@ -57,7 +57,7 @@ public class NetCDFfile
 
     private Mooring mooring = null;
     
-    public boolean fileOrderTimeDepth = false;
+    public boolean fileOrderTimeDepth = true;
 
     public Variable vTime;
 //    public Variable vPos;
@@ -89,6 +89,62 @@ public class NetCDFfile
             logger.error(pex);
         }
     }
+    
+    public String getFileName(Mooring selectedMooring, Instrument sourceInstrument, Timestamp dataStartTime, Timestamp dataEndTime, String table)
+    {
+        SimpleDateFormat nameFormatter = new SimpleDateFormat("yyyyMMdd'T'HHmmss'Z'");
+        nameFormatter.setTimeZone(tz);
+
+        String filename = "ABOS_NetCDF.nc";
+        String deployment = selectedMooring.getMooringID();
+        String mooring = deployment.substring(0, deployment.indexOf("-"));
+        if (sourceInstrument != null)
+        {
+            deployment += "_" + sourceInstrument.getModel();
+        }
+        if (authority.equals("IMOS"))
+        {
+            // IMOS_<Facility-Code>_<Data-Code>_<Start-date>_<Platform-Code>_FV<File-Version>_ <Product-Type>_END-<End-date>_C-<Creation_date>_<PARTX>.nc
+            
+            // IMOS_ABOS-SOTS_20110803T115900Z_PULSE_FV01_PULSE-8-2011_END-20120719T214600Z_C-20130724T051434Z.nc
+            filename = //System.getProperty("user.home")
+                            //+ "/"
+                            authority 
+                            + "_" + facility + "_" 
+                            + "RTSCP_"
+                            + nameFormatter.format(dataStartTime)
+                            + "_" + mooring;
+                    
+            if (table.startsWith("raw"))
+            {
+                filename        += "_FV00";
+            }
+            else
+            {
+                filename        += "_FV01";                
+            }
+            filename        += "_" + deployment
+                            + "_END-"
+                            + nameFormatter.format(dataEndTime)
+                            + "_C-"               
+                            + nameFormatter.format(System.currentTimeMillis())
+                            + ".nc"
+                            ;
+        }
+        else if (authority.equals("OS"))
+        {
+            filename = "OS"
+                        + "_" + facility
+                        + "_" + deployment
+                        + "_D"
+                        + ".nc"
+                        ;
+        }
+
+        return filename;
+    }    
+    
+    
     public void createFile(String filename) throws IOException
     {
         //dataFile = NetcdfFileWriter.createNew(NetcdfFileWriter.Version.netcdf3, filename);

@@ -21,11 +21,11 @@ public class TableMain
 {
 	public static void main(String[] argv) throws Exception
 	{
-		SQLtable tab = new SQLtable("SELECT * FROM mooring");
+		SQLtable tab = new SQLtable("jdbc:postgresql://pete@127.0.0.1/ABOS-2015", "SELECT * FROM mooring");
 		
 		JTable table = tab.getTable();
 		
-		JFrame f = new JFrame();
+		final JFrame f = new JFrame();
 		f.setSize(1500, 600);
 		f.add(new JScrollPane(table));
 		f.setLayout(new GridLayout(1,1));

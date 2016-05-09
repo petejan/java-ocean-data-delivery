@@ -130,7 +130,7 @@ public class SeabirdCnvParser extends AbstractDataParser
         {
             for(int i=0;i<=m.groupCount();i++)
             {
-                System.out.println("Group " + i + " :" + m.group(i));
+                logger.debug("Group " + i + " :" + m.group(i));
             }
             Column c = new Column(dataLine);
             
@@ -144,6 +144,8 @@ public class SeabirdCnvParser extends AbstractDataParser
                 timeCol = c.colNo;
             }
             c.obsCode = (String)col2obs.get(c.obs);
+            
+            logger.debug("OBS_CODE " + c.obsCode);
             
             names.add(c);            
         }

@@ -78,11 +78,12 @@ public class NetCDFcreateForm extends MemoryWindow
     private Instrument sourceInstrument;
     
     private String selectLimited = "";
+//    private String selectLimited = " AND d.instrument_id IN (SELECT instrument_id FROM instrument WHERE make = 'WHOI')";
 //    private String selectLimited = " AND source_file_id > 300000";// AND data_timestamp between '2010-06-01' AND '2010-06-10'";
     
     private String table = "processed_instrument_data";
     
-    /** Creates new form SBE16CalculationForm */
+    /** Creates new form NetCDFcreateForm */
     public NetCDFcreateForm()
     {
         TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
@@ -339,61 +340,7 @@ public class NetCDFcreateForm extends MemoryWindow
     protected Timestamp dataStartTime = null;
     protected Timestamp dataEndTime = null;
 
-    protected ArrayList<Timestamp> timeArray;
-    
-    protected String getFileName()
-    {
-        SimpleDateFormat nameFormatter = new SimpleDateFormat("yyyyMMdd'T'HHmmss'Z'");
-        nameFormatter.setTimeZone(tz);
-
-        String filename = "ABOS_NetCDF.nc";
-        String deployment = selectedMooring.getMooringID();
-        String mooring = deployment.substring(0, deployment.indexOf("-"));
-        if (sourceInstrument != null)
-        {
-            deployment += "_" + sourceInstrument.getModel();
-        }
-        if (authority.equals("IMOS"))
-        {
-            // IMOS_<Facility-Code>_<Data-Code>_<Start-date>_<Platform-Code>_FV<File-Version>_ <Product-Type>_END-<End-date>_C-<Creation_date>_<PARTX>.nc
-            
-            // IMOS_ABOS-SOTS_20110803T115900Z_PULSE_FV01_PULSE-8-2011_END-20120719T214600Z_C-20130724T051434Z.nc
-            filename = //System.getProperty("user.home")
-                            //+ "/"
-                            authority 
-                            + "_" + facility + "_" 
-                            + "RTSCP_"
-                            + nameFormatter.format(dataStartTime)
-                            + "_" + mooring;
-                    
-            if (table.startsWith("raw"))
-            {
-                filename        += "_FV00";
-            }
-            else
-            {
-                filename        += "_FV01";                
-            }
-            filename        += "_" + deployment
-                            + "_END-"
-                            + nameFormatter.format(dataEndTime)
-                            + "_C-"               
-                            + nameFormatter.format(System.currentTimeMillis())
-                            + ".nc"
-                            ;
-        }
-        else if (authority.equals("OS"))
-        {
-            filename = "OS"
-                        + "_" + facility
-                        + "_" + deployment
-                        + "_D"
-                        + ".nc"
-                        ;
-        }
-
-        return filename;
-    }    
+    protected ArrayList<Timestamp> timeArray;    
     
     ArrayList<InstanceCoord> instanceCoords;
 
@@ -405,7 +352,8 @@ public class NetCDFcreateForm extends MemoryWindow
             selectInstrument = " AND d.instrument_id = " + sourceInstrument.getInstrumentID();
         }
         String SQL =  "SELECT parameter_code, array_agg(instrument_id) AS instruments, array_agg(source) AS source, array_agg(depth) AS depths FROM "
-                    + "      (SELECT parameter_code::varchar, d.mooring_id, d.instrument_id, s.instrument_id AS source, avg(depth)::numeric(8,3) AS depth FROM  " + table + " AS d JOIN instrument_data_files AS s ON (source_file_id = datafile_pk) JOIN instrument ON (d.instrument_id = instrument.instrument_id) "
+                    + "      (SELECT parameter_code::varchar, d.mooring_id, d.instrument_id, s.instrument_id AS source, avg(depth)::numeric(8,3) AS depth FROM  " + table + " AS d JOIN instrument_data_files AS s ON (source_file_id = datafile_pk) "
+                    + "                        JOIN instrument ON (d.instrument_id = instrument.instrument_id) "
                     +         " WHERE d.mooring_id = " + StringUtilities.quoteString(selectedMooring.getMooringID()) 
                     + selectInstrument + " " + selectLimited
                     + " AND data_timestamp BETWEEN " + StringUtilities.quoteString(Common.getRawSQLTimestamp(dataStartTime)) + " AND " + StringUtilities.quoteString(Common.getRawSQLTimestamp(dataEndTime))
@@ -481,7 +429,7 @@ public class NetCDFcreateForm extends MemoryWindow
         Connection conn = Common.getConnection();
         Statement proc = null;
         
-        String SQL = "SELECT min(data_timestamp), max(data_timestamp) FROM " + table + " WHERE mooring_id = " + StringUtilities.quoteString(selectedMooring.getMooringID());
+        String SQL = "SELECT min(data_timestamp), max(data_timestamp) FROM " + table + " AS d WHERE mooring_id = " + StringUtilities.quoteString(selectedMooring.getMooringID());
         if (sourceInstrument != null)
         {                    
             SQL += " AND instrument_id = " + sourceInstrument.getInstrumentID();
@@ -526,21 +474,15 @@ public class NetCDFcreateForm extends MemoryWindow
         if (jCBraw.isSelected())
         {
             SQL = "SELECT DISTINCT(date_trunc('second', data_timestamp))" 
-                    + " FROM " + table
+                    + " FROM " + table + " AS d "
                     + " WHERE mooring_id = " + StringUtilities.quoteString(selectedMooring.getMooringID());
+            
             if (sourceInstrument != null)
             {                    
-//                SQL = "SELECT DISTINCT(data_timestamp)" 
-//                        + " FROM " + table
-//                        + " WHERE mooring_id = " + StringUtilities.quoteString(selectedMooring.getMooringID());
                 SQL += " AND instrument_id = " + sourceInstrument.getInstrumentID();
             }
             SQL += selectLimited;
 
-//            SQL += " AND data_timestamp between "
-//                    + StringUtilities.quoteString(Common.getRawSQLTimestamp(mooringInWaterTime))
-//                    + " AND "
-//                    + StringUtilities.quoteString(Common.getRawSQLTimestamp(mooringOutWaterTime));
             SQL += " ORDER BY 1";
             
             try
@@ -585,7 +527,7 @@ public class NetCDFcreateForm extends MemoryWindow
                 + " parameter_code,"
                 + " parameter_value,"
                 + " quality_code"
-                + " FROM " + table
+                + " FROM " + table + " AS d "
                 + " WHERE mooring_id = " + StringUtilities.quoteString(selectedMooring.getMooringID())
                 + selectLimited
                 + " AND parameter_code = " + StringUtilities.quoteString(param)
@@ -671,15 +613,16 @@ public class NetCDFcreateForm extends MemoryWindow
     {
         facility = selectedMooring.getFacility();
         
-        String filename = getFileName();
+        f.setAuthority(authority);
+        f.setMooring(selectedMooring);
+        f.setFacility(selectedMooring.getFacility());
+
+        String filename = f.getFileName(selectedMooring, sourceInstrument, dataStartTime, dataEndTime, table);
         int RECORD_COUNT = timeArray.size();
         try
         {
             // Create new netcdf-3 file with the given filename
             f.createFile(filename);
-            f.setMooring(selectedMooring);
-            f.setAuthority(authority);
-            f.setFacility(selectedMooring.getFacility());
 
             f.addGroupAttribute(null, new Attribute("time_deployment_start", netcdfDate.format(mooringInWaterTime)));
             f.addGroupAttribute(null, new Attribute("time_deployment_end", netcdfDate.format(mooringOutWaterTime)));

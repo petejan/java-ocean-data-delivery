@@ -68,6 +68,7 @@ public class Main
 
         String home = System.getProperty("user.home");
 
+        // configure log4j
         if(args.length >= 2)
         {
             PropertyConfigurator.configure(args[1]);
@@ -82,7 +83,7 @@ public class Main
             // passed in the database connection parameters
             //
             Common.closeConnection();
-            Common.build( args[0]);
+            Common.build( args[0] );
         }
         else
         {
@@ -206,7 +207,7 @@ public class Main
           SQLtable tab;
           try
           {
-        	  tab = new SQLtable("SELECT * FROM mooring");
+        	  tab = new SQLtable(Common.dbURL, "SELECT * FROM mooring");
         	  JTable table = tab.getTable();
         	  mm.addComponent(new JScrollPane(table));
           }
