@@ -111,7 +111,7 @@ public class decode
             {
                 sum = (sum + ints[n]) & 0xffff;
             }
-            // System.out.printf("%2d, 0x%04x 0x%04x\n", n, (ints[n] & 0xffff), sum & 0xffff);
+            //System.out.printf("%2d, 0x%04x 0x%04x\n", n, (ints[n] & 0xffff), sum & 0xffff);
         }
         ints[nInts - 1] = ints[nInts - 1] & 0xffff;
         if (msgs >= 3)
@@ -190,7 +190,7 @@ public class decode
 
             //System.out.println((ticks + tickRoll * 0.0065536 * 65535) + "," + accelWorld);
 
-            if (msgs >= 1)
+            if (msgs >= 2)
             {
                 System.out.println("pry ," + r.pry + ",accel ," + r.accel + " , gyro ," + r.gyro + " ,accel-w ," + r.accelWorld);
             }

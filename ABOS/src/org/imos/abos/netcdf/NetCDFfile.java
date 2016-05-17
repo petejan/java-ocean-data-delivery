@@ -5,6 +5,8 @@
  */
 package org.imos.abos.netcdf;
 
+import java.io.File;
+import java.io.FilenameFilter;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.sql.Timestamp;
@@ -18,6 +20,9 @@ import java.util.Date;
 import java.util.List;
 import java.util.TimeZone;
 import java.util.Vector;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.imos.abos.dbms.Instrument;
@@ -90,17 +95,30 @@ public class NetCDFfile
         }
     }
     
-    public String getFileName(Mooring selectedMooring, Instrument sourceInstrument, Timestamp dataStartTime, Timestamp dataEndTime, String table)
+    boolean multiPart = false;
+    public boolean setMultiPart(boolean b)
+    {
+    	multiPart = b;
+    	
+    	return multiPart;
+    }
+    public String getFileName(Instrument sourceInstrument, Timestamp dataStartTime, Timestamp dataEndTime, String table)
+    {
+    	return getFileName(sourceInstrument, dataStartTime, dataEndTime, table, "RTSCP");
+    }
+    
+    public String getFileName(Instrument sourceInstrument, Timestamp dataStartTime, Timestamp dataEndTime, String table, String dataType)
     {
         SimpleDateFormat nameFormatter = new SimpleDateFormat("yyyyMMdd'T'HHmmss'Z'");
         nameFormatter.setTimeZone(tz);
 
         String filename = "ABOS_NetCDF.nc";
-        String deployment = selectedMooring.getMooringID();
+        String deployment = mooring.getMooringID();
         String mooring = deployment.substring(0, deployment.indexOf("-"));
         if (sourceInstrument != null)
         {
-            deployment += "_" + sourceInstrument.getModel();
+        	String sn = sourceInstrument.getSerialNumber().replaceAll("[()_]", "").trim();
+            deployment += "_" + sourceInstrument.getModel().trim() + "-" + sn;
         }
         if (authority.equals("IMOS"))
         {
@@ -111,7 +129,7 @@ public class NetCDFfile
                             //+ "/"
                             authority 
                             + "_" + facility + "_" 
-                            + "RTSCP_"
+                            + dataType + "_"
                             + nameFormatter.format(dataStartTime)
                             + "_" + mooring;
                     
@@ -127,8 +145,12 @@ public class NetCDFfile
                             + "_END-"
                             + nameFormatter.format(dataEndTime)
                             + "_C-"               
-                            + nameFormatter.format(System.currentTimeMillis())
-                            + ".nc"
+                            + nameFormatter.format(System.currentTimeMillis());
+            
+            if (multiPart)
+            	filename	+= "_PART01";
+            
+            filename        += ".nc"
                             ;
         }
         else if (authority.equals("OS"))
@@ -141,6 +163,53 @@ public class NetCDFfile
                         ;
         }
 
+        filename = filename.replaceAll("\\s+", "-"); // replace any spaces with a - character
+        
+        // hacks to get the next filename in a mulitpart set
+        final String filter = authority 
+                            + "_" + facility + "_" 
+                            + dataType + "_"
+                            + "(\\d{8}T\\d{6}Z)"
+                            + "_" + mooring
+                            + "_FV00"
+                            + "_" + deployment
+                            + "_END-"
+                            + "(\\d{8}T\\d{6}Z)"
+                            + "_C-"               
+                            + "\\d{8}T\\d{6}Z"
+                            + "_(PART\\d+)"
+                            + "\\.nc";
+        
+        final Pattern pattern = Pattern.compile(filter);
+        File fl = new File(".");
+        File[] files = fl.listFiles(new FilenameFilter()
+                        {
+                            @Override
+                            public boolean accept(File dir, String name)
+                            {
+//                                System.out.println("name " + name + " " + name.matches(filter));
+                                return pattern.matcher(name).matches();
+                            }
+                        });
+        
+        int fileno = 1;
+        for (File datfile : files)
+        {
+            filename = datfile.getName();
+            System.out.println("Filtered files " + datfile);
+            fileno++;
+        }        
+        Matcher mat = pattern.matcher(filename);
+        if (mat.find())
+        {
+	        filename = filename.replaceAll(mat.group(1), nameFormatter.format(dataStartTime));
+	        filename = filename.replaceAll(mat.group(2), nameFormatter.format(dataEndTime));
+
+	        filename = filename.replaceAll(mat.group(3), String.format("PART%02d", fileno));
+        }
+        
+        System.out.println("Next filename " + filename);        
+                
         return filename;
     }    
     
@@ -186,7 +255,7 @@ public class NetCDFfile
     	{
     	    public int compare(Attribute o1, Attribute o2) 
     	    {
-    	        return o1.getFullName().compareTo(o2.getFullName());
+    	        return o1.getFullName().toLowerCase().compareTo(o2.getFullName().toLowerCase());
     	    }
     	};
     	

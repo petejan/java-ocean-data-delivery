@@ -14,8 +14,12 @@ import java.util.List;
 import java.util.TimeZone;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
+import org.imos.abos.dbms.Instrument;
 import org.imos.abos.dbms.Mooring;
+import org.imos.abos.parsers.NortekParse;
 import org.imos.abos.parsers.RawAWCPdata;
 import org.wiley.core.Common;
 import ucar.ma2.Array;
@@ -28,6 +32,8 @@ import ucar.nc2.Variable;
 
 public class WriteAWCP
 {
+    private static Logger log = Logger.getLogger(WriteAWCP.class);
+
     public static void main(String args[]) throws Exception
     {
         String $HOME = System.getProperty("user.home");
@@ -105,14 +111,13 @@ public class WriteAWCP
         Date tsEnd = null;
         
         RawAWCPdata an = new RawAWCPdata(xmlFile);
+        
         Mooring m = Mooring.selectByMooringID(mooring_id);
-        SimpleDateFormat nameFormatter = new SimpleDateFormat("yyyyMMdd'T'HHmmss'Z'");
-        nameFormatter.setTimeZone(TimeZone.getDefault());
         String deployment = m.getMooringID();
         String mooring = deployment.substring(0, deployment.indexOf("-"));
         
-        Date dataStartTime = m.getTimestampIn(); // TODO: probably should come from data, esp for part files
-        Date dataEndTime = m.getTimestampOut();
+        Timestamp dataStartTime = m.getTimestampIn(); // TODO: probably should come from data, esp for part files
+        Timestamp dataEndTime = m.getTimestampOut();
 
         for(File datfile : listOfFiles)
         {
@@ -124,77 +129,37 @@ public class WriteAWCP
             an.close();            
         }
                 
-        String authority = "IMOS";
-        String facility = m.getFacility();
-        String filename = authority 
-                            + "_" + facility + "_" 
-                            + "RA_"
-                            + nameFormatter.format(tsStart)
-                            + "_" + mooring.toUpperCase() ;
-                    
-                filename    += "_FV00";
-                filename    += "_" + deployment.toUpperCase() + "-AZFP-"+an.serialNo
-                            + "_END-"
-                            + nameFormatter.format(tsEnd)
-                            + "_C-"               
-                            + nameFormatter.format(System.currentTimeMillis())
-                            + "_PART1"
-                            + ".nc"
-                            ;
-                
-        // hacks to get the next filename in a mulitpart set
-        final String filter = authority 
-                            + "_" + facility + "_" 
-                            + "RA_"
-                            + "(\\d{8}T\\d{6}Z)"
-                            + "_" + mooring.toUpperCase() 
-                            + "_FV00"
-                            + "_" + deployment.toUpperCase() + "-AZFP-"+an.serialNo
-                            + "_END-"
-                            + "(\\d{8}T\\d{6}Z)"
-                            + "_C-"               
-                            + "\\d{8}T\\d{6}Z"
-                            + "_(PART\\d)"
-                            + "\\.nc";
-        final Pattern pattern = Pattern.compile(filter);
-        File fl = new File(".");
-        File[] files = fl.listFiles(new FilenameFilter()
-                        {
-                            @Override
-                            public boolean accept(File dir, String name)
-                            {
-//                                System.out.println("name " + name + " " + name.matches(filter));
-                                return pattern.matcher(name).matches();
-                            }
-                        });
-        
-        int fileno = 1;
-        for (File datfile : files)
-        {
-            filename = datfile.getName();
-            System.out.println("Filtered files " + datfile);
-            fileno++;
-        }        
-        Matcher mat = pattern.matcher(filename);
-        mat.find();
-        filename = filename.replaceAll(mat.group(1), nameFormatter.format(tsStart));
-        filename = filename.replaceAll(mat.group(2), nameFormatter.format(tsEnd));
-        filename = filename.replaceAll(mat.group(3), "PART"+fileno);
-        System.out.println("Next filename " + filename);        
-                
-        //filename = "AWCP-NetCDF.nc";
         System.out.println("total records " + len + " tsStart " + tsStart + " tsEnd " + tsEnd);
         System.out.println(an.toString());
+
+        ArrayList<Instrument> insts = Instrument.selectInstrumentsForMooring(mooring_id);
+        Instrument inst = Instrument.selectByInstrumentID(1574);
+        for(Instrument ix : insts)
+        {
+    		log.debug("Instrument " + ix);
+    		
+        	if (ix.getMake().contains("ASL"))
+        	{
+        		inst = ix;        
+        		break;
+        	}
+        }
+		log.info("Instrument " + inst);
+                
+        NetCDFfile ndf = new NetCDFfile();       
+        ndf.setMooring(m);
+        ndf.setAuthority("IMOS");
+        ndf.setFacility("ABOS-ASFS");
+        ndf.setMultiPart(true);
+                
+        String filename = ndf.getFileName(inst, dataStartTime, dataEndTime, "raw", "RA");
         
-        NetCDFfile ndf = new NetCDFfile();
+        //filename = "AWCP-NetCDF.nc";
         
         try
         {
             // Create new netcdf-4 file with the given filename
             ndf.createFile(filename);
-            ndf.setMooring(m);
-            ndf.setAuthority("IMOS");
-            ndf.setFacility("ABOS-ASFS");
 
             ndf.writeGlobalAttributes();
             ndf.createCoordinateVariables((int)len);  

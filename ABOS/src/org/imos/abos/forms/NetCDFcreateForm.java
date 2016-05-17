@@ -71,7 +71,6 @@ public class NetCDFcreateForm extends MemoryWindow
     private Mooring selectedMooring = null;
     
     private String authority = "OS";
-    private String facility = "ABOS-SOTS";
     
     protected TimeZone tz = TimeZone.getTimeZone("UTC");
     protected SimpleDateFormat netcdfDate;
@@ -611,13 +610,13 @@ public class NetCDFcreateForm extends MemoryWindow
 
     protected void createCDFFile()
     {
-        facility = selectedMooring.getFacility();
+        selectedMooring.getFacility();
         
         f.setAuthority(authority);
         f.setMooring(selectedMooring);
         f.setFacility(selectedMooring.getFacility());
 
-        String filename = f.getFileName(selectedMooring, sourceInstrument, dataStartTime, dataEndTime, table);
+        String filename = f.getFileName(sourceInstrument, dataStartTime, dataEndTime, table);
         int RECORD_COUNT = timeArray.size();
         try
         {

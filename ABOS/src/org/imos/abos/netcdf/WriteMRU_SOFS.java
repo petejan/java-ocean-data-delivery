@@ -26,7 +26,9 @@ import java.sql.Timestamp;
 import java.util.Vector;
 
 import org.apache.commons.math3.stat.descriptive.SummaryStatistics;
+import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
+import org.imos.abos.dbms.Instrument;
 import org.imos.abos.dbms.InstrumentCalibrationValue;
 import org.imos.abos.dbms.Mooring;
 import org.imos.abos.mooring.MRU.WaveCalculator;
@@ -34,11 +36,14 @@ import org.imos.abos.mooring.MRU.decode;
 import org.imos.abos.mooring.MRU.waveSpectra;
 import org.imos.abos.mooring.MRU.decode.mruRecord;
 import org.imos.abos.mooring.MRU.decode.mruStabQ;
+import org.imos.abos.parsers.NortekParse;
 import org.wiley.core.Common;
 import ucar.ma2.ArrayDouble;
 
 public class WriteMRU_SOFS
 {
+    private static Logger log = Logger.getLogger(WriteMRU_SOFS.class);
+
     public static class ListFiles
     {
         ArrayList endAll = new ArrayList();
@@ -73,7 +78,7 @@ public class WriteMRU_SOFS
         
         decode d = new decode();
         final int len = 35;
-        d.setMsgs(0);
+        d.setMsgs(1);
 
         final int NTIME = args.length;
         final int NSAMPLE = 3072;
@@ -87,8 +92,22 @@ public class WriteMRU_SOFS
         String filename = m.getMooringID() + "-MRU.nc";
         
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        ArrayList<Instrument> insts = Instrument.selectInstrumentsForMooring(m.getMooringID()); 
+        Instrument instLoad = Instrument.selectByInstrumentID(2248);
+        for(Instrument ix : insts)
+        {
+    		log.debug("Instrument " + ix);
+    		
+        	if (ix.getModel().contains("Load Cell"))
+        	{
+        		instLoad = ix;        
+        		break;
+        	}
+        }
+		log.info("Instrument " + instLoad);
         
-        ArrayList<InstrumentCalibrationValue> v = InstrumentCalibrationValue.selectByInstrumentAndMooring(2248, m.getMooringID()); // load cell
+        ArrayList<InstrumentCalibrationValue> v = InstrumentCalibrationValue.selectByInstrumentAndMooring(instLoad.getInstrumentID(), m.getMooringID()); // load cell
+        
         double slope = Double.NaN;
         double offset = Double.NaN;
         for(InstrumentCalibrationValue i : v)
@@ -100,74 +119,6 @@ public class WriteMRU_SOFS
         }
         System.out.println("Calibration Slope " + slope + " offset " + offset);
         
-        /*
-         // global attributes:
-         :project = "Integrated Marine Observing System" ;
-         :conventions = "IMOS version 1.3" ;
-         :title = "Heat and radiative flux data from Southern Ocean Flux Station" ;
-         :institution = "Australian Bureau of Meteorology" ;
-         :date_created = "2012-07-03T04:12:57Z" ;
-         :abstract = "" ;
-         :comment = "COARE Bulk Flux Algorithm version 3.0b (Fairall et \n",
-         "al.,2003: J.Climate,16,571-591). Net heat flux does not include flux due to a rainfall (H_RAIN)." ;
-         :source = "Mooring observation" ;
-         :keywords = "Oceans>Ocean Temperature>Sea Surface \n",
-         "Temperature,Oceans>Ocean Winds>Surface Winds,Atmosphere>Atmospheric \n",
-         "Pressure>Atmospheric \n",
-         "Pressure,Atmosphere>Precipitation>Precipitation Rate,Atmosphere>Atmospheric \n",
-         "Water Vapor>Humidity,Atmosphere>Atmospheric Winds>Surface \n",
-         "Winds,Atmosphere>Atmospheric Temperature>Air Temperature,Atmosphere>Atmospheric \n",
-         "Radiation>Shortwave Radiation,Atmosphere>Atmospheric Radiation>Longwave \n",
-         "Radiation,Atmosphere>Atmospheric Radiation>Net Radiation,Atmosphere>Atmospheric \n",
-         "Radiation>Radiative Flux,Oceans>Ocean Heat Budget>Heat Flux,Oceans>Ocean \n",
-         "Heat Budget>Longwave Radiation,Oceans>Ocean Heat Budget>Shortwave Radiation" ;
-         :references = "http://www.imos.org.au" ;
-         :netcdf_version = "3.6.1" ;
-         :platform_code = "SOFS" ;
-         :naming_authority = "IMOS" ;
-         :cdm_data_type = "Trajectory" ;
-         :geospatial_lat_min = "        -46.75780" ;
-         :geospatial_lat_max = "        -46.69600" ;
-         :geospatial_lon_min = "        141.98100" ;
-         :geospatial_lon_max = "        142.10300" ;
-         :geospatial_vertical_min = "0.0" ;
-         :geospatial_vertical_max = "0.0" ;
-         :time_coverage_start = "2010-03-17T11:59:00Z" ;
-         :time_coverage_end = "2011-03-13T06:00:00Z" ;
-         :data_centre = "eMII eMarine Information Infrastructure" ;
-         :data_center_email = "info@emii.org.au" ;
-         :author_email = "r.verein@bom.gov.au" ;
-         :author = "Ruslan Verein" ;
-         :principal_investigator = "Eric Schulz" ;
-         :citation = "Citation to be used in publications should follow \n",
-         "the format: \'IMOS.[year-of-data-download],[Title],[Data access URL],accessed \n",
-         "[date-of access]\'" ;
-         :acknowledgement = "Data was sourced from Integrated Marine \n",
-         "Observing System (IMOS) - an initiative of the Australian Government being \n",
-         "conducted as part of the National Calloborative Research Infrastructure \n",
-         "Strategy." ;
-         :distribution_statement = "ABOS data may be re-used, provided \n",
-         "that related metadata explaining the data has been reviewed by the user, and the \n",
-         "data is appropriately acknowledged. Data, products and services from IMOS are \n",
-         "provided \'as is\' without any warranty as to fitness for a particular purpose." ;
-         :file_version = "Level 2 - Derived product" ;
-         :file_version_quality_control = "All data in this file has been \n",
-         "through the BOM quality control procedure (Reference Table F) and was classed Z \n",
-         "(passes all tests)" ;
-         :site = "SOUTHERN OCEAN FLUX STATION" ;
-         :WMO = "58450" ;
-        
-         Sensor Example: VWND
-         long_name: northward component of wind speed (5180)
-         units: meter second-1
-         instrument: Gill Instruments Wind Observer II (s/n 213)
-         observation_type: measured
-         sensor_height: 3.52
-         _FillValue: -9999.0
-         standard_name: northward_wind
-         ancillary_variables: VWND_quality_control
-
-         */
         sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
         
         ListFiles lf = new ListFiles();
@@ -176,6 +127,27 @@ public class WriteMRU_SOFS
         
         System.out.println("Files to process " + listOfFiles.size());
         NetCDFfile ndf = new NetCDFfile();
+        ndf.setMooring(m);
+        ndf.setAuthority("IMOS");
+        ndf.setFacility("ABOS-ASFS");
+        
+        Instrument inst = Instrument.selectByInstrumentID(1620);
+        for(Instrument ix : insts)
+        {
+    		log.debug("Instrument " + ix);
+    		
+        	if (ix.getModel().contains("3DM"))
+        	{
+        		inst = ix;        
+        		break;
+        	}
+        }
+		log.info("Instrument " + inst);
+		
+        Timestamp dataStartTime = m.getTimestampIn(); // TODO: probably should come from data, esp for part files
+        Timestamp dataEndTime = m.getTimestampOut();        
+
+        filename = ndf.getFileName(inst, dataStartTime, dataEndTime, "raw", "RW");
         
         try
         {
@@ -185,13 +157,23 @@ public class WriteMRU_SOFS
 
             // Create new netcdf-4 file with the given filename
             ndf.createFile(filename);
-            ndf.setMooring(m);
-            ndf.setAuthority("IMOS");
-            ndf.setFacility("ABOS-ASFS");
 
             ndf.writeGlobalAttributes();
             ndf.createCoordinateVariables(listOfFiles.size());      
-            
+            ndf.addGroupAttribute(null, new Attribute("serial_number", inst.getSerialNumber()));
+            ndf.addGroupAttribute(null, new Attribute("featureType", "timeSeriesProfile"));
+            ndf.addGroupAttribute(null, new Attribute("cdm_data_type", "Profile"));
+            ndf.addGroupAttribute(null, new Attribute("geospatial_vertical_min", 30f));
+            ndf.addGroupAttribute(null, new Attribute("geospatial_vertical_max", 220f));
+            ndf.addGroupAttribute(null, new Attribute("geospatial_vertical_positive", "down"));
+            ndf.addGroupAttribute(null, new Attribute("time_coverage_start", ndf.netcdfDate.format(dataStartTime)));
+            ndf.addGroupAttribute(null, new Attribute("time_coverage_end", ndf.netcdfDate.format(dataEndTime)));
+            ndf.addGroupAttribute(null, new Attribute("instrument_nominal_depth", 30f));
+            ndf.addGroupAttribute(null, new Attribute("instrument", "ASL AZFP"));
+            ndf.addGroupAttribute(null, new Attribute("instrument_serial_numbe", inst.getSerialNumber()));
+            ndf.addGroupAttribute(null, new Attribute("file_version", "Level 0 – Raw data"));
+            ndf.addGroupAttribute(null, new Attribute("history", ndf.netcdfDate.format(new Date()) + " File Created"));
+                        
             Variable vLon = ndf.dataFile.addVariable(null, "XPOS", DataType.DOUBLE, "TIME");
             Variable vLat = ndf.dataFile.addVariable(null, "YPOS", DataType.DOUBLE, "TIME");
             vLat.addAttribute(new Attribute("standard_name", "latitude"));
@@ -225,32 +207,41 @@ public class WriteMRU_SOFS
             vdims.add(vectorDim);
             
             Variable vSpecFreq = ndf.dataFile.addVariable(null, "frequency", DataType.FLOAT, "spectrum");
+            vSpecFreq.addAttribute(new Attribute("long_name", "spectral_frequency"));
+            vSpecFreq.addAttribute(new Attribute("units", "Hz"));   
+
             Variable vSampleTime = ndf.dataFile.addVariable(null, "sample_time", DataType.FLOAT, "sample");
-            vSpecFreq.addAttribute(new Attribute("units", "Hz"));
             vSampleTime.addAttribute(new Attribute("units", "s"));
 
-            Variable vAccel = ndf.dataFile.addVariable(null, "Acceleration", DataType.FLOAT, vdims);
-            Variable vMag = ndf.dataFile.addVariable(null, "Magnetic", DataType.FLOAT, vdims);
-            Variable vAttitude = ndf.dataFile.addVariable(null, "Attitude", DataType.FLOAT, vdims);
+            Variable vAccel = ndf.dataFile.addVariable(null, "acceleration", DataType.FLOAT, vdims);
+            vAccel.addAttribute(new Attribute("units", "m/s/s"));
+            
+            Variable vMag = ndf.dataFile.addVariable(null, "magnetic", DataType.FLOAT, vdims);
+            vMag.addAttribute(new Attribute("units", "Guass"));
+            
+            Variable vAttitude = ndf.dataFile.addVariable(null, "attitude", DataType.FLOAT, vdims);
+            vAttitude.addAttribute(new Attribute("units", "degrees"));
 
             List<Dimension> dims = new ArrayList<Dimension>();
             dims.add(ndf.timeDim);
             dims.add(sampleDim);
 
             Variable vLoad = ndf.dataFile.addVariable(null, "load", DataType.FLOAT, dims);
+            vLoad.addAttribute(new Attribute("units", "kg"));
 
             List<Dimension> dimSpec = new ArrayList<Dimension>();
             dimSpec.add(ndf.timeDim);
             dimSpec.add(specDim);
 
             Variable vSpec = ndf.dataFile.addVariable(null, "wave_spectra", DataType.FLOAT, dimSpec);
-            Variable vSWH = ndf.dataFile.addVariable(null, "significant_wave_height", DataType.FLOAT, "TIME");
+            vSpec.addAttribute(new Attribute("long_name", "wave_spectral_density"));
+            vSpec.addAttribute(new Attribute("units", "m^2/Hz"));
+            vSpec.addAttribute(new Attribute("_FillValue", Float.NaN));
 
-            // Define units attributes for variables.
-            vAccel.addAttribute(new Attribute("units", "m/s/s"));
-            vLoad.addAttribute(new Attribute("units", "kg"));
-            vMag.addAttribute(new Attribute("units", "Guass"));
-            vAttitude.addAttribute(new Attribute("units", "degrees"));
+            Variable vSWH = ndf.dataFile.addVariable(null, "SWH", DataType.FLOAT, "TIME");
+            vSWH.addAttribute(new Attribute("units", "metre"));
+            vSWH.addAttribute(new Attribute("standard_name", "sea_surface_wave_significant_height"));
+            vSWH.addAttribute(new Attribute("_FillValue", Float.NaN));
 
             int[] vDim = new int[]
             {
@@ -407,7 +398,7 @@ public class WriteMRU_SOFS
             ndf.writeCoordinateVariableAttributes();
 
             // Write the coordinate variable data. 
-            ndf.dataFile.create();
+            ndf.create();
             
             ndf.writePosition(m.getLatitudeIn(), m.getLongitudeIn());            
             

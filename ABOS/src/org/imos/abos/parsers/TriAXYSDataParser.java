@@ -14,12 +14,18 @@ import java.io.IOException;
 import java.sql.Timestamp;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.*;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.NoSuchElementException;
+import java.util.StringTokenizer;
+import java.util.TimeZone;
+import java.util.TreeMap;
+
 import org.apache.log4j.PropertyConfigurator;
 import org.imos.abos.dbms.Array2DInstrumentData;
 import org.imos.abos.dbms.ArrayInstrumentData;
+import org.imos.abos.dbms.Instrument;
 import org.imos.abos.dbms.Mooring;
 import org.imos.abos.dbms.RawInstrumentData;
 import org.imos.abos.netcdf.NetCDFfile;
@@ -33,6 +39,8 @@ import ucar.nc2.Attribute;
 import ucar.nc2.Dimension;
 import ucar.nc2.NetcdfFileWriter;
 import ucar.nc2.Variable;
+import org.apache.log4j.Logger;
+
 
 /**
  *
@@ -40,6 +48,8 @@ import ucar.nc2.Variable;
  */
 public class TriAXYSDataParser extends AbstractDataParser
 {
+    private static Logger log = Logger.getLogger(TriAXYSDataParser.class);
+
 
     String mooring = "SOFS-2-2011";
     
@@ -711,34 +721,51 @@ public class TriAXYSDataParser extends AbstractDataParser
         sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
         
         NetCDFfile ndf = new NetCDFfile();
+        ndf.setMooring(m);
+        ndf.setAuthority("IMOS");
+        ndf.setFacility("ABOS-ASFS");
+        ArrayList<Instrument> insts = Instrument.selectInstrumentsForMooring(m.getMooringID()); 
+        Instrument inst = Instrument.selectByInstrumentID(1620);
+        for(Instrument ix : insts)
+        {
+    		log.debug("Instrument " + ix);
+    		
+        	if (ix.getModel().contains("TriAxys"))
+        	{
+        		inst = ix;        
+        		break;
+        	}
+        }
+		log.info("Instrument " + inst);
+		
+        Timestamp dataStartTime = m.getTimestampIn(); // TODO: probably should come from data, esp for part files
+        Timestamp dataEndTime = m.getTimestampOut();        
+
+
+        filename = ndf.getFileName(inst, dataStartTime, dataEndTime, "raw");
         
         try
         {
             // Create new netcdf-3 file with the given filename
             ndf.createFile(filename);
-            ndf.setMooring(m);
-            ndf.setAuthority("IMOS");
-            ndf.setFacility("ABOS-ASFS");
-            
             ndf.writeGlobalAttributes();
-            ndf.dataFile.addGroupAttribute(null, new Attribute("time_coverage_start", sdf.format(samples.firstKey())));
-            ndf.dataFile.addGroupAttribute(null, new Attribute("time_coverage_end", sdf.format(samples.lastKey())));
-
+            ndf.addGroupAttribute(null, new Attribute("time_coverage_start", sdf.format(samples.firstKey())));
+            ndf.addGroupAttribute(null, new Attribute("time_coverage_end", sdf.format(samples.lastKey())));
             
-            ndf.dataFile.addGroupAttribute(null, new Attribute("time_deployment_start", sdf.format(m.getTimestampIn())));
-            ndf.dataFile.addGroupAttribute(null, new Attribute("time_deployment_end", sdf.format(m.getTimestampOut())));
-            ndf.dataFile.addGroupAttribute(null, new Attribute("file_version", "Level 0 - RAW data"));
+            ndf.addGroupAttribute(null, new Attribute("time_deployment_start", sdf.format(m.getTimestampIn())));
+            ndf.addGroupAttribute(null, new Attribute("time_deployment_end", sdf.format(m.getTimestampOut())));
+            ndf.addGroupAttribute(null, new Attribute("file_version", "Level 0 - RAW data"));
             //ndf.dataFile.addGroupAttribute(null, new Attribute("instrument", "AXYS Technologies Inc, TRIAXYS OEM Directional Wave Sensor, TAS04811"));
-            ndf.dataFile.addGroupAttribute(null, new Attribute("instrument", "AXYS Technologies Inc, TRIAXYS OEM Directional Wave Sensor, TAS03860"));
-            ndf.dataFile.addGroupAttribute(null, new Attribute("title", "SOFS TriAXYS Wave height, direction, and spectra"));
-            ndf.dataFile.addGroupAttribute(null, new Attribute("site_code", "SOTS"));
-            ndf.dataFile.addGroupAttribute(null, new Attribute("deployment_code", m.getMooringID()));
+            ndf.addGroupAttribute(null, new Attribute("instrument", "AXYS Technologies Inc, TRIAXYS OEM Directional Wave Sensor , " + inst.getSerialNumber()));
+            ndf.addGroupAttribute(null, new Attribute("title", "SOFS TriAXYS Wave height, direction, and spectra"));
+            ndf.addGroupAttribute(null, new Attribute("site_code", "SOTS"));
+            ndf.addGroupAttribute(null, new Attribute("deployment_code", m.getMooringID()));
             //ndf.dataFile.addGroupAttribute(null, new Attribute("abstract", "SOFS is an observing platform in the Sub-Antarctic Zone, approximately 350 nautical miles southwest of Tasmania.\nIt obtains frequent measurements of the surface and deep ocean properties that control the transfer of heat, moisture, energy and CO2 between the atmosphere and the upper ocean\nto improve understanding of climate and carbon processes.\nThe mooring was deployed in May 2013 at (-46.7S, 142E) and recovered in October 2013\nThis wave data was collected using a AXYS technologies TriAXYS OEM wave sensor deployed on a 3m WHOI surface float"));
-            ndf.dataFile.addGroupAttribute(null, new Attribute("abstract", "SOFS is an observing platform in the Sub-Antarctic Zone, approximately 350 nautical miles southwest of Tasmania.\nIt obtains frequent measurements of the surface and deep ocean properties that control the transfer of heat, moisture, energy and CO2 between the atmosphere and the upper ocean\nto improve understanding of climate and carbon processes.\nThe mooring was deployed in November 2011 at (-46.7S, 142E) and recovered in July 2012\nThis wave data was collected using a AXYS technologies TriAXYS OEM wave sensor deployed on a 3m WHOI surface float"));
-            ndf.dataFile.addGroupAttribute(null, new Attribute("keywords", "OCEANS > OCEAN WAVES > SIGNIFICANT WAVE HEIGHT\nOCEANS > OCEAN WAVES > WAVE HEIGHT\nOCEANS > OCEAN WAVES > WAVE SPECTRA\nOCEANS > OCEAN WAVES > WAVE FREQUENCY\nOCEANS > OCEAN WAVES > WAVE PERIOD"));
-            ndf.dataFile.addGroupAttribute(null, new Attribute("geospatial_vertical_max", new Double(0)));
-            ndf.dataFile.addGroupAttribute(null, new Attribute("geospatial_vertical_min", new Double(0)));
-            ndf.dataFile.addGroupAttribute(null, new Attribute("comment", "RAW heave, horizontal displacement and velocities are also avaliable upon request"));
+            ndf.addGroupAttribute(null, new Attribute("abstract", "SOFS is an observing platform in the Sub-Antarctic Zone, approximately 350 nautical miles southwest of Tasmania.\nIt obtains frequent measurements of the surface and deep ocean properties that control the transfer of heat, moisture, energy and CO2 between the atmosphere and the upper ocean\nto improve understanding of climate and carbon processes.\nThe mooring was deployed in November 2011 at (-46.7S, 142E) and recovered in July 2012\nThis wave data was collected using a AXYS technologies TriAXYS OEM wave sensor deployed on a 3m WHOI surface float"));
+            ndf.addGroupAttribute(null, new Attribute("keywords", "OCEANS > OCEAN WAVES > SIGNIFICANT WAVE HEIGHT\nOCEANS > OCEAN WAVES > WAVE HEIGHT\nOCEANS > OCEAN WAVES > WAVE SPECTRA\nOCEANS > OCEAN WAVES > WAVE FREQUENCY\nOCEANS > OCEAN WAVES > WAVE PERIOD"));
+            ndf.addGroupAttribute(null, new Attribute("geospatial_vertical_max", new Double(0)));
+            ndf.addGroupAttribute(null, new Attribute("geospatial_vertical_min", new Double(0)));
+            ndf.addGroupAttribute(null, new Attribute("comment", "RAW heave, horizontal displacement and velocities are also avaliable upon request"));
             
             ndf.createCoordinateVariables(samples.size());
             ndf.writeCoordinateVariables(new ArrayList(samples.keySet()));
@@ -919,7 +946,8 @@ public class TriAXYSDataParser extends AbstractDataParser
             }
 
             // Write the coordinate variable data. 
-            ndf.dataFile.create();
+            ndf.create();
+            
             //long tz = sdf.parse("2000-01-01T000000").getTime();
 
             //Date ts = null;
@@ -1039,7 +1067,7 @@ public class TriAXYSDataParser extends AbstractDataParser
         }
         catch (ParseException ex)
         {
-            Logger.getLogger(TriAXYSDataParser.class.getName()).log(Level.SEVERE, null, ex);
+            log.error(ex);
         }
         
     }

@@ -77,6 +77,7 @@
                 <zipfileset excludes="META-INF/*.SF" src="lib/log4j-1.2.15.jar"/>
                 <zipfileset excludes="META-INF/*.SF" src="lib/NeoNatalScreening.jar"/>
                 <zipfileset excludes="META-INF/*.SF" src="lib/netcdfAll-4.6.jar"/>
+                <zipfileset excludes="META-INF/*.SF" src="lib/slf4j-log4j12-1.7.21.jar"/>
                 <zipfileset excludes="META-INF/*.SF" src="lib/postgresql-9.4-1201.jdbc4.jar"/>
                 <zipfileset excludes="META-INF/*.SF" src="lib/swing-layout/swing-layout-1.0.4.jar"/>
             </jar>

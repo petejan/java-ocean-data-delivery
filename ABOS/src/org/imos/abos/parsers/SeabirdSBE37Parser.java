@@ -57,12 +57,14 @@ public class SeabirdSBE37Parser extends AbstractDataParser
     @Override
     protected void parseData(String dataLine) throws ParseException, NoSuchElementException
     {
-        SimpleDateFormat dateParser = new SimpleDateFormat("dd MMM yyyy HH:mm:ss");
+        //SimpleDateFormat dateParser = new SimpleDateFormat("dd MMM yyyy HH:mm:ss");
+        SimpleDateFormat dateParser = new SimpleDateFormat("dd-MM-yyyy HH:mm:ss");
         DecimalFormat deciFormat = new DecimalFormat("-######.0#");
 
         String temperatureString;
         String CNDCString;
         String pressureString = null;
+        String psalString = null;
 
 
         String dateString;
@@ -73,6 +75,7 @@ public class SeabirdSBE37Parser extends AbstractDataParser
         Double waterTemp = null;
         Double pressure = null;
         Double CNDC = null;
+        Double psal = null;
 
         String constructTimestamp;
 
@@ -84,6 +87,8 @@ public class SeabirdSBE37Parser extends AbstractDataParser
             CNDCString  = st.nextToken();
             if (tCount > 4)
                 pressureString  = st.nextToken();
+            if (tCount > 5)
+                psalString  = st.nextToken();
             dateString = st.nextToken();
             timeString = st.nextToken();
 
@@ -117,7 +122,7 @@ public class SeabirdSBE37Parser extends AbstractDataParser
                 }
             }
 
-            if (tCount > 5)
+            if (pressureString != null)
             {
                 try
                 {
@@ -134,6 +139,26 @@ public class SeabirdSBE37Parser extends AbstractDataParser
                     catch(ParseException pexx)
                     {
                         throw new ParseException("parse failed for text '" + pressureString + "'",0);
+                    }
+                }
+            }
+            if (psalString != null)
+            {
+                try
+                {
+                    psal = new Double(psalString.trim());
+                }
+
+                catch(NumberFormatException pex)
+                {
+                    try
+                    {
+                        Number n = deciFormat.parse(psalString.trim());
+                        psal = n.doubleValue();
+                    }
+                    catch(ParseException pexx)
+                    {
+                        throw new ParseException("parse failed for text '" + psalString + "'",0);
                     }
                 }
             }
@@ -177,6 +202,15 @@ public class SeabirdSBE37Parser extends AbstractDataParser
             {
                 row.setParameterCode("PRES");
                 row.setParameterValue(pressure);
+                row.setSourceFileID(currentFile.getDataFilePrimaryKey());
+                row.setQualityCode("RAW");
+
+                ok = row.insert();
+            }
+            if (psal != null)
+            {
+                row.setParameterCode("PSAL");
+                row.setParameterValue(psal);
                 row.setSourceFileID(currentFile.getDataFilePrimaryKey());
                 row.setQualityCode("RAW");
 
