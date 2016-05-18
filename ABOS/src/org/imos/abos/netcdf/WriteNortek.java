@@ -24,7 +24,6 @@ import org.imos.abos.parsers.NortekParse;
 import org.imos.abos.parsers.RawAWCPdata;
 import org.wiley.core.Common;
 
-import sun.util.logging.resources.logging;
 import ucar.ma2.Array;
 import ucar.ma2.ArrayDouble;
 import ucar.ma2.ArrayFloat;

@@ -56,7 +56,7 @@ public abstract class AbstractDataParser
 
     protected ArrayList<String> headers = new ArrayList();
     
-    protected TextFileLogger errorlogger = null;
+    //protected TextFileLogger errorlogger = null;
     protected int PARSE_FAILURES = 0;
 
     abstract protected boolean isHeader(String dataLine);
@@ -112,7 +112,8 @@ public abstract class AbstractDataParser
     
     public TextFileLogger getErrorLogFile()
     {
-        return errorlogger;
+        //return errorlogger;
+    	return null;
     }
     
     /**
@@ -205,10 +206,10 @@ public abstract class AbstractDataParser
         //TextFileLogger errorlogger = new TextFileLogger($HOME + "/" + fileName.trim() + "_errors", "csv");
         String n = fileName.trim();
         n = n.substring(n.lastIndexOf("/")+1);
-        errorlogger = new TextFileLogger(n + "_errors", "csv");
+        //errorlogger = new TextFileLogger(n + "_errors", "csv");
         try
         {
-            errorlogger.open();
+            //errorlogger.open();
             while (true)
             {
                 dataLine = input.readLine();
@@ -242,20 +243,12 @@ public abstract class AbstractDataParser
                     }
                     catch (ParseException ex)
                     {
-                        errorlogger.receive("Row: " + (rowCount+1)
-                                + " - "
-                                + ex.getMessage() 
-                                + "|" 
-                                + dataLine);
+                        //errorlogger.receive("Row: " + (rowCount+1) + " - " + ex.getMessage() + "|" + dataLine);
                         continue;
                     }
                     catch (NoSuchElementException nex)
                     {
-                        errorlogger.receive("Row: " + (rowCount+1)
-                                + " - "
-                                + nex.getMessage() 
-                                + "|" 
-                                + dataLine);
+                        //errorlogger.receive("Row: " + (rowCount+1) + " - " + nex.getMessage() + "|" + dataLine);
                         continue;
                     }
                 }
@@ -265,11 +258,7 @@ public abstract class AbstractDataParser
                 }
                 catch (ParseException ex)
                 {
-                    errorlogger.receive("Row: " + (rowCount+1)
-                                + " - "
-                                + ex.getMessage() 
-                                + "|" 
-                                + dataLine);
+                    // errorlogger.receive("Row: " + (rowCount+1) + " - " + ex.getMessage() + "|" + dataLine);
                     PARSE_FAILURES++;
                     if (PARSE_FAILURES > PARSE_FAILURE_LIMIT)
                     {
@@ -280,12 +269,7 @@ public abstract class AbstractDataParser
                 catch (NoSuchElementException nse)
                 {
                     nse.printStackTrace();
-                    errorlogger.receive("Row: " + (rowCount+1)
-                                + " - "
-                                +"Insufficient data elements - " 
-                                + nse.getMessage() 
-                                + "|" 
-                                + dataLine);
+                    //errorlogger.receive("Row: " + (rowCount+1) + " - " +"Insufficient data elements - " + nse.getMessage() + "|" + dataLine);
                     PARSE_FAILURES++;
                     if (PARSE_FAILURES > PARSE_FAILURE_LIMIT)
                     {
@@ -298,11 +282,11 @@ public abstract class AbstractDataParser
             }
             if (PARSE_FAILURES > 0)
             {
-                AbstractDataParser.logger.debug("Wrote errors to file " + errorlogger.getFullName());
-                if(parentForm != null)
-                    parentForm.updateMessageArea("Wrote errors to file " + errorlogger.getFullName() + "\n");
+                //AbstractDataParser.logger.debug("Wrote errors to file " + errorlogger.getFullName());
+                //if(parentForm != null)
+                    //parentForm.updateMessageArea("Wrote errors to file " + errorlogger.getFullName() + "\n");
             }
-            errorlogger.close();
+            //errorlogger.close();
         }
         catch (IOException ioe)
         {
@@ -325,6 +309,7 @@ public abstract class AbstractDataParser
                                         + " bad rows.\n");
     }
 
+    protected String processingFile = null;
     protected void processFile(File dataFile)
     {
         try
@@ -344,6 +329,7 @@ public abstract class AbstractDataParser
                         if (true)
                         {
                             System.out.println("Processing file " + ze.getName());
+                            processingFile = ze.getName();
                             in = zf.getInputStream(ze);
                             BufferedReader input = new BufferedReader(new InputStreamReader(in));
                             if(parentForm != null)
@@ -369,6 +355,7 @@ public abstract class AbstractDataParser
             else
             {
                 System.out.println("Processing file " + dataFile.getName());
+                processingFile = dataFile.getName();
                 //
                 // straight ASCII file
                 //

@@ -29,6 +29,7 @@ import org.imos.abos.dbms.Instrument;
 import org.imos.abos.dbms.InstrumentCalibrationValue;
 import org.imos.abos.dbms.Mooring;
 import org.imos.abos.dbms.ParameterCodes;
+import org.jfree.util.Log;
 import org.wiley.core.Common;
 import org.wiley.util.SQLWrapper;
 import org.wiley.util.StringUtilities;
@@ -277,9 +278,12 @@ public class NetCDFfile
     		}
     		else
     		{
-    			if (!lastAtt.getStringValue().trim().contains(a.getStringValue().trim()))
+    			if (lastAtt.isString() && a.isString())
     			{
-    				lastAtt = new Attribute(lastAtt.getFullName(), lastAtt.getStringValue() + "; " + a.getStringValue());
+	    			if (!lastAtt.getStringValue().contains(a.getStringValue()))
+	    			{
+	    				lastAtt = new Attribute(lastAtt.getFullName(), lastAtt.getStringValue() + "; " + a.getStringValue());
+	    			}
     			}
     		}    		
     	}

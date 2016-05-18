@@ -34,6 +34,7 @@ import ucar.ma2.Array;
 import ucar.ma2.DataType;
 import ucar.ma2.Index;
 import ucar.ma2.Index2D;
+import ucar.ma2.Index3D;
 import ucar.ma2.InvalidRangeException;
 import ucar.nc2.Attribute;
 import ucar.nc2.Dimension;
@@ -48,16 +49,55 @@ import org.apache.log4j.Logger;
  */
 public class TriAXYSDataParser extends AbstractDataParser
 {
-    private static Logger log = Logger.getLogger(TriAXYSDataParser.class);
-
+	private static Logger log = Logger.getLogger(TriAXYSDataParser.class);
 
     String mooring = "SOFS-2-2011";
-    
+    boolean raw = false;
+
     private TriAXYSDataParser(String string)
     {
         super();
         mooring = string;
     }
+    
+    TriAXYSParser p = null;
+    
+    int header = 0;
+    enum Type {NONE, SUMMARY, DIRSPEC, NONDIRSPEC, MEANDIR, RAW, WAVE, UNKNOWN};
+    boolean commit = false;
+    
+    SimpleDateFormat sdf1 = new SimpleDateFormat("yyyy MMM dd HH:mm");
+    SimpleDateFormat sdf2 = new SimpleDateFormat("yyyy-MM-dd HH:mm");
+    Timestamp ts;
+    
+    public class Sample
+    {
+        Date ts;
+        Double spectralDensity[] = null;
+        Double meanWaveDir = null;
+        Double meanSpreadWidth = null;
+        Double[] spectralDensity_MEANDIR = null;
+        Double meanDirection[] = null;
+        Double spreadWidth[] = null;  
+        Double dirSpectrum[][] = null;
+        Double zeroCrossings;
+        Double averageHt;
+        Double Tz;
+        Double maxHt;
+        Double sigHt;
+        Double sigPer;
+        Double Tp;
+        Double Tp5;
+        Double HM0;
+        Double meanTheta;
+        Double sigmaTheta;  
+        Double[] compass = null;
+        Double[][] accel = null;
+        Double[][] gyro = null;        
+    }
+    
+    TreeMap<Timestamp,Sample> samples = new TreeMap<Timestamp,Sample>();
+    
 
     private class SummaryParser extends TriAXYSParser
     {        
@@ -78,7 +118,7 @@ public class TriAXYSDataParser extends AbstractDataParser
         {
             headerLength = 1;
             type = Type.SUMMARY;
-            System.out.println("SummaryParser " + headerLength);  
+            log.debug("SummaryParser " + headerLength);  
             df = new SimpleDateFormat("yyyy/MM/dd HH:mm");
         }
 
@@ -108,9 +148,9 @@ public class TriAXYSDataParser extends AbstractDataParser
                 meanTheta = Double.parseDouble(split[12]); // Overall mean wave direction in degrees obtained by averaging the mean wave angle q over all frequencies with weighting function S(f). q is calculated by the KVH method.
                 sigmaTheta = Double.parseDouble(split[13]); // Overall directional spreading width in degrees obtained by averaging the spreading width sigma theta, sq, over all frequencies with weighting function S(f). sq is calculated by the KVH method.
                 
-                System.out.println("Summary parse " + ts + " SWH " + sigHt);
+                log.debug("Summary parse " + ts + " SWH " + sigHt);
 
-                if (ts.after(df.parse("2011/11/20 23:59")) & ts.before(df.parse("2012/07/31 23:00")))
+                //if (ts.after(df.parse("2011/11/20 23:59")) & ts.before(df.parse("2012/07/31 23:00")))
                 {
                     Sample s = samples.get(ts);
                     if (s == null)
@@ -189,31 +229,6 @@ public class TriAXYSDataParser extends AbstractDataParser
         protected abstract void commitData(RawInstrumentData raw);
     }
     
-    public class Sample
-    {
-        Date ts;
-        Double spectralDensity[] = null;
-        Double meanWaveDir = null;
-        Double meanSpreadWidth = null;
-        Double[] spectralDensity_MEANDIR = null;
-        Double meanDirection[] = null;
-        Double spreadWidth[] = null;  
-        Double dirSpectrum[][] = null;
-        Double zeroCrossings;
-        Double averageHt;
-        Double Tz;
-        Double maxHt;
-        Double sigHt;
-        Double sigPer;
-        Double Tp;
-        Double Tp5;
-        Double HM0;
-        Double meanTheta;
-        Double sigmaTheta;        
-    }
-    
-    TreeMap<Timestamp,Sample> samples = new TreeMap<Timestamp,Sample>();
-    
     public class NonDirParser extends TriAXYSParser
     {
         Double spectralDensity[] = null;
@@ -223,7 +238,7 @@ public class TriAXYSDataParser extends AbstractDataParser
         {
             headerLength = 8;
             type = Type.NONDIRSPEC;
-            System.out.println("NonDirParser " + headerLength);
+            log.debug("NonDirParser " + headerLength);
         }
         @Override
         protected void parseHeader(String dataLine) throws ParseException, NoSuchElementException
@@ -250,13 +265,17 @@ public class TriAXYSDataParser extends AbstractDataParser
                     break;
                 }
             }
-//            System.out.println("f " + frequency[i]);
+//            log.debug("f " + frequency[i]);
             Double v = new Double(dataLineTokens.nextToken());
             if (v.doubleValue() != 0.0)
             {
                 spectralDensity[i] = v;
             }
             line++;
+            if (line == nFreq)
+            {
+            	commit = true;
+            }
         }  
 
         @Override
@@ -266,16 +285,13 @@ public class TriAXYSDataParser extends AbstractDataParser
             Sample s = samples.get(ts);
             if (s == null)
             {
-//                s = new Sample();
-//                Samples.put(ts, s);
-//                s.ts = (Timestamp) ts.clone();
-//                s.spectralDensity = spectralDensity.clone();
+                s = new Sample();
+                samples.put(ts, s);
+                s.ts = (Timestamp) ts.clone();
             }
-            else
-            {
-                s.spectralDensity = spectralDensity;
-            }
-            System.out.println("Set NONDIR spectral density " + ts + " " + spectralDensity[5]);
+            s.spectralDensity = spectralDensity;
+
+            log.debug("Set NONDIR spectral density " + ts + " " + spectralDensity[5]);
             
             if (currentFile != null)
             {
@@ -312,7 +328,7 @@ public class TriAXYSDataParser extends AbstractDataParser
         {
             headerLength = 13;
             type = Type.MEANDIR;
-            System.out.println("MeanDirParser " + headerLength);
+            log.debug("MeanDirParser " + headerLength);
         }
         @Override
         protected void parseHeader(String dataLine) throws ParseException, NoSuchElementException
@@ -328,9 +344,11 @@ public class TriAXYSDataParser extends AbstractDataParser
             else if (param.startsWith("S(f) WEIGHTED MEAN SPREAD WIDTH"))
             {
                 meanSpreadWidth = Double.parseDouble(value);
-            }            
+            }           
+            fn = 0;
         }
 
+        int fn = 0;
         @Override
         protected void parseData(String dataLine) throws ParseException, NoSuchElementException
         {
@@ -362,7 +380,11 @@ public class TriAXYSDataParser extends AbstractDataParser
                 meanDirection[i] = new Double(dataLineTokens.nextToken());
                 spreadWidth[i] = new Double(dataLineTokens.nextToken());
             }
+            //log.debug("MEAN " + fn + " " + f + " " + v);
             line++;
+            fn++;
+            if (fn == nFreq)
+            	commit = true;
         }  
 
         @Override
@@ -371,18 +393,15 @@ public class TriAXYSDataParser extends AbstractDataParser
             Sample s = samples.get(ts);
             if (s == null)
             {
-//                s = new Sample();
-//                Samples.put(ts, s);
-//                s.ts = (Timestamp) ts.clone();
-//                s.spectralDensity = spectralDensity.clone();
+                s = new Sample();
+                samples.put(ts, s);
+                s.ts = (Timestamp) ts.clone();
             }
-            else
-            {
-                s.spectralDensity_MEANDIR = spectralDensity;
-                s.meanDirection = meanDirection;
-                s.spreadWidth = spreadWidth;
-            }
-            System.out.println("Set MEANDIR " + ts + " " + meanDirection[5]);
+            s.spectralDensity_MEANDIR = spectralDensity;
+            s.meanDirection = meanDirection;
+            s.spreadWidth = spreadWidth;
+
+            log.debug("Set MEANDIR " + ts + " " + meanDirection[5]);
             
             if (currentFile != null)
             {            
@@ -435,7 +454,7 @@ public class TriAXYSDataParser extends AbstractDataParser
         {
             headerLength = 11;
             type = Type.DIRSPEC;
-            System.out.println("DirParser " + headerLength);            
+            log.debug("DirParser " + headerLength);    
         }
         @Override
         protected void parseHeader(String dataLine) throws ParseException, NoSuchElementException
@@ -454,6 +473,7 @@ public class TriAXYSDataParser extends AbstractDataParser
             }            
         }
 
+        int f = 0;
         @Override
         protected void parseData(String dataLine) throws ParseException, NoSuchElementException
         {
@@ -468,7 +488,7 @@ public class TriAXYSDataParser extends AbstractDataParser
                     }                    
                 }
             }
-            if (line < nFreq)
+            if (f < nFreq)
             {
                 int i = 0;
                 for(i = 0;i<frequency.length;i++)
@@ -488,8 +508,12 @@ public class TriAXYSDataParser extends AbstractDataParser
                     }
                     j++;
                 }
+            	f++;
             }  
+            
             line++;
+            if (f == nFreq)
+            	commit = true;
         }        
 
         @Override
@@ -498,16 +522,14 @@ public class TriAXYSDataParser extends AbstractDataParser
             Sample s = samples.get(ts);
             if (s == null)
             {
-//                s = new Sample();
-//                Samples.put(ts, s);
-//                s.ts = (Timestamp) ts.clone();
-//                s.spectralDensity = spectralDensity.clone();
+                s = new Sample();
+                
+                samples.put(ts, s);
+                s.ts = (Timestamp) ts.clone();
             }
-            else
-            {
-                s.dirSpectrum = dirSpectrum;
-            }
-            System.out.println("Set DIR spectrum " + ts + " " + dirSpectrum[5][2]);
+            s.dirSpectrum = dirSpectrum;
+
+            log.debug("Set DIR spectrum " + ts + " " + dirSpectrum[5][2]);
             
             if (currentFile != null)
             {                        
@@ -529,13 +551,171 @@ public class TriAXYSDataParser extends AbstractDataParser
             }
         }
     }
+    
+    public class WaveParser extends TriAXYSParser
+	{
+        Double zeroCrossings;
+        Double averageHt;
+        Double Tz;
+        Double maxHt;
+        Double sigHt;
+        Double sigPer;
+        Double Tp;
+        Double Tp5;
+        Double HM0;
+        Double meanTheta;
+        Double sigmaTheta;
+        SimpleDateFormat df;        
+    	
+    	public WaveParser()
+    	{
+            headerLength = 4;
+
+            type = Type.WAVE;
+            log.debug("WaveParser " + headerLength);
+            commit = false;
+    	}
+    	
+		@Override
+		protected void parseHeader(String dataLine) throws ParseException, NoSuchElementException
+		{
+			// TODO Auto-generated method stub
+
+		}
+
+		@Override
+		protected void parseData(String dataLine) throws ParseException, NoSuchElementException
+		{
+            String[] split = dataLine.split("=");
+            if (split.length < 2)
+            	return;
+            
+            String param = split[0].trim();
+            String value = split[1].trim();
+            
+            if (param.startsWith("Number of Zero Crossings"))
+            {
+            	zeroCrossings = Double.parseDouble(value);
+            }
+            else if (param.startsWith("Average Wave Height (Havg)"))
+            {
+            	averageHt = Double.parseDouble(value);
+            }            
+            else if (param.startsWith("Tz"))
+            {
+            	Tz = Double.parseDouble(value);
+            }            
+            else if (param.startsWith("Max Wave Height (Hmax)"))
+            {
+            	maxHt = Double.parseDouble(value);
+            }            
+            else if (param.startsWith("Significant Wave Height (Hsig)"))
+            {
+            	sigHt = Double.parseDouble(value);
+            }            
+            else if (param.startsWith("Significant Wave Period (Tsig)"))
+            {
+            	sigPer = Double.parseDouble(value);
+            }            
+            else if (param.startsWith("Mean Period"))
+            {
+            	Tp = Double.parseDouble(value);
+            }            
+            else if (param.startsWith("Tp5"))
+            {
+            	Tp5 = Double.parseDouble(value);
+            }            
+            else if (param.startsWith("Hm0"))
+            {
+            	HM0 = Double.parseDouble(value);
+            }            
+            else if (param.startsWith("Mean Magnetic Direction"))
+            {
+            	meanTheta = Double.parseDouble(value);
+            }            
+            else if (param.startsWith("Mean Spread"))
+            {
+            	sigmaTheta = Double.parseDouble(value);
+            }            
+            else if (param.startsWith("Wave Steepness"))
+            {
+            	commit = true;
+            }            
+		}
+
+		@Override
+		protected void commitData(RawInstrumentData raw)
+		{
+            Sample s = samples.get(ts);
+            if (s == null)
+            {
+                s = new Sample();
+                samples.put(ts, s);
+                
+                s.ts = (Timestamp) ts.clone();
+            }
+            s.zeroCrossings = zeroCrossings;
+            s.averageHt = averageHt;
+            s.Tz = Tz;
+            s.maxHt = maxHt;
+            s.sigHt = sigHt;    
+            s.sigPer = sigPer;
+            s.Tp = Tp;
+            s.Tp5 = Tp5;
+            s.HM0 = HM0;
+            s.meanTheta = meanTheta;
+            s.sigmaTheta = sigmaTheta;    
+            
+            if (currentFile != null)
+            {            
+                boolean ok = false;
+
+                raw.setParameterCode("ZERO_CROSS");
+                raw.setParameterValue(zeroCrossings);
+                ok = raw.insert();
+                raw.setParameterCode("AVG_WAVE_HEIGHT");
+                raw.setParameterValue(averageHt);
+                ok = raw.insert();
+                raw.setParameterCode("AVG_PERIOD");
+                raw.setParameterValue(Tz);
+                ok = raw.insert();
+                raw.setParameterCode("MAX_WAVE_HEIGHT");
+                raw.setParameterValue(maxHt);
+                ok = raw.insert();
+                raw.setParameterCode("SIG_WAVE_HEIGHT");
+                raw.setParameterValue(sigHt);
+                ok = raw.insert();
+                raw.setParameterCode("SIG_WAVE_PERIOD");
+                raw.setParameterValue(sigPer);
+                ok = raw.insert();
+                raw.setParameterCode("TP");
+                raw.setParameterValue(Tp);
+                ok = raw.insert();
+                raw.setParameterCode("TP5");
+                raw.setParameterValue(Tp5);
+                ok = raw.insert();
+//                raw.setParameterCode("SIG_WAVE_HEIGHT");
+//                raw.setParameterValue(HM0);
+//                ok = raw.insert();
+                raw.setParameterCode("MEAN_THETA");
+                raw.setParameterValue(meanTheta);
+                ok = raw.insert();
+                raw.setParameterCode("SIGMA_THETA");
+                raw.setParameterValue(sigmaTheta);
+                ok = raw.insert();
+            }
+            
+		}
+
+	}
+    
     public class UnknownParser extends TriAXYSParser
     {
         public UnknownParser()
         {
             headerLength = 12;
             type = Type.UNKNOWN;
-            System.out.println("UnknownParser " + headerLength);            
+            log.debug("UnknownParser " + headerLength);            
         }
 
         @Override
@@ -554,14 +734,100 @@ public class TriAXYSDataParser extends AbstractDataParser
         }
     
     }
+    public class RawParser extends TriAXYSParser
+    {
+    	int sampleNo = 0;
+        Double[] compass = null;
+        Double[][] accel = null;
+        Double[][] gyro = null; 
+        SimpleDateFormat df = null;
+
+    	public RawParser()
+    	{
+            headerLength = 1;
+            type = Type.RAW;
+            log.debug("RAW " + headerLength + " file " + processingFile);
+
+            compass = new Double[4800];
+            accel = new Double[4800][3];
+            gyro = new Double[4800][3];
+            
+            sampleNo = 0;
+            df = new SimpleDateFormat("yyyyMMddHHmm");
+            try
+			{
+            	String tString = processingFile.substring(processingFile.lastIndexOf("/")+1);
+				ts = new Timestamp(df.parse(tString).getTime());
+			}
+			catch (ParseException e)
+			{
+				// TODO Auto-generated catch block
+				log.debug(e);
+			}
+            
+            log.debug("RAW Timestamp " + ts);
+            
+            commit = false;
+            
+            s = 0;
+    	}
+    	
+    	@Override
+		protected void parseHeader(String dataLine) throws ParseException, NoSuchElementException
+		{
+			// TODO Auto-generated method stub
+			
+		}
+
+    	int s = 0;
+		@Override
+		protected void parseData(String dataLine) throws ParseException, NoSuchElementException
+		{
+            dataLineTokens = new StringTokenizer(dataLine,",");
+
+            //log.debug("DataLines tokens " + dataLineTokens.countTokens());
+            
+            if ((s < 4800) && (dataLineTokens.countTokens() == 8))
+            {
+		        int fsample = Integer.parseInt(dataLineTokens.nextToken());
+		        
+		        compass[s] = Double.parseDouble(dataLineTokens.nextToken());
+		        accel[s][0] = Double.parseDouble(dataLineTokens.nextToken());
+		        accel[s][1] = Double.parseDouble(dataLineTokens.nextToken());
+		        accel[s][2] = Double.parseDouble(dataLineTokens.nextToken());
+		        gyro[s][0] = Double.parseDouble(dataLineTokens.nextToken());
+		        gyro[s][1] = Double.parseDouble(dataLineTokens.nextToken());
+		        gyro[s][2] = Double.parseDouble(dataLineTokens.nextToken());		
+		        
+		        //log.debug("sample " + s + " compass " + compass[s]);
+		        
+		        s++;
+		        commit = false;
+            }
+            else // 1502150400,SOFS-5,+000.0,,13.74,4.0,4800,120,120,1,04811,1.01.0687,,53,0,0.000,+00.0
+            {
+	        	commit = true;
+            }
+		}
+
+		@Override
+		protected void commitData(RawInstrumentData raw)
+		{
+            Sample s = samples.get(ts);
+            if (s == null)
+            {
+                s = new Sample();
+                samples.put(ts, s);
+                s.ts = (Timestamp) ts.clone();
+            }
+            s.compass = compass;
+            s.accel = accel;
+            s.gyro = gyro;
+
+            log.debug("Set RAW " + ts + " " + compass[5]);
+		}
+    }
     
-    TriAXYSParser p = null;
-    
-    int header = 0;
-    enum Type {NONE, SUMMARY, DIRSPEC, NONDIRSPEC, MEANDIR, UNKNOWN};
-    
-    SimpleDateFormat sdf = new SimpleDateFormat("yyyy MMM dd HH:mm");
-    Timestamp ts;
     int nFreq = -1;
     int nFreqPoints = 129;
     double initialF = Double.NaN;
@@ -571,7 +837,7 @@ public class TriAXYSDataParser extends AbstractDataParser
     @Override
     protected boolean isHeader(String dataLine)
     {
-        if (dataLine.startsWith("TRIAXYS BUOY DATA REPORT"))
+        if (dataLine.startsWith("TRIAXYS BUOY DATA REPORT") || dataLine.startsWith("Sample,Comp(deg)"))
         {
             p = null;
             return true;
@@ -585,13 +851,16 @@ public class TriAXYSDataParser extends AbstractDataParser
     }
 
     @Override
-    protected void parseHeader(String dataLine) throws ParseException, NoSuchElementException
+    protected void parseHeader(String headerLine) throws ParseException, NoSuchElementException
     {
         TimeZone.setDefault(tz);
-        sdf.setTimeZone(tz);
+        sdf1.setTimeZone(tz);
+        sdf2.setTimeZone(tz);
      
-        //System.out.println("Header " + header + " : " + dataLine);
-        if (dataLine.startsWith("TRIAXYS BUOY DATA REPORT"))
+        commit = false;
+
+        log.debug("Header " + header + " : " + headerLine);
+        if (headerLine.startsWith("TRIAXYS BUOY DATA REPORT"))
         {
             header = 0;
             p = null;
@@ -599,19 +868,33 @@ public class TriAXYSDataParser extends AbstractDataParser
             
             return;
         }
-        else if (dataLine.startsWith("Date\tYear\tJulian Date"))
+        else if (headerLine.startsWith("Date\tYear\tJulian Date"))
         {
             header = 0;
             p = new SummaryParser();
+        }
+        else if (headerLine.startsWith("Sample,Comp(deg)"))
+        {
+        	if (raw)
+        	{
+            header = 0;
+            p = new RawParser();
+        	}
+        	else
+        		p = new UnknownParser();
         }
         
         header++;
         
         if (p != null)
         {
-            p.parseHeader(dataLine);            
+            p.parseHeader(headerLine);            
         }
         if (p instanceof SummaryParser)
+        {
+            return;
+        }
+        if (p instanceof RawParser)
         {
             return;
         }
@@ -620,7 +903,7 @@ public class TriAXYSDataParser extends AbstractDataParser
             return;
         }
         
-        String[] split = dataLine.split("=");
+        String[] split = headerLine.split("=");
         String param = split[0].trim();
         String value = split[1].trim();
         if (param.startsWith("TYPE"))
@@ -637,6 +920,10 @@ public class TriAXYSDataParser extends AbstractDataParser
             {
                 p = new MeanDirParser();
             }
+            else if (value.startsWith("WAVE STATISTICS")) 
+            {
+                p = new WaveParser();
+            }
             else 
             {
                 p = new UnknownParser();
@@ -644,7 +931,16 @@ public class TriAXYSDataParser extends AbstractDataParser
         }
         else if (param.startsWith("DATE"))
         {
-            ts = new Timestamp(sdf.parse(value).getTime());                
+        	Date t;
+        	try
+        	{
+        		t = sdf1.parse(value);
+        	}
+        	catch (ParseException pe)
+        	{
+        		t = sdf2.parse(value);        		
+        	}
+            ts = new Timestamp(t.getTime());                
         }
         else if (param.startsWith("NUMBER OF FREQUENCIES"))
         {
@@ -694,21 +990,21 @@ public class TriAXYSDataParser extends AbstractDataParser
             row.setQualityCode("RAW");
         }
         
-        // System.out.println("Data line " + p.line + " " + dataLine);
+        // log.debug("Data line " + p.line + " " + dataLine);
         
         p.parseData(dataLine);
         
-//        if (p.line == nFreq)
+        if (commit)
         {
-//            System.out.println("Data Record " + ts);
+            log.debug("Data Record " + ts);
             
-            //p.commitData(row);
+            p.commitData(row);
         }
     }
     
     public void createNetCDF() throws ParseException
     {
-        System.out.println("Data Start " + samples.firstKey() + " end " + samples.lastKey());
+        log.debug("Data Start " + samples.firstKey() + " end " + samples.lastKey());
 
         Mooring m = Mooring.selectByMooringID(mooring);
         
@@ -741,8 +1037,7 @@ public class TriAXYSDataParser extends AbstractDataParser
         Timestamp dataStartTime = m.getTimestampIn(); // TODO: probably should come from data, esp for part files
         Timestamp dataEndTime = m.getTimestampOut();        
 
-
-        filename = ndf.getFileName(inst, dataStartTime, dataEndTime, "raw");
+        filename = ndf.getFileName(inst, dataStartTime, dataEndTime, "raw", "RW");
         
         try
         {
@@ -788,6 +1083,22 @@ public class TriAXYSDataParser extends AbstractDataParser
                 dimSpecDir.add(frequencyDim);			
                 dimSpecDir.add(dirDim);			
             }
+            
+            List<Dimension> dimSample = null;
+            List<Dimension> dimVector = null;
+            if (raw)
+            {
+	            Dimension sampleDim = ndf.dataFile.addDimension(null, "sample", 4800);
+	            Dimension vectorDim = ndf.dataFile.addDimension(null, "vector", 3);
+	            dimSample = new ArrayList<Dimension>();
+	            dimSample.add(ndf.timeDim);
+	            dimSample.add(sampleDim);			
+	            dimVector = new ArrayList<Dimension>();
+	            dimVector.add(ndf.timeDim);
+	            dimVector.add(sampleDim);			
+	            dimVector.add(vectorDim);
+            }
+            
             Variable vFrequency = null;
             Variable vDir = null;
             
@@ -843,7 +1154,7 @@ public class TriAXYSDataParser extends AbstractDataParser
             vTp.addAttribute(new Attribute("long_name", "peak_wave_period"));
             vTp.addAttribute(new Attribute("_FillValue", Float.NaN));
             
-            Variable vHM0 = ndf.dataFile.addVariable(null, "HM0", DataType.FLOAT, "TIME");
+            Variable vHM0 = ndf.dataFile.addVariable(null, "VAVH", DataType.FLOAT, "TIME");
             vHM0.addAttribute(new Attribute("units", "m"));
             vHM0.addAttribute(new Attribute("standard_name", "sea_surface_wave_significant_height"));
             vHM0.addAttribute(new Attribute("_FillValue", Float.NaN));
@@ -854,18 +1165,18 @@ public class TriAXYSDataParser extends AbstractDataParser
             vTp5.addAttribute(new Attribute("comment", "Peak wave period in seconds as computed by the Read method"));
             vTp5.addAttribute(new Attribute("_FillValue", Float.NaN));
             
-            Variable vZC = ndf.dataFile.addVariable(null, "ZC", DataType.FLOAT, "TIME");
+            Variable vZC = ndf.dataFile.addVariable(null, "VAVT", DataType.FLOAT, "TIME");
             vZC.addAttribute(new Attribute("units", "count"));
             vZC.addAttribute(new Attribute("standard_name", "sea_surface_wave_zero_upcrossing_period"));
             vZC.addAttribute(new Attribute("_FillValue", Float.NaN));
             
-            Variable vMeanTheta = ndf.dataFile.addVariable(null, "DIR", DataType.FLOAT, "TIME");
+            Variable vMeanTheta = ndf.dataFile.addVariable(null, "WAV_DIR", DataType.FLOAT, "TIME");
             vMeanTheta.addAttribute(new Attribute("units", "degrees_true"));
             vMeanTheta.addAttribute(new Attribute("_FillValue", Float.NaN));
             vMeanTheta.addAttribute(new Attribute("long_name", "mean_wave_direction"));
             vMeanTheta.addAttribute(new Attribute("comment", "Overall mean wave direction in degrees obtained by averaging the mean wave angle q over all frequencies with weighting function S(f). q is calculated by the KVH method"));
 
-            Variable vSigmaTheta = ndf.dataFile.addVariable(null, "SIGMA_DIR", DataType.FLOAT, "TIME");
+            Variable vSigmaTheta = ndf.dataFile.addVariable(null, "SSDS", DataType.FLOAT, "TIME");
             vSigmaTheta.addAttribute(new Attribute("long_name", "mean_wave_direction_spread"));
             vSigmaTheta.addAttribute(new Attribute("units", "degrees"));
             vSigmaTheta.addAttribute(new Attribute("_FillValue", Float.NaN));
@@ -897,10 +1208,29 @@ public class TriAXYSDataParser extends AbstractDataParser
                 vDirSpectrum.addAttribute(new Attribute("units", "degrees_true"));
                 vDirSpectrum.addAttribute(new Attribute("_FillValue", Float.NaN));
             }
+            Variable vCompass = null;
+            Variable vAccel = null;
+            Variable vGyro = null;
+            if (raw)
+            {
+	            vCompass = ndf.dataFile.addVariable(null, "compass", DataType.FLOAT, dimSample);
+	            vCompass.addAttribute(new Attribute("long_name", "compass_direction"));
+	            vCompass.addAttribute(new Attribute("units", "degrees"));
+	            vCompass.addAttribute(new Attribute("_FillValue", Float.NaN));
+	            vAccel = ndf.dataFile.addVariable(null, "acceleration", DataType.FLOAT, dimVector);
+	            vAccel.addAttribute(new Attribute("long_name", "acceleration_vector"));
+	            vAccel.addAttribute(new Attribute("units", "m/s/s"));
+	            vAccel.addAttribute(new Attribute("_FillValue", Float.NaN));
+	            vGyro = ndf.dataFile.addVariable(null, "gyro", DataType.FLOAT, dimVector);
+	            vGyro.addAttribute(new Attribute("long_name", "rotation_speed"));
+	            vGyro.addAttribute(new Attribute("units", "rad/s"));
+	            vGyro.addAttribute(new Attribute("_FillValue", Float.NaN));
+            }
 
 //            Array dataTime = Array.factory(DataType.INT, new int[] { timeDim.getLength() });
 
             Array dataSWH = Array.factory(DataType.FLOAT, new int[] { ndf.timeDim.getLength() });
+            Array dataSWP = Array.factory(DataType.FLOAT, new int[] { ndf.timeDim.getLength() });
             Array dataAvgH = Array.factory(DataType.FLOAT, new int[] { ndf.timeDim.getLength() });
             Array dataAvgPer = Array.factory(DataType.FLOAT, new int[] { ndf.timeDim.getLength() });
             Array dataMaxH = Array.factory(DataType.FLOAT, new int[] { ndf.timeDim.getLength() });
@@ -941,8 +1271,17 @@ public class TriAXYSDataParser extends AbstractDataParser
                 {
                     dataDirection.setFloat(i, (float)(i * dirStep));                    
                 }
-                frequencyDirIndex = new Index2D(specDirDim);
-                dataDirSpectrum = Array.factory(DataType.FLOAT, specDirDim );                
+                dataDirSpectrum = Array.factory(DataType.FLOAT, specDirDim );    
+                frequencyDirIndex = dataDirSpectrum.getIndex();
+            }
+            Array dataCompass = null;
+            Array dataAccel = null;
+            Array dataGyro = null;
+            if (raw)
+            {
+            	dataCompass = Array.factory(DataType.FLOAT, new int[] { ndf.timeDim.getLength(), 4800} );
+            	dataAccel = Array.factory(DataType.FLOAT, new int[] { ndf.timeDim.getLength(), 4800, 3} );
+            	dataGyro = Array.factory(DataType.FLOAT, new int[] { ndf.timeDim.getLength(), 4800, 3} );
             }
 
             // Write the coordinate variable data. 
@@ -953,11 +1292,20 @@ public class TriAXYSDataParser extends AbstractDataParser
             //Date ts = null;
 
             int i = 0;
+            Index vectorIndex = null;
+            Index sampleIndex = null;
+            if (raw)
+            {
+            	vectorIndex = dataAccel.getIndex();
+            	sampleIndex = dataCompass.getIndex();
+            }
+
             for (Sample s : samples.values())
             {                
 //                dataTime.setInt(i, (int) ((s.ts.getTime() - tz) / 1000));
 
                 dataSWH.setFloat(i, s.sigHt.floatValue());
+                dataSWP.setFloat(i, s.sigPer.floatValue());
                 dataAvgH.setFloat(i, s.averageHt.floatValue());
                 dataAvgPer.setFloat(i, s.Tz.floatValue());
                 dataMaxH.setFloat(i, s.maxHt.floatValue());
@@ -980,6 +1328,7 @@ public class TriAXYSDataParser extends AbstractDataParser
                             for(int k=0;k<nDir;k++)
                             {
                                 frequencyDirIndex.set(i, j, k);
+                            	//log.debug("Freq Dir Index " + frequencyDirIndex);
                                 dataDirSpectrum.setFloat(frequencyDirIndex, s.dirSpectrum[j][k].floatValue());                                
                             }
                         }
@@ -988,6 +1337,24 @@ public class TriAXYSDataParser extends AbstractDataParser
                             dataSpectralDensity.setFloat(frequencyIndex, Float.NaN);                            
                         }
                     }
+                }
+                if (raw)
+                {
+	                if (s.accel != null)
+	                {
+	                	for (int j = 0;j<s.accel.length;j++)
+	                	{
+	                		sampleIndex.set(i, j);
+	                		dataCompass.setFloat(sampleIndex, s.compass[j].floatValue());
+	                		for (int k=0;k<3;k++)
+	                		{
+		                		vectorIndex.set(i, j, k);
+		                		//log.debug("Sample Index " + vectorIndex);
+		                		dataAccel.setFloat(vectorIndex, s.accel[j][k].floatValue());
+		                		dataGyro.setFloat(vectorIndex, s.gyro[j][k].floatValue());
+	                		}
+	                	}
+	                }
                 }
                 
                 i++;
@@ -1002,6 +1369,7 @@ public class TriAXYSDataParser extends AbstractDataParser
             }
             
             ndf.dataFile.write(vSWH, dataSWH);
+            ndf.dataFile.write(vSWPer, dataSWP);
             ndf.dataFile.write(vAvgH, dataAvgH);
             ndf.dataFile.write(vAvgPer, dataAvgPer);
             ndf.dataFile.write(vMaxH, dataMaxH);
@@ -1011,6 +1379,13 @@ public class TriAXYSDataParser extends AbstractDataParser
             ndf.dataFile.write(vZC, dataZC);
             ndf.dataFile.write(vMeanTheta, dataMeanTheta);
             ndf.dataFile.write(vSigmaTheta, dataSigmaTheta);
+            
+            if (raw)
+            {
+	            ndf.dataFile.write(vCompass, dataCompass);
+	            ndf.dataFile.write(vAccel, dataAccel);
+	            ndf.dataFile.write(vGyro, dataGyro);
+            }
 
             if (nFreq > 0)
             {
@@ -1043,7 +1418,7 @@ public class TriAXYSDataParser extends AbstractDataParser
                 }
             }
         }
-        System.out.println("*** SUCCESS writing file " + filename);        
+        log.debug("*** SUCCESS writing file " + filename);        
     }
     
     public static void main(String args[])
