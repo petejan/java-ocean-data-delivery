@@ -15,14 +15,19 @@
 	</classpathentry>
 	<classpathentry kind="lib" path="lib/jsr-275-1.0-beta-2.jar"/>
 	<classpathentry kind="lib" path="lib/junit_4/junit-4.5.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/log4j-1.2.15.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/NeoNatalScreening.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/NeoNatalScreening.jar" sourcepath="/Users/peter/ABOS/git/neonatal-code/NeoNatalScreening/src"/>
 	<classpathentry kind="lib" path="lib/nujan-1.4.1.jar"/>
 	<classpathentry exported="true" kind="lib" path="lib/swing-layout/swing-layout-1.0.4.jar"/>
-	<classpathentry kind="lib" path="lib/netcdfAll-4.5.jar"/>
 	<classpathentry kind="lib" path="lib/postgresql-9.4-1201.jdbc4.jar"/>
 	<classpathentry kind="lib" path="lib/poi-3.10.1/poi-3.10.1-20140818.jar"/>
 	<classpathentry kind="lib" path="lib/poi-3.10.1/poi-ooxml-3.10.1-20140818.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/log4j-1.2.15.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/netcdfAll-4.6.jar">
+		<attributes>
+			<attribute name="org.eclipse.jdt.launching.CLASSPATH_ATTR_LIBRARY_PATH_ENTRY" value="/opt/local/lib"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry exported="true" kind="lib" path="lib/slf4j-log4j12-1.7.21.jar"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry kind="output" path="build/classes"/>
 </classpath>
