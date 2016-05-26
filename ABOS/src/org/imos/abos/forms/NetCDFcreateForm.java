@@ -70,7 +70,7 @@ public class NetCDFcreateForm extends MemoryWindow
     
     private Mooring selectedMooring = null;
     
-    private String authority = "OS";
+    private String authority = "IMOS";
     
     protected TimeZone tz = TimeZone.getTimeZone("UTC");
     protected SimpleDateFormat netcdfDate;
@@ -143,7 +143,7 @@ public class NetCDFcreateForm extends MemoryWindow
 
         mooringDescriptionField.setEnabled(false);
 
-        authorityCombo.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "OS", "IMOS" }));
+        authorityCombo.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "IMOS", "OS" }));
 
         jLabel1.setText("Authority");
 
@@ -664,6 +664,9 @@ public class NetCDFcreateForm extends MemoryWindow
                 }                        
             }
             
+            int dimNo = 1;
+            ArrayList <String>dimNames = new ArrayList<String>();
+            
             for (ArrayList<InstanceCoord> sameD : dimensionCoords.values())
             {
                 Collections.sort(sameD, new Comparator<InstanceCoord>() 
@@ -685,10 +688,19 @@ public class NetCDFcreateForm extends MemoryWindow
                 {
                     for(InstanceCoord dc : sameD)
                     {
-                        dimensionName += "_" + dc.params.substring(0,2);
+                        dimensionName += "_" + dc.params.substring(0, 2);
                     }
                     
                 }
+                String origName = dimensionName;
+                dimNo = 1;
+                while (dimNames.contains(dimensionName))
+                {
+                	dimensionName = origName + "_" + dimNo;
+                	dimNo++;
+                }
+                dimNames.add(dimensionName);
+                
                 logger.debug("Create Dimension " + dimensionName);
                 
                 Dimension dim = f.dataFile.addDimension(null, dimensionName, sameD.get(0).depths.length);
@@ -834,11 +846,6 @@ public class NetCDFcreateForm extends MemoryWindow
                     }                    
                 }
             }
-            if (f.addGlobalInstrument)
-            {
-                for (Attribute a: f.globalAttribute)
-                    f.addGroupAttribute(null, a);                
-            }
             //Create the file. At this point the (empty) file will be written to disk
             f.create();
             
@@ -871,20 +878,29 @@ public class NetCDFcreateForm extends MemoryWindow
         {
             e.printStackTrace(System.err);
         }
-        finally
-        {
-            if (f.dataFile != null)
-            {
-                try
-                {
-                    f.dataFile.close();
-                }
-                catch (IOException ioe)
-                {
-                    ioe.printStackTrace();
-                }
-            }
-        }
+//        finally
+//        {
+//            if (f.dataFile != null)
+//            {
+//                try
+//                {
+//                    f.dataFile.close();
+//                }
+//                catch (IOException ioe)
+//                {
+//                    ioe.printStackTrace();
+//                }
+//            }
+//        }
+        try
+		{
+			f.dataFile.close();
+		}
+		catch (IOException e)
+		{
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
     }
 
     protected class ParamDatum

@@ -52,8 +52,13 @@ public class TriAXYSDataParser extends AbstractDataParser
 	private static Logger log = Logger.getLogger(TriAXYSDataParser.class);
 
     String mooring = "SOFS-2-2011";
-    boolean raw = false;
+    boolean raw = true;
 
+    public TriAXYSDataParser()
+    {
+    	super();
+    }
+    
     private TriAXYSDataParser(String string)
     {
         super();
@@ -904,6 +909,9 @@ public class TriAXYSDataParser extends AbstractDataParser
         }
         
         String[] split = headerLine.split("=");
+        if (split.length < 2)
+        	return;
+        
         String param = split[0].trim();
         String value = split[1].trim();
         if (param.startsWith("TYPE"))

@@ -38,6 +38,7 @@ import ucar.ma2.ArrayChar;
 import ucar.ma2.ArrayDouble;
 import ucar.ma2.ArrayFloat;
 import ucar.ma2.ArrayInt;
+import ucar.ma2.ArrayString;
 import ucar.ma2.DataType;
 import ucar.ma2.InvalidRangeException;
 import ucar.nc2.Attribute;
@@ -75,8 +76,6 @@ public class NetCDFfile
     public final boolean timeIsDoubleDays = true;
     public SimpleDateFormat netcdfDate;
     long anchorTime;
-    public boolean addGlobalInstrument;
-    public ArrayList <Attribute> globalAttribute;
 
     public NetCDFfile() 
     {        
@@ -272,7 +271,7 @@ public class NetCDFfile
     		}
     		if (lastAtt.getFullName().compareTo(a.getFullName()) != 0)
     		{
-        		//logger.debug("Add Attributes "  + lastAtt + " = " + lastAtt.getStringValue());
+        		logger.trace("Add Attributes "  + lastAtt + " = " + lastAtt.getStringValue());
     			dataFile.addGroupAttribute(null, lastAtt);
     			lastAtt = a;
     		}
@@ -280,6 +279,7 @@ public class NetCDFfile
     		{
     			if (lastAtt.isString() && a.isString())
     			{
+            		logger.trace("Add Attributes "  + lastAtt + " = " + lastAtt.getStringValue() + " duplicate " + a.getStringValue());
 	    			if (!lastAtt.getStringValue().contains(a.getStringValue()))
 	    			{
 	    				lastAtt = new Attribute(lastAtt.getFullName(), lastAtt.getStringValue() + "; " + a.getStringValue());
@@ -667,25 +667,20 @@ public class NetCDFfile
                 }
                 if ((dc.instruments[i] - dc.source[i]) != 0)
                 {
-                    System.out.println("DIFFERENT SOURCE::INSTRUMENT " + dc.instruments[i] + " " + dc.source[i]);
+                    logger.info("DIFFERENT SOURCE::INSTRUMENT " + dc.instruments[i] + " " + dc.source[i]);
                     differentSource = true;
                 }
             }
+            variable.addAttribute(new Attribute("sensor_name", sensor));
+            variable.addAttribute(new Attribute("sensor_serial_number", serialNo));
+            
+            groupAttributeList.add(new Attribute("instrument", sensor));
+            groupAttributeList.add(new Attribute("instrument_serial_number", serialNo));
+            
             if (differentSource)
             {
-                variable.addAttribute(new Attribute("sensor_name", sourceSensor));
-                variable.addAttribute(new Attribute("sensor_serial_number", sourceSerialNo));
-                if (!addGlobalInstrument)
-                    globalAttribute = new ArrayList<Attribute>();
-                
-                addGlobalInstrument = true;
-                globalAttribute.add(new Attribute("instrument", sensor));
-                globalAttribute.add(new Attribute("instrument_serial_number", serialNo));
-            }
-            else
-            {
-                variable.addAttribute(new Attribute("sensor_name", sensor));
-                variable.addAttribute(new Attribute("sensor_serial_number", serialNo));
+                variable.addAttribute(new Attribute("sensor_source_name", sourceSensor));
+                variable.addAttribute(new Attribute("sensor_source_serial_number", sourceSerialNo));
             }
 
             if (param != null)
@@ -758,11 +753,12 @@ public class NetCDFfile
             SQL = "SELECT DISTINCT(attribute_name) FROM netcdf_attributes "
                     + " WHERE (deployment = " + StringUtilities.quoteString(getDeployment()) + " OR deployment = '*')"
                     + " AND (instrument_id IS NOT NULL AND instrument_id IN ( " + instruments + ")) "
-                    + " AND parameter = " + StringUtilities.quoteString(dc.varName.trim()) + " ORDER BY attribute_name";
+                    + " AND (parameter = " + StringUtilities.quoteString(dc.varName.trim()) + " OR parameter = '*') ORDER BY attribute_name";
 
             query.setConnection(Common.getConnection());
             query.executeQuery(SQL);
             Vector attributeName = query.getData();
+            String type = null;
             for (int attribN = 0; (attributeName != null) && (attribN < attributeName.size()); attribN++)
             {
                 Vector aRow = (Vector) attributeName.get(attribN);
@@ -770,16 +766,18 @@ public class NetCDFfile
 
                 int hasInstrumentAttribute = 0;
                 ArrayDouble.D1 values = new ArrayDouble.D1(dc.instruments.length);
+                ArrayString.D1 strings = new ArrayString.D1(dc.instruments.length);
                 for (int i = 0; i < dc.instruments.length; i++)
                 {
                     values.set(i, Double.NaN);
+                    strings.set(i, new String(""));
                 }
                 for (int i = 0; i < dc.instruments.length; i++)
                 {
                     SQL = "SELECT attribute_name, attribute_type, attribute_value FROM netcdf_attributes "
                             + " WHERE (deployment = " + StringUtilities.quoteString(getDeployment()) + " OR deployment = '*')"
                             + " AND instrument_id = " + dc.instruments[i]
-                            + " AND parameter = " + StringUtilities.quoteString(dc.varName.trim()) + " ORDER BY attribute_name";
+                            + " AND (parameter = " + StringUtilities.quoteString(dc.varName.trim()) + " OR parameter = '*') ORDER BY attribute_name";
 
                     query.setConnection(Common.getConnection());
                     query.executeQuery(SQL);
@@ -790,7 +788,7 @@ public class NetCDFfile
                         {
                             Vector row = (Vector) attributeSet.get(j);
                             name = (String) (row.get(0));
-                            String type = (String) (row.get(1));
+                            type = (String) (row.get(1));
                             String value = (String) (row.get(2));
 
                             logger.debug("INSTRUMENT PARAMETER: " + name + " " + value);
@@ -803,7 +801,7 @@ public class NetCDFfile
                             }
                             else
                             {
-                                variable.addAttribute(new Attribute(name.trim(), value.replaceAll("\\\\n", "\n").trim()));
+                                strings.set(i, value.replaceAll("\\\\n", "\n").trim());
                             }
 
                         }
@@ -812,7 +810,20 @@ public class NetCDFfile
                 }
                 if (hasInstrumentAttribute > 0)
                 {
-                    variable.addAttribute(new Attribute(name.trim(), values));
+                	if (type.startsWith("NUMBER"))                		
+                		variable.addAttribute(new Attribute(name.trim(), values));
+                	else
+                	{
+                		String aggString = "";
+                		for(int i=0;i<strings.getSize();i++)
+                		{
+                			aggString += strings.get(i);
+                			if ((i+1) < strings.getSize())
+                				aggString += ";";
+                		}
+                		variable.addAttribute(new Attribute(name.trim(), aggString));
+                	}
+                		
                 }
             }
         }

@@ -210,25 +210,40 @@ public class WriteMRU_SOFS
             Variable vSpecFreq = ndf.dataFile.addVariable(null, "frequency", DataType.FLOAT, "spectrum");
             vSpecFreq.addAttribute(new Attribute("long_name", "spectral_frequency"));
             vSpecFreq.addAttribute(new Attribute("units", "Hz"));   
+            vSpecFreq.addAttribute(new Attribute("_FillValue", Float.NaN));
 
             Variable vSampleTime = ndf.dataFile.addVariable(null, "sample_time", DataType.FLOAT, "sample");
+            vSampleTime.addAttribute(new Attribute("long_name", "time_of_sample"));
             vSampleTime.addAttribute(new Attribute("units", "s"));
+            vSampleTime.addAttribute(new Attribute("_FillValue", Float.NaN));
 
             Variable vAccel = ndf.dataFile.addVariable(null, "acceleration", DataType.FLOAT, vdims);
+            vAccel.addAttribute(new Attribute("long_name", "acceleration_vector_XYZ"));
             vAccel.addAttribute(new Attribute("units", "m/s/s"));
+            vAccel.addAttribute(new Attribute("_FillValue", Float.NaN));
             
             Variable vMag = ndf.dataFile.addVariable(null, "magnetic", DataType.FLOAT, vdims);
+            vMag.addAttribute(new Attribute("long_name", "magnetic_direction_XYZ"));
             vMag.addAttribute(new Attribute("units", "Guass"));
+            vMag.addAttribute(new Attribute("_FillValue", Float.NaN));
             
             Variable vAttitude = ndf.dataFile.addVariable(null, "attitude", DataType.FLOAT, vdims);
+            vAttitude.addAttribute(new Attribute("long_name", "float_attitude_vector_HPR"));
             vAttitude.addAttribute(new Attribute("units", "degrees"));
+            vAttitude.addAttribute(new Attribute("_FillValue", Float.NaN));
 
             List<Dimension> dims = new ArrayList<Dimension>();
             dims.add(ndf.timeDim);
             dims.add(sampleDim);
 
-            Variable vLoad = ndf.dataFile.addVariable(null, "load", DataType.FLOAT, dims);
-            vLoad.addAttribute(new Attribute("units", "kg"));
+            Variable vLoad = null;            		
+            if (instLoad != null)
+            {
+	            vLoad = ndf.dataFile.addVariable(null, "load", DataType.FLOAT, dims);
+	            vLoad.addAttribute(new Attribute("long_name", "mooring_wire_load"));
+	            vLoad.addAttribute(new Attribute("units", "kg"));
+	            vLoad.addAttribute(new Attribute("_FillValue", Float.NaN));
+            }
 
             List<Dimension> dimSpec = new ArrayList<Dimension>();
             dimSpec.add(ndf.timeDim);
@@ -454,7 +469,7 @@ public class WriteMRU_SOFS
             ndf.dataFile.write(vMag, dataMag);
             ndf.dataFile.write(vAttitude, dataAttitude);
 
-            if (haveLoad)            	
+            if (instLoad != null)            	
             	ndf.dataFile.write(vLoad, dataLoad);
 
             log.info("SUCCESS writing file " + filename);

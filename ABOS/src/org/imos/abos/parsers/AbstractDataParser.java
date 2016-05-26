@@ -63,7 +63,7 @@ public abstract class AbstractDataParser
     abstract protected void parseHeader(String dataLine) throws ParseException, NoSuchElementException;
     abstract protected void parseData(String dataLine) throws ParseException, NoSuchElementException;
 
-    public void AbstractDataParser()
+    public AbstractDataParser()
     {
         TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
     }

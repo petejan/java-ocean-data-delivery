@@ -66,6 +66,7 @@ public class NameValueParser extends AbstractDataParser
         double value;
         int paramsSent = 0;
         HashMap<String, String> hm = new HashMap(); 
+        
         hm.put("OBP", "OPTODE_BPHASE");
         hm.put("OT", "OPTODE_TEMP");
         hm.put("OptodeBPhase", "OPTODE_BPHASE");
@@ -85,6 +86,19 @@ public class NameValueParser extends AbstractDataParser
         hm.put("lat", "YPOS");
         hm.put("lon", "XPOS");
         hm.put("PAR", "PAR_VOLT");
+
+        hm.put("MaxWH", "MAX_WAVE_HEIGHT");
+        hm.put("MaxWP", "MAX_WAVE_PERIOD");
+        hm.put("MaxWD", "MAX_WAVE_DIR");
+        hm.put("MeanWP", "AVG_PERIOD");
+        hm.put("MeanWD", "AVG_WAVE_DIR");
+        hm.put("MeanWH", "AVG_WAVE_HEIGHT");
+        hm.put("SWD", "SIG_WAVE_DIR");
+        hm.put("SWH", "SIG_WAVE_HEIGHT");
+        hm.put("SWP", "SIG_WAVE_PERIOD");
+        hm.put("t10WP", "T10_WAVE_PERIOD");
+        hm.put("t10WH", "T10_WAVE_HEIGHT");
+        hm.put("t10WD", "T10_WAVE_DIR");
 
         hm.put("CHL", "ECO_FLNTUS_CHL");
         hm.put("NTU", "ECO_FLNTUS_TURB");

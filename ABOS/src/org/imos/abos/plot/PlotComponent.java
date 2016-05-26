@@ -130,7 +130,7 @@ public class PlotComponent extends MemoryWindow
             plot.setRangeGridlinePaint(Color.GRAY);
             plot.setAxisOffset(RectangleInsets.ZERO_INSETS);
             XYItemRenderer r = plot.getRenderer();
-            r.setBaseToolTipGenerator(new StandardXYToolTipGenerator(StandardXYToolTipGenerator.DEFAULT_TOOL_TIP_FORMAT, new SimpleDateFormat("yyyy-MM-dd HH:mm:ss"), new DecimalFormat("#0.999")));
+            r.setBaseToolTipGenerator(new StandardXYToolTipGenerator(StandardXYToolTipGenerator.DEFAULT_TOOL_TIP_FORMAT, new SimpleDateFormat("yyyy-MM-dd HH:mm:ss"), new DecimalFormat("#0.000")));
             
             chart.getLegend().setPosition(RectangleEdge.RIGHT);
 

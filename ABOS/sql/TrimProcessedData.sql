@@ -47,3 +47,7 @@ update raw_instrument_data set quality_code = 'BAD' where data_timestamp between
 update raw_instrument_data set quality_code = 'BAD' where data_timestamp = '2015-10-26 19:30:36' and instrument_id = 2402 AND parameter_code not in ('TEMP');
 update raw_instrument_data set quality_code = 'BAD' where data_timestamp = '2015-08-06 19:00:36' and instrument_id = 2218 AND parameter_code in ('DOX2');
 update processed_instrument_data set quality_code = 'BAD' where data_timestamp = '2015-08-06 19:00:00' and instrument_id = 2218 AND parameter_code in ('DOX2');
+
+update raw_instrument_data set quality_code = 'BAD' FROM 
+    (SELECT source_file_id AS s, instrument_id AS i, data_timestamp AS t FROM raw_instrument_data WHERE parameter_code = 'SIG_WAVE_HEIGHT' and parameter_value > 30) AS bad 
+    WHERE source_file_id = s and instrument_id = i and data_timestamp = t;

@@ -253,6 +253,7 @@ public class Parse3DMGX1File
 	public static void main(String args[])
 	{
 		Parse3DMGX1File pn = new Parse3DMGX1File();
+		pn.readLoad = true;
 		
         File f = new File(args[0]);
 
