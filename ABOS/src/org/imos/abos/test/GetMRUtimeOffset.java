@@ -44,6 +44,9 @@ import java.util.logging.Logger;
  */
 public class GetMRUtimeOffset
 {
+	// Generate input file with
+	// find MRU -name "*.TXT" -exec grep -h "string GPRMC.*,A,.*" {} \; > SOFS-5-RMC.txt
+	
     public static void main(String args[])
     {
         TimeZone.setDefault(TimeZone.getTimeZone("UTC"));

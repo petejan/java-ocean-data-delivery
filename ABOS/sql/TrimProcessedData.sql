@@ -1,4 +1,4 @@
----UPDATE processed_instrument_data SET quality_code = 'BAD' WHERE quality_code != 'BAD' AND mooring_id = 'Pulse-6-2009' AND (data_timestamp < '2009-09-30' OR data_timestamp > '2010-03-18');
+﻿---UPDATE processed_instrument_data SET quality_code = 'BAD' WHERE quality_code != 'BAD' AND mooring_id = 'Pulse-6-2009' AND (data_timestamp < '2009-09-30' OR data_timestamp > '2010-03-18');
 ---UPDATE processed_instrument_data SET quality_code = 'BAD' WHERE quality_code != 'BAD' AND mooring_id = 'Pulse-6-2009' AND (data_timestamp = '2010-03-08 03:00');
 ---UPDATE processed_instrument_data SET quality_code = 'BAD' WHERE quality_code != 'BAD' AND parameter_code = 'DOX2' AND parameter_value < 240;
 ---UPDATE processed_instrument_data SET quality_code = 'BAD' WHERE quality_code != 'BAD' AND mooring_id = 'Pulse-7-2010' AND (data_timestamp < '2010-09-12' OR data_timestamp > '2011-04-17');
@@ -51,3 +51,17 @@ update processed_instrument_data set quality_code = 'BAD' where data_timestamp =
 update raw_instrument_data set quality_code = 'BAD' FROM 
     (SELECT source_file_id AS s, instrument_id AS i, data_timestamp AS t FROM raw_instrument_data WHERE parameter_code = 'SIG_WAVE_HEIGHT' and parameter_value > 30) AS bad 
     WHERE source_file_id = s and instrument_id = i and data_timestamp = t;
+
+
+-- SOFS-5-2015
+
+update raw_instrument_data set quality_code = 'BAD' where parameter_code = 'AIRT' and (parameter_value > 16 OR parameter_value < 2);
+update raw_instrument_data set quality_code = 'BAD' where instrument_id = 1630 AND data_timestamp > '2015-11-26';
+update raw_instrument_data set quality_code = 'BAD' where parameter_code IN ('WSPD', 'WSPD_MIN', 'WSPD_MAX') and (parameter_value > 50 OR parameter_value <= 0);
+update raw_instrument_data set quality_code = 'BAD' where instrument_id = 1365 AND data_timestamp > '2015-07-08';
+update raw_instrument_data set quality_code = 'BAD' where instrument_id = 1381 
+    AND parameter_code in ('WSPD', 'WSPD_MIN', 'WSPD_MAX', 'COMPASS', 'UWND', 'VWND', 'WDIR') AND data_timestamp > '2015-07-08';
+update raw_instrument_data set quality_code = 'BAD' where parameter_code = 'RAIT' and parameter_value <= 0;
+
+update processed_instrument_data set quality_code = 'BAD' where parameter_code = 'RAIT' and parameter_value <= 0;
+

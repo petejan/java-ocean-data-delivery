@@ -118,7 +118,7 @@ public class NetCDFfile
         if (sourceInstrument != null)
         {
         	String sn = sourceInstrument.getSerialNumber().replaceAll("[()_]", "").trim();
-            deployment += "_" + sourceInstrument.getModel().trim() + "-" + sn;
+            deployment += "-" + sourceInstrument.getModel().trim() + "-" + sn;
         }
         if (authority.equals("IMOS"))
         {
@@ -719,7 +719,7 @@ public class NetCDFfile
                     + " WHERE (deployment = " + StringUtilities.quoteString(getDeployment()) + " OR deployment = '*')"
                     + " AND (naming_authority = " + StringUtilities.quoteString(authority) + " OR naming_authority = '*')"
                     + " AND instrument_id ISNULL"
-                    + " AND parameter = " + StringUtilities.quoteString(dc.varName.trim()) + " ORDER BY attribute_name";
+                    + " AND parameter = " + StringUtilities.quoteString(dc.params.trim()) + " ORDER BY attribute_name";
 
             query.setConnection(Common.getConnection());
             query.executeQuery(SQL);
@@ -753,7 +753,7 @@ public class NetCDFfile
             SQL = "SELECT DISTINCT(attribute_name) FROM netcdf_attributes "
                     + " WHERE (deployment = " + StringUtilities.quoteString(getDeployment()) + " OR deployment = '*')"
                     + " AND (instrument_id IS NOT NULL AND instrument_id IN ( " + instruments + ")) "
-                    + " AND (parameter = " + StringUtilities.quoteString(dc.varName.trim()) + " OR parameter = '*') ORDER BY attribute_name";
+                    + " AND (parameter = " + StringUtilities.quoteString(dc.params.trim()) + " OR parameter = '*') ORDER BY attribute_name";
 
             query.setConnection(Common.getConnection());
             query.executeQuery(SQL);
@@ -777,7 +777,7 @@ public class NetCDFfile
                     SQL = "SELECT attribute_name, attribute_type, attribute_value FROM netcdf_attributes "
                             + " WHERE (deployment = " + StringUtilities.quoteString(getDeployment()) + " OR deployment = '*')"
                             + " AND instrument_id = " + dc.instruments[i]
-                            + " AND (parameter = " + StringUtilities.quoteString(dc.varName.trim()) + " OR parameter = '*') ORDER BY attribute_name";
+                            + " AND (parameter = " + StringUtilities.quoteString(dc.params.trim()) + " OR parameter = '*') ORDER BY attribute_name";
 
                     query.setConnection(Common.getConnection());
                     query.executeQuery(SQL);
@@ -861,9 +861,13 @@ public class NetCDFfile
                 }
             }
             varName = pt;
+            if ((varName.compareTo("DEPTH") == 0) || (varName.compareTo("HEIGHT") == 0)) // because they are dimension names
+            {
+            	varName = varName + "_INST";
+            }
             dataVar = dataTemp;
             dataVarQC = dataTempQC;
-            var = dataFile.addVariable(null, pt, DataType.FLOAT, timeAndDim);
+            var = dataFile.addVariable(null, varName, DataType.FLOAT, timeAndDim);
             
             if (useHeight)
             {
@@ -875,7 +879,7 @@ public class NetCDFfile
             }
             addVariableAttributes(this);
 
-            String qc = pt + "_QC";
+            String qc = varName + "_QC";
             var.addAttribute(new Attribute("ancillary_variables", qc));
             var.addAttribute(new Attribute("coordinates", "TIME " + getDimensionName() + " LATITUDE LONGITUDE"));
 

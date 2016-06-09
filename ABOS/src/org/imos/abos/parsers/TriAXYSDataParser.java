@@ -50,6 +50,7 @@ import org.apache.log4j.Logger;
 public class TriAXYSDataParser extends AbstractDataParser
 {
 	private static Logger log = Logger.getLogger(TriAXYSDataParser.class);
+	private static long tOffset = 24 * 3600 * 1000;
 
     String mooring = "SOFS-2-2011";
     boolean raw = true;
@@ -139,7 +140,7 @@ public class TriAXYSDataParser extends AbstractDataParser
             String[] split = dataLine.split("\t");       
             if (split.length >= 14)
             {
-                ts = new Timestamp(df.parse(split[0]).getTime());
+                ts = new Timestamp(df.parse(split[0]).getTime() + tOffset);
                 
                 zeroCrossings = Double.parseDouble(split[3]); // Number of waves detected by zero-crossing analysis of the wave elevation record.                
                 averageHt = Double.parseDouble(split[4]); // Average zero down-crossing wave height (m)
@@ -762,7 +763,7 @@ public class TriAXYSDataParser extends AbstractDataParser
             try
 			{
             	String tString = processingFile.substring(processingFile.lastIndexOf("/")+1);
-				ts = new Timestamp(df.parse(tString).getTime());
+				ts = new Timestamp(df.parse(tString).getTime() + tOffset);
 			}
 			catch (ParseException e)
 			{
@@ -948,7 +949,7 @@ public class TriAXYSDataParser extends AbstractDataParser
         	{
         		t = sdf2.parse(value);        		
         	}
-            ts = new Timestamp(t.getTime());                
+            ts = new Timestamp(t.getTime() + tOffset);                
         }
         else if (param.startsWith("NUMBER OF FREQUENCIES"))
         {
@@ -1016,10 +1017,6 @@ public class TriAXYSDataParser extends AbstractDataParser
 
         Mooring m = Mooring.selectByMooringID(mooring);
         
-        SimpleDateFormat nameFormatter = new SimpleDateFormat("yyyyMMdd'T'HHmmss'Z'");
-        nameFormatter.setTimeZone(TimeZone.getTimeZone("UTC"));
-        String filename = "IMOS_ABOS-ASFS_RW_" + nameFormatter.format(samples.firstKey()) + "_SOFS_FV00_" + m.getMooringID() + "-TriAXYS_END-" + nameFormatter.format(samples.lastKey())+ "_C-" + nameFormatter.format(new Date()) + ".nc";
-
         // Create the file.
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");        
         sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
@@ -1028,6 +1025,8 @@ public class TriAXYSDataParser extends AbstractDataParser
         ndf.setMooring(m);
         ndf.setAuthority("IMOS");
         ndf.setFacility("ABOS-ASFS");
+        ndf.setMultiPart(true);
+        
         ArrayList<Instrument> insts = Instrument.selectInstrumentsForMooring(m.getMooringID()); 
         Instrument inst = Instrument.selectByInstrumentID(1620);
         for(Instrument ix : insts)
@@ -1045,7 +1044,7 @@ public class TriAXYSDataParser extends AbstractDataParser
         Timestamp dataStartTime = m.getTimestampIn(); // TODO: probably should come from data, esp for part files
         Timestamp dataEndTime = m.getTimestampOut();        
 
-        filename = ndf.getFileName(inst, dataStartTime, dataEndTime, "raw", "RW");
+        String filename = ndf.getFileName(inst, dataStartTime, dataEndTime, "raw", "RW");
         
         try
         {
@@ -1069,10 +1068,16 @@ public class TriAXYSDataParser extends AbstractDataParser
             ndf.addGroupAttribute(null, new Attribute("geospatial_vertical_max", new Double(0)));
             ndf.addGroupAttribute(null, new Attribute("geospatial_vertical_min", new Double(0)));
             ndf.addGroupAttribute(null, new Attribute("comment", "RAW heave, horizontal displacement and velocities are also avaliable upon request"));
+
             
             ndf.createCoordinateVariables(samples.size());
+
             ndf.writeCoordinateVariables(new ArrayList(samples.keySet()));
             ndf.writeCoordinateVariableAttributes();
+            if (mooring.compareTo("SOFS-5-2015") == 0)
+            {
+            	ndf.vTime.addAttribute(new Attribute ("comment", "time adjustument, added 1 day as incorrect time setting"));
+            }
             
 //            Dimension timeDim = ndf.dataFile.addDimension(null, "TIME", Samples.size());
             Dimension frequencyDim = null;
@@ -1130,10 +1135,10 @@ public class TriAXYSDataParser extends AbstractDataParser
 //            vTime.addAttribute(new Attribute("calendar", "gregorian"));
 
             
-            Variable vSWH = ndf.dataFile.addVariable(null, "H13", DataType.FLOAT, "TIME");
-            vSWH.addAttribute(new Attribute("units", "metre"));
-            vSWH.addAttribute(new Attribute("standard_name", "sea_surface_wave_significant_height"));
-            vSWH.addAttribute(new Attribute("_FillValue", Float.NaN));
+//            Variable vSWH = ndf.dataFile.addVariable(null, "H13", DataType.FLOAT, "TIME");
+//            vSWH.addAttribute(new Attribute("units", "metre"));
+//            vSWH.addAttribute(new Attribute("standard_name", "sea_surface_wave_significant_height"));
+//            vSWH.addAttribute(new Attribute("_FillValue", Float.NaN));
             
             Variable vSWPer = ndf.dataFile.addVariable(null, "T13", DataType.FLOAT, "TIME");
             vSWPer.addAttribute(new Attribute("units", "sec"));
@@ -1237,7 +1242,7 @@ public class TriAXYSDataParser extends AbstractDataParser
 
 //            Array dataTime = Array.factory(DataType.INT, new int[] { timeDim.getLength() });
 
-            Array dataSWH = Array.factory(DataType.FLOAT, new int[] { ndf.timeDim.getLength() });
+//            Array dataSWH = Array.factory(DataType.FLOAT, new int[] { ndf.timeDim.getLength() });
             Array dataSWP = Array.factory(DataType.FLOAT, new int[] { ndf.timeDim.getLength() });
             Array dataAvgH = Array.factory(DataType.FLOAT, new int[] { ndf.timeDim.getLength() });
             Array dataAvgPer = Array.factory(DataType.FLOAT, new int[] { ndf.timeDim.getLength() });
@@ -1312,7 +1317,7 @@ public class TriAXYSDataParser extends AbstractDataParser
             {                
 //                dataTime.setInt(i, (int) ((s.ts.getTime() - tz) / 1000));
 
-                dataSWH.setFloat(i, s.sigHt.floatValue());
+//                dataSWH.setFloat(i, s.sigHt.floatValue());
                 dataSWP.setFloat(i, s.sigPer.floatValue());
                 dataAvgH.setFloat(i, s.averageHt.floatValue());
                 dataAvgPer.setFloat(i, s.Tz.floatValue());
@@ -1376,7 +1381,7 @@ public class TriAXYSDataParser extends AbstractDataParser
                 ndf.dataFile.write(vDir, dataDirection);
             }
             
-            ndf.dataFile.write(vSWH, dataSWH);
+//            ndf.dataFile.write(vSWH, dataSWH);
             ndf.dataFile.write(vSWPer, dataSWP);
             ndf.dataFile.write(vAvgH, dataAvgH);
             ndf.dataFile.write(vAvgPer, dataAvgPer);

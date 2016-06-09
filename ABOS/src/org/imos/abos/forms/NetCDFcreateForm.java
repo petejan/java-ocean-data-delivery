@@ -348,7 +348,7 @@ public class NetCDFcreateForm extends MemoryWindow
         String selectInstrument = "";
         if (sourceInstrument != null)
         {
-            selectInstrument = " AND d.instrument_id = " + sourceInstrument.getInstrumentID();
+            selectInstrument = " AND s.instrument_id = " + sourceInstrument.getInstrumentID();
         }
         String SQL =  "SELECT parameter_code, array_agg(instrument_id) AS instruments, array_agg(source) AS source, array_agg(depth) AS depths FROM "
                     + "      (SELECT parameter_code::varchar, d.mooring_id, d.instrument_id, s.instrument_id AS source, avg(depth)::numeric(8,3) AS depth FROM  " + table + " AS d JOIN instrument_data_files AS s ON (source_file_id = datafile_pk) "
