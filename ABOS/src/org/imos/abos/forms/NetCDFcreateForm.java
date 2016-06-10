@@ -688,7 +688,12 @@ public class NetCDFcreateForm extends MemoryWindow
                 {
                     for(InstanceCoord dc : sameD)
                     {
-                        dimensionName += "_" + dc.params.substring(0, 2);
+						String pn = dc.params.substring(0, 2);
+						
+                    	if (!dimensionName.substring(5).contains(pn))
+                    	{
+                    		dimensionName += "_" + pn;
+                    	}
                     }
                     
                 }
