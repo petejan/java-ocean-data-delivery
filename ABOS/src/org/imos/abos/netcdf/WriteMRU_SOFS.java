@@ -164,7 +164,6 @@ public class WriteMRU_SOFS
             ndf.writeGlobalAttributes();
             ndf.createCoordinateVariables(listOfFiles.size());      
             ndf.addGroupAttribute(null, new Attribute("serial_number", inst.getSerialNumber()));
-            ndf.addGroupAttribute(null, new Attribute("featureType", "timeSeries"));
             ndf.addGroupAttribute(null, new Attribute("cdm_data_type", "Station"));
             ndf.addGroupAttribute(null, new Attribute("geospatial_vertical_min", 0f));
             ndf.addGroupAttribute(null, new Attribute("geospatial_vertical_max", 0f));
@@ -220,16 +219,19 @@ public class WriteMRU_SOFS
             Variable vAccel = ndf.dataFile.addVariable(null, "acceleration", DataType.FLOAT, vdims);
             vAccel.addAttribute(new Attribute("long_name", "acceleration_vector_XYZ"));
             vAccel.addAttribute(new Attribute("units", "m/s/s"));
+            vAccel.addAttribute(new Attribute("coordinates", "TIME LATITUDE LONGITUDE"));
             vAccel.addAttribute(new Attribute("_FillValue", Float.NaN));
             
             Variable vMag = ndf.dataFile.addVariable(null, "magnetic", DataType.FLOAT, vdims);
             vMag.addAttribute(new Attribute("long_name", "magnetic_direction_XYZ"));
-            vMag.addAttribute(new Attribute("units", "Guass"));
+            vMag.addAttribute(new Attribute("units", "gauss"));
+            vMag.addAttribute(new Attribute("coordinates", "TIME LATITUDE LONGITUDE"));
             vMag.addAttribute(new Attribute("_FillValue", Float.NaN));
             
             Variable vAttitude = ndf.dataFile.addVariable(null, "attitude", DataType.FLOAT, vdims);
             vAttitude.addAttribute(new Attribute("long_name", "float_attitude_vector_HPR"));
             vAttitude.addAttribute(new Attribute("units", "degrees"));
+            vAttitude.addAttribute(new Attribute("coordinates", "TIME LATITUDE LONGITUDE"));
             vAttitude.addAttribute(new Attribute("_FillValue", Float.NaN));
 
             List<Dimension> dims = new ArrayList<Dimension>();
@@ -252,11 +254,13 @@ public class WriteMRU_SOFS
             Variable vSpec = ndf.dataFile.addVariable(null, "wave_spectra", DataType.FLOAT, dimSpec);
             vSpec.addAttribute(new Attribute("long_name", "wave_spectral_density"));
             vSpec.addAttribute(new Attribute("units", "m^2/Hz"));
+            vSpec.addAttribute(new Attribute("coordinates", "TIME LATITUDE LONGITUDE"));            
             vSpec.addAttribute(new Attribute("_FillValue", Float.NaN));
 
             Variable vSWH = ndf.dataFile.addVariable(null, "SWH", DataType.FLOAT, "TIME");
             vSWH.addAttribute(new Attribute("units", "metre"));
             vSWH.addAttribute(new Attribute("standard_name", "sea_surface_wave_significant_height"));
+            vSWH.addAttribute(new Attribute("coordinates", "TIME LATITUDE LONGITUDE"));            
             vSWH.addAttribute(new Attribute("_FillValue", Float.NaN));
 
             int[] vDim = new int[]
