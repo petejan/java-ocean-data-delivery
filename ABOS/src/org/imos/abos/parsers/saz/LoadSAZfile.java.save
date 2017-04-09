@@ -1,0 +1,198 @@
+package org.imos.abos.parsers.saz;
+
+import java.io.File;
+import java.sql.Timestamp;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.TimeZone;
+
+import org.apache.log4j.Logger;
+import org.apache.log4j.PropertyConfigurator;
+import org.imos.abos.dbms.Instrument;
+import org.imos.abos.dbms.InstrumentDataFile;
+import org.imos.abos.dbms.Mooring;
+import org.imos.abos.dbms.RawInstrumentData;
+import org.wiley.core.Common;
+
+public class LoadSAZfile
+{
+    private static org.apache.log4j.Logger log = Logger.getLogger(ReadDiSAZfile.class);
+
+	/**
+	 * Method main
+	 *
+	 * Given 1 argument takes that as the filename, inputs it and dumps the cell
+	 * values/types out to sys.out.<br/>
+	 *
+	 */
+    
+
+	public static void main(String[] args)
+	{
+		boolean insert = true;
+		
+		if (args.length < 1)
+		{
+			System.err.println("At least one argument expected");
+			return;
+		}
+
+		String fileName = args[0];
+
+        String $HOME = System.getProperty("user.home");
+        PropertyConfigurator.configure("log4j.properties");
+        Common.build("ABOS.properties");
+        
+		ReadDiSAZfile sf = new ReadDiSAZfile();
+		TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
+		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        InstrumentDataFile idf = new InstrumentDataFile();
+        
+
+		try
+		{
+			sf.readFile(fileName);
+			sf.parse(null);
+			
+			System.out.println("deployment " + sf.deployment);;
+
+			ArrayList <Double> mf = sf.getSedMass();
+			ArrayList <Date> time = sf.getTime();
+			ArrayList <Double> cup = sf.getCup();
+			ArrayList <String> pos = sf.getPositions();
+			ArrayList <Double> duration = sf.getDuration();
+
+			ArrayList <Double> massFlux = sf.getMassFlux();
+			ArrayList <Double> carbon = sf.getCarbon();
+			ArrayList <Double> nitrogen = sf.getNitrogen();
+			ArrayList <Double> psal = sf.getPsal();
+			ArrayList <Double> bsio2 = sf.getBSiO2();
+			ArrayList <Double> pnPSiO2 = sf.getPnPSiO2();
+			ArrayList <Double> tpcPSiO2 = sf.getTpcPSiO2();
+			ArrayList <Double> ph = sf.getPh();
+			ArrayList <Double> bsi = sf.getBsi();
+			ArrayList <Double> pic = sf.getPic();
+			
+			String post = pos.get(0);
+			
+			SimpleDateFormat sdfyear = new SimpleDateFormat("yyyy");
+			
+			String mooringStr = "SAZ" + post.substring(0,2) + "-" + sf.deployment.substring(4, 6) + "-" + sdfyear.format(time.get(0)); 
+			Mooring m = Mooring.selectByMooringID(mooringStr);
+			
+			log.debug("Mooring " + m.getMooringID());
+			
+            File f = new File(fileName);
+            idf.setFileName(f.getName());
+            idf.setMooringID(m.getMooringID());
+            idf.setFilePath(f.getAbsolutePath());
+            idf.setProcessingStatus("UNPROCESSED");
+            byte[] nullFile = new byte[0];
+            idf.setFileData(nullFile);
+
+            RawInstrumentData row = new RawInstrumentData();
+            
+            row.setLatitude(m.getLatitudeIn());
+            row.setLongitude(m.getLongitudeIn());
+            row.setMooringID(m.getMooringID());
+            row.setQualityCode("RAW");
+
+            int inst_id = -1;
+            
+			for(int i=0;i<time.size();i++)
+			{
+				post = pos.get(i);
+				String depthStr = post.substring(3, 7);
+				double depth = Integer.parseInt(depthStr);
+				log.debug("looking for instrument on mooring " + m.getMooringID() + " at depth " + depth);
+				ArrayList<Instrument> inst = Instrument.selectInstrumentsAttachedToMooringAtDepth(m.getMooringID(), depth);
+				int new_inst_id = inst.get(0).getInstrumentID();
+				
+				log.debug(sdf.format(time.get(i)) + " pos " + pos.get(i) + " mooring " + mooringStr + " depth " + depth + " instrument " + inst.get(0) + " Cup " + cup.get(i) + " cup mass " + mf.get(i));
+
+				if (inst_id != new_inst_id)
+				{
+		            if (insert)
+		            {
+		            	log.info("new Instrument id " + new_inst_id);
+		            	
+		                idf.setDataFilePrimaryKey(InstrumentDataFile.getNextSequenceNumber());
+		                idf.setInstrumentID(new_inst_id);
+		                idf.setInstrumentDepth(depth);
+		                idf.insert();
+
+		                row.setSourceFileID(idf.getDataFilePrimaryKey());	            
+		            }							
+				}
+				inst_id = new_inst_id;
+				
+	            row.setDataTimestamp(new Timestamp(time.get(i).getTime()));
+	            row.setDepth(depth);
+	            row.setInstrumentID(inst.get(0).getInstrumentID());
+	            
+	            row.setParameterCode("CUP");
+	            row.setParameterValue(cup.get(i));
+
+	            boolean ok = row.insert();
+	            				
+	            row.setParameterCode("WEIGHT");
+	            row.setParameterValue(mf.get(i));
+
+	            ok = row.insert();
+	            
+	            row.setParameterCode("DURATION");
+	            row.setParameterValue(duration.get(i));
+
+	            ok = row.insert();
+
+	            row.setParameterCode("MASS_FLUX");
+	            row.setParameterValue(massFlux.get(i));
+
+	            ok = row.insert();
+
+	            row.setParameterCode("TPC");
+	            row.setParameterValue(carbon.get(i));
+
+	            ok = row.insert();
+
+	            row.setParameterCode("TPN");
+	            row.setParameterValue(nitrogen.get(i));
+
+	            ok = row.insert();
+
+	            row.setParameterCode("PSAL_REFI");
+	            row.setParameterValue(psal.get(i));
+
+	            ok = row.insert();
+
+	            row.setParameterCode("PH");
+	            row.setParameterValue(ph.get(i));
+
+	            ok = row.insert();
+
+	            row.setParameterCode("BSIO2");
+	            row.setParameterValue(bsio2.get(i));
+
+	            ok = row.insert();
+
+	            row.setParameterCode("PN_PSIO2");
+	            row.setParameterValue(pnPSiO2.get(i));
+
+	            ok = row.insert();
+
+	            row.setParameterCode("PIC");
+	            row.setParameterValue(pic.get(i));
+
+	            ok = row.insert();
+			}
+			
+			sf.close();
+		}
+		catch (Exception e)
+		{
+			e.printStackTrace();
+		}
+	}
+
+}

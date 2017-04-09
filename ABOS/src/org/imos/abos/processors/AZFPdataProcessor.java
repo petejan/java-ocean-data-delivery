@@ -38,45 +38,45 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.apache.commons.math3.stat.descriptive.SummaryStatistics;
 import org.apache.log4j.PropertyConfigurator;
-import org.imos.abos.parsers.AWCPdataParser;
+import org.imos.abos.parsers.AZFPdataParser;
 import org.wiley.core.Common;
 
 /**
  *
  * @author jan079
  */
-public class AWCPdataProcessor
+public class AZFPdataProcessor
 {
-    HashMap<String, AWCPdataParser.FileType> hm = new HashMap<String, AWCPdataParser.FileType>();
+    HashMap<String, AZFPdataParser.FileType> hm = new HashMap<String, AZFPdataParser.FileType>();
 
     String param;
-    AWCPdataParser.FileType fileType;
+    AZFPdataParser.FileType fileType;
     
-    Map<AWCPdataParser.FileType, String> stringType = new EnumMap<AWCPdataParser.FileType, String>(AWCPdataParser.FileType.class);
-    Map<AWCPdataParser.FileType, Integer> indexType = new EnumMap<AWCPdataParser.FileType, Integer>(AWCPdataParser.FileType.class);
+    Map<AZFPdataParser.FileType, String> stringType = new EnumMap<AZFPdataParser.FileType, String>(AZFPdataParser.FileType.class);
+    Map<AZFPdataParser.FileType, Integer> indexType = new EnumMap<AZFPdataParser.FileType, Integer>(AZFPdataParser.FileType.class);
 
     int index;   
     
-    public AWCPdataProcessor()
+    public AZFPdataProcessor()
     {
         sumN[0] = 0;
         sumN[1] = 0;
         sumN[2] = 0;
         sumN[3] = 0;
-        stringType.put(AWCPdataParser.FileType.C_38, "SV_038");
-        stringType.put(AWCPdataParser.FileType.C_125, "SV_125");
-        stringType.put(AWCPdataParser.FileType.C_200, "SV_200");
-        stringType.put(AWCPdataParser.FileType.C_455, "SV_455");
+        stringType.put(AZFPdataParser.FileType.C_38, "SV_038");
+        stringType.put(AZFPdataParser.FileType.C_125, "SV_125");
+        stringType.put(AZFPdataParser.FileType.C_200, "SV_200");
+        stringType.put(AZFPdataParser.FileType.C_455, "SV_455");
         
-        indexType.put(AWCPdataParser.FileType.C_38, 0);
-        indexType.put(AWCPdataParser.FileType.C_125, 1);
-        indexType.put(AWCPdataParser.FileType.C_200, 2);
-        indexType.put(AWCPdataParser.FileType.C_455, 3);
+        indexType.put(AZFPdataParser.FileType.C_38, 0);
+        indexType.put(AZFPdataParser.FileType.C_125, 1);
+        indexType.put(AZFPdataParser.FileType.C_200, 2);
+        indexType.put(AZFPdataParser.FileType.C_455, 3);
         
-        hm.put("SV_038", AWCPdataParser.FileType.C_38);
-        hm.put("SV_125", AWCPdataParser.FileType.C_125);
-        hm.put("SV_200", AWCPdataParser.FileType.C_200);
-        hm.put("SV_455", AWCPdataParser.FileType.C_455);        
+        hm.put("SV_038", AZFPdataParser.FileType.C_38);
+        hm.put("SV_125", AZFPdataParser.FileType.C_125);
+        hm.put("SV_200", AZFPdataParser.FileType.C_200);
+        hm.put("SV_455", AZFPdataParser.FileType.C_455);        
         
         rowSS[0] = new SummaryStatistics();
         rowSS[1] = new SummaryStatistics();
@@ -92,9 +92,9 @@ public class AWCPdataProcessor
     {
         String $HOME = System.getProperty("user.home");
         PropertyConfigurator.configure("log4j.properties");
-        Common.build($HOME + "/ABOS/ABOS.properties");
+        Common.build("ABOS.properties");
 
-        AWCPdataProcessor proc = new AWCPdataProcessor();
+        AZFPdataProcessor proc = new AZFPdataProcessor();
 
         proc.run();
     }
@@ -110,7 +110,7 @@ public class AWCPdataProcessor
     SummaryStatistics[] rowSS = new SummaryStatistics[4];
     SummaryStatistics[] rowSSCM = new SummaryStatistics[4];
 
-    public void sample(Double[] svs, AWCPdataParser.FileType fileType)
+    public void sample(Double[] svs, AZFPdataParser.FileType fileType)
     {
         vPk = Double.MIN_VALUE;
         iPk = 0;
@@ -120,7 +120,7 @@ public class AWCPdataProcessor
             svv[i] = Math.pow(10, svs[i] / 10);
             d = i * zscale;
             //System.out.print(" ," + svs[i]);
-            if (fileType == AWCPdataParser.FileType.C_455) // 455 kHz
+            if (fileType == AZFPdataParser.FileType.C_455) // 455 kHz
             {
                 if ((i > 500) && (i < 2500))
                 {
@@ -224,11 +224,11 @@ public class AWCPdataProcessor
         }
         catch (SQLException ex)
         {
-            Logger.getLogger(AWCPdataProcessor.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(AZFPdataProcessor.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
 
-    public void sampleInit(Timestamp dataTimestamp, AWCPdataParser.FileType fileType)
+    public void sampleInit(Timestamp dataTimestamp, AZFPdataParser.FileType fileType)
     {
         this.fileType = fileType;
         index = indexType.get(fileType);

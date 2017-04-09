@@ -367,7 +367,7 @@ public class WaterTempCreationForm extends MemoryWindow implements DataProcessor
         String $HOME = System.getProperty("user.home");
 
         PropertyConfigurator.configure("log4j.properties");
-        Common.build($HOME + "/ABOS/ABOS.properties");
+        Common.build("ABOS.properties");
 
         WaterTempCreationForm form = new WaterTempCreationForm();
 

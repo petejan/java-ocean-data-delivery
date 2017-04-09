@@ -70,7 +70,7 @@ public class TriAXYSDataParser extends AbstractDataParser
     
     int header = 0;
     enum Type {NONE, SUMMARY, DIRSPEC, NONDIRSPEC, MEANDIR, RAW, WAVE, UNKNOWN};
-    boolean commit = false;
+    boolean commit = true;
     
     SimpleDateFormat sdf1 = new SimpleDateFormat("yyyy MMM dd HH:mm");
     SimpleDateFormat sdf2 = new SimpleDateFormat("yyyy-MM-dd HH:mm");
@@ -220,6 +220,8 @@ public class TriAXYSDataParser extends AbstractDataParser
                 raw.setParameterCode("SIGMA_THETA");
                 raw.setParameterValue(sigmaTheta);
                 ok = raw.insert();
+                
+                log.info("commit " + ok);
             }
             
         }
@@ -863,7 +865,7 @@ public class TriAXYSDataParser extends AbstractDataParser
         sdf1.setTimeZone(tz);
         sdf2.setTimeZone(tz);
      
-        commit = false;
+        commit = true;
 
         log.debug("Header " + header + " : " + headerLine);
         if (headerLine.startsWith("TRIAXYS BUOY DATA REPORT"))
@@ -1003,7 +1005,7 @@ public class TriAXYSDataParser extends AbstractDataParser
         
         p.parseData(dataLine);
         
-        if (commit)
+        //if (commit)
         {
             log.debug("Data Record " + ts);
             
@@ -1438,7 +1440,7 @@ public class TriAXYSDataParser extends AbstractDataParser
     {
         String $HOME = System.getProperty("user.home");
         PropertyConfigurator.configure("log4j.properties");
-        Common.build($HOME + "/ABOS/ABOS.properties");
+        Common.build("ABOS.properties");
         
         TriAXYSDataParser p = new TriAXYSDataParser(args[0]);
         

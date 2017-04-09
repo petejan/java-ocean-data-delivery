@@ -581,6 +581,8 @@ public class Instrument  implements Cloneable
         query.setConnection( Common.getConnection() );
         query.executeQuery( sql);
 
+        logger.trace("doSelect " + sql);
+        
         Vector dataSet = query.getData();
         if ( ! ( dataSet == null ) )
         {
@@ -682,6 +684,19 @@ public class Instrument  implements Cloneable
                         + " select distinct instrument_id from mooring_attached_instruments "
                         + " where mooring_id = "
                         + StringUtilities.quoteString(mooringID)
+                        + ")"
+                        + getDefaultSortOrder());
+    }
+    
+    public static ArrayList<Instrument> selectInstrumentsAttachedToMooringAtDepth(String mooringID, double depth)
+    {
+        return doSelect( selectSQL
+                        + " where instrument_id in "
+                        + "("
+                        + " select distinct instrument_id from mooring_attached_instruments "
+                        + " where mooring_id = "
+                        + StringUtilities.quoteString(mooringID)
+                        + " AND depth = " + depth
                         + ")"
                         + getDefaultSortOrder());
     }

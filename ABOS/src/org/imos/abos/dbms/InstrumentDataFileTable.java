@@ -70,7 +70,7 @@ public class InstrumentDataFileTable extends EditableBaseTable
         if(args.length == 0)
         {
             PropertyConfigurator.configure("log4j.properties");
-            Common.build($HOME + "/ABOS/ABOS.properties");
+            Common.build("ABOS.properties");
         }
 
         InstrumentDataFileTable table = new InstrumentDataFileTable();

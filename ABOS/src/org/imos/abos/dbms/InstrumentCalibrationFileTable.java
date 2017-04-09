@@ -70,7 +70,7 @@ public class InstrumentCalibrationFileTable extends EditableBaseTable
         if(args.length == 0)
         {
             PropertyConfigurator.configure("log4j.properties");
-            Common.build($HOME + "/ABOS/ABOS.properties");
+            Common.build("ABOS.properties");
         }
 
         InstrumentCalibrationFileTable table = new InstrumentCalibrationFileTable();

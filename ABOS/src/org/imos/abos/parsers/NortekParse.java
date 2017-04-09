@@ -7,10 +7,10 @@ import java.io.IOException;
 import java.nio.ByteOrder;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
+import java.nio.charset.StandardCharsets;
 import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
@@ -20,20 +20,20 @@ import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
 
 import ucar.nc2.Attribute;
-import ucar.nc2.Dimension;
 
 public class NortekParse
 {
     private static Logger log = Logger.getLogger(NortekParse.class);
 
     HashMap<Integer, String> packetName = new HashMap<Integer, String>();
-    SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
-
+    SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+    SimpleDateFormat sdfms = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
     
 	public NortekParse()
 	{
         TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
         sdf.setTimeZone(TimeZone.getDefault());
+        sdfms.setTimeZone(TimeZone.getDefault());
         
         packetName.put(0x00 ,"User Configuration");
         packetName.put(0x01 ,"Aquadopp Velocity Data");
@@ -49,8 +49,8 @@ public class NortekParse
         packetName.put(0x21 ,"Aquadopp Profiler Velocity Data");
         packetName.put(0x24 ,"Continental Data");
         packetName.put(0x2a ,"High Resolution Aquadopp Profiler Data");
-        packetName.put(0x30 ,"AWAC Wave Data");
-        packetName.put(0x31 ,"AWAC Wave Data Header");
+        packetName.put(0x30 ,"AWAC Wave Data/Aquadopp Profiler Wave Burst Data");
+        packetName.put(0x31 ,"AWAC Wave Data Header/Aquadopp Profiler Wave Burst Data Header");
         packetName.put(0x36 ,"AWAC Wave Data SUV");
         packetName.put(0x42 ,"AWAC Stage Data");
         packetName.put(0x50 ,"Vectrino velocity data header");
@@ -61,7 +61,7 @@ public class NortekParse
         packetName.put(0x63 ,"Wave Fourier coefficient spectrum");
         packetName.put(0x65 ,"Cleaned up AST time series");
         packetName.put(0x6a ,"Awac Processed Velocity Profile Data");
-        packetName.put(0x71 ,"vector with IMU");
+        packetName.put(0x71 ,"Vector with IMU");
         packetName.put(0x80 ,"Aquadopp Diagnostics Data");                       
 	}
 
@@ -86,7 +86,14 @@ public class NortekParse
 
         return records;
     }
-    
+
+    public void close() throws IOException
+    {
+        buffer.clear();
+        in.close();
+        fileInputStream.close();
+    }
+        
     int structStart = -1;
     int dataStart = -1;
     int structEnd = -1;
@@ -95,17 +102,19 @@ public class NortekParse
     
     public ArrayList<Attribute> attributes = new ArrayList<Attribute>();
     
-    public int read() throws IOException
+    public Object read() throws IOException
     {
     	structStart = buffer.position();
     	
     	if (buffer.remaining() < 1)
-    		return -1;
+    		return null;
         
         int sync = buffer.get() & 0xff;
         if (sync != 0xa5)
         {
-            return -1;
+			//log.warn("bad sync " + sync + " " + new String(Character.toChars(sync)));
+			
+			return 0;
         }
 
         id = buffer.get() & 0xff;
@@ -115,7 +124,7 @@ public class NortekParse
         else
         	size = buffer.getShort() & 0xffff;
     	
-        log.debug("sync " + sync + " id " + id + " size " + size + " : " + packetName.get(id));
+        //log.debug("sync " + sync + " id " + id + " size " + size + " : " + packetName.get(id));
 
     	dataStart = buffer.position();
     	structEnd = structStart + 2 * size;
@@ -123,13 +132,20 @@ public class NortekParse
     	log.trace("Size Words " + size);
         		
 		if (readCheckSum() < 0)
-			return -1;
+		{
+			log.warn("Check sum error");
+			
+			// TODO: Move back to start of packet incase the packet size is bad ?
+			
+			return 0;
+		}
 
 		buffer.position(dataStart);
+		Object readObject = 0;
     	switch (id)
     	{
     		case 0:
-    	    	readUserConfig();
+    	    	readObject = readUserConfig();
     	    	break;
     		case 4:
     	    	readHeadConfig();
@@ -141,24 +157,38 @@ public class NortekParse
     	    	readProbeCheck();
     	    	break;
     		case 18:
-    			readVectorVelocityHeader();
+    			readObject = readVectorVelocityHeader();
     			break;
     		case 17:
-    			readVectorSystemData();
+    			readObject = readVectorSystemData();
     			break;
     		case 16:
-    			readVectorVelocityData();
+    			readObject = readVectorVelocityData();
+    			break;
+    		case 33:
+    			readObject = readAquadoppProfileVelocityData();
+    			break;
+    		case 42:
+    			readObject = readHRAquadoppProfileVelocityData();
+    			break;
+    		case 48:
+    			readObject = readAwacWaveData();
+    			break;
+    		case 49:
+    			readObject = readAwacWaveDataHeader();
     			break;
     		case 113:
-    			readVectorIMUData();
+    			readObject = readVectorIMUData();
     			break;
     		default:
     			log.error("Unknown packet " + id);
     	}
     	
     	buffer.position(structEnd);
+    	
+    	//log.debug("read size " + in.size() + " position " + buffer.position());
         
-        return (int)(in.size() - buffer.position());
+        return readObject;
     }
 
     public int readCheckSum()
@@ -207,118 +237,279 @@ public class NortekParse
     	c.set(GregorianCalendar.MILLISECOND, 0);
     	Timestamp ts = new Timestamp(c.getTime().getTime());
     	
-    	log.trace(sdf.format(ts));    
+    	//log.debug("TS  " + year + " " + sdf.format(ts));    
     	
     	return ts;
     }
 
+    // data blocks
+    
     int dataPoint = 0;
-    float vel[][];
-    int amp[][];
-    int cor[][];
-    float ana1[];
-    float ana2[];
-    public float pressure[];
     
-    public ArrayList velData = new ArrayList();
-    public ArrayList ampData = new ArrayList();
-    public ArrayList corData = new ArrayList();
+    public class VectorVelocityData
+    {
+    	public int count;
+
+    	int anaIn2LSB;
+    	int pressureMSB;
+    	int anaIn2MSB;
+    	int pressureLSW;
+    	
+    	public int anaIn1;
+    	public float pressure;
+    	public int anaIn2;    	
+    	    	
+    	public int velB1;
+    	public int velB2;
+    	public int velB3;
+
+    	public int ampB1;
+    	public int ampB2;
+    	public int ampB3;
+
+    	public int corB1;
+    	public int corB2;
+    	public int corB3;
+    	
+    	public String toString()
+    	{
+        	return ("VectorVelocityData: " + dataPoint + " data " + count + " P " + pressure + " ana " + anaIn1);
+    	}
+    }
+
+    ArrayList<VectorVelocityData> velocityData = new ArrayList<VectorVelocityData>();
     
-    public ArrayList pressureData = new ArrayList();
-    public ArrayList ana1Data = new ArrayList();
-    public ArrayList ana2Data = new ArrayList();
-    
-    private void readVectorVelocityData()
+    private Object readVectorVelocityData()
 	{
+    	VectorVelocityData vvd = new VectorVelocityData();
+    	
     	dataPoint++;
 
-    	int anaIn2LSB = buffer.get() & 0xff;
-    	int count = buffer.get() & 0xff;
-    	int pressureMSB = buffer.get() & 0xff;
-    	int anaIn2MSB = buffer.get();
-    	int pressureLSW = buffer.getShort() & 0xffff;
-    	int anaIn1 = buffer.getShort();
+    	vvd.anaIn2LSB = buffer.get() & 0xff;
+    	vvd.count = buffer.get() & 0xff;
+    	vvd.pressureMSB = buffer.get() & 0xff;
+    	vvd.anaIn2MSB = buffer.get();
+    	vvd.pressureLSW = buffer.getShort() & 0xffff;
+    	vvd.anaIn1 = buffer.getShort();
     	
-    	int velB1 = buffer.getShort();
-    	int velB2 = buffer.getShort();
-    	int velB3 = buffer.getShort();
-    	vel[dataPoint][0] = velB1;
-    	vel[dataPoint][1] = velB2;
-    	vel[dataPoint][2] = velB3;
+    	vvd.velB1 = buffer.getShort();
+    	vvd.velB2 = buffer.getShort();
+    	vvd.velB3 = buffer.getShort();
 
-    	int ampB1 = buffer.get() & 0xff;
-    	int ampB2 = buffer.get() & 0xff;
-    	int ampB3 = buffer.get() & 0xff;
-    	amp[dataPoint][0] = ampB1;
-    	amp[dataPoint][1] = ampB2;
-    	amp[dataPoint][2] = ampB3;
+    	vvd.ampB1 = buffer.get() & 0xff;
+    	vvd.ampB2 = buffer.get() & 0xff;
+    	vvd.ampB3 = buffer.get() & 0xff;
 
-    	int corB1 = buffer.get() & 0xff;
-    	int corB2 = buffer.get() & 0xff;
-    	int corB3 = buffer.get() & 0xff;
-    	cor[dataPoint][0] = corB1;
-    	cor[dataPoint][1] = corB2;
-    	cor[dataPoint][2] = corB3;
+    	vvd.corB1 = buffer.get() & 0xff;
+    	vvd.corB2 = buffer.get() & 0xff;
+    	vvd.corB3 = buffer.get() & 0xff;
     	
-    	float pressure = (pressureLSW + pressureMSB * 65536) * 0.001f;
-    	int anaIn2 = anaIn2LSB | (anaIn2MSB * 256);
+    	vvd.pressure = (vvd.pressureLSW + vvd.pressureMSB * 65536) * 0.001f;
+    	vvd.anaIn2 = vvd.anaIn2LSB | (vvd.anaIn2MSB * 256);
     	
-    	this.ana1[dataPoint] = anaIn1;
-    	this.ana2[dataPoint] = anaIn2;
-    	this.pressure[dataPoint] = pressure;
-
-    	log.debug("Vel " + dataPoint + " data " + count + " P " + pressure);
-	}
-
-    float stabAccel[][];
-    float angRate[][];
-    float stabMag[][];
-    
-    public ArrayList stabAccelData = new ArrayList();
-    public ArrayList angRateData = new ArrayList();
-    public ArrayList stabMagData = new ArrayList();
-    
-    private void readVectorIMUData()
-    {
-    	int ensCnt = buffer.get() & 0xff;
-    	int AHRSId = buffer.get() & 0xff;
+    	velocityData.add(vvd);
     	
-    	if (AHRSId == 0xD2)
+    	if (velocityData.size() == NRecords)
     	{
-    		float stabX = buffer.getFloat();
-    		float stabY = buffer.getFloat();
-    		float stabZ = buffer.getFloat();
-    		float AngRateX = buffer.getFloat();
-    		float AngRateY = buffer.getFloat();
-    		float AngRateZ = buffer.getFloat();
-    		float StabMagX = buffer.getFloat();
-    		float StabMagY = buffer.getFloat();
-    		float StabMagZ = buffer.getFloat();
-    		double timer = (buffer.getInt() & 0xffffffff)/62.5;
+    		log.info("velocityData records " + velocityData.size());
     		
-        	stabAccel[dataPoint][0] = stabX;
-        	stabAccel[dataPoint][1] = stabY;
-        	stabAccel[dataPoint][2] = stabZ;
-        	angRate[dataPoint][0] = AngRateX;
-        	angRate[dataPoint][1] = AngRateY;
-        	angRate[dataPoint][2] = AngRateZ;
-        	stabMag[dataPoint][0] = StabMagX;
-        	stabMag[dataPoint][1] = StabMagY;
-        	stabMag[dataPoint][2] = StabMagZ;
-        	
-    		log.debug("IMU gryo stab accel, ang rate, mag " + StabMagX + " timer " + timer);
+    		return velocityData;
     	}
     	
-    	log.debug("IMU DataPoint " + dataPoint + " cnt " + ensCnt + " IMU ID " + AHRSId);
-    }
-    private void readProbeCheck()
+    	return vvd;
+	}
+    
+    public class AwacWaveData
     {
-    	int samples = buffer.getShort() & 0xffff;
+    	public float pressure;
+    	public float dist1;
+    	int anaIn;
     	
-    	log.debug("Probe Check " + samples );
+    	public float vel1;
+    	public float vel2;
+    	public float vel3;
+    	public float vel4;
+
+    	public int amp1;
+    	public int amp2;
+    	public int amp3;
+    	public int amp4;    	
+
+    	public String toString()
+    	{
+        	return (String.format("WAVE data point %d dist %f press %f vel %f %f %f amp %d %d %d", dataPoint, dist1, pressure, vel1, vel2, vel2, amp1, amp2, amp3));
+    	}
     }
-    private void readUserConfig()
+    
+    ArrayList<AwacWaveData> waveData = new ArrayList<AwacWaveData>();
+    
+    private Object readAwacWaveData()
+	{
+    	AwacWaveData awd = new AwacWaveData();
+    	
+    	dataPoint++;
+
+    	awd.pressure = (buffer.getShort() & 0xffff) * 0.001f;
+    	awd.dist1 = buffer.getShort() & 0xffff;
+    	awd.anaIn = buffer.getShort() & 0xffff;
+    	
+    	awd.vel1 = buffer.getShort();
+    	awd.vel2 = buffer.getShort();
+    	awd.vel3 = buffer.getShort();
+    	awd.vel4 = buffer.getShort();
+
+    	awd.amp1 = buffer.get() & 0xff;
+    	awd.amp2 = buffer.get() & 0xff;
+    	awd.amp3 = buffer.get() & 0xff;
+    	awd.amp4 = buffer.get() & 0xff;
+    	
+    	waveData.add(awd);
+    	
+    	log.debug(awd);
+    	
+    	if (waveData.size() == NRecords)
+    	{
+    		log.info("waveData records " + waveData.size());
+    		
+    		return waveData;
+    	}
+    	return awd;
+	}       
+    
+    ArrayList<IMU> imuData = new ArrayList<IMU>();
+    
+    public class IMU
     {
+    	int ensCnt;
+    	int AHRSId;
+    	
+		public float stabX;
+		public float stabY;
+		public float stabZ;
+		public float AngRateX;
+		public float AngRateY;
+		public float AngRateZ;
+		public float StabMagX;
+		public float StabMagY;
+		public float StabMagZ;
+
+		public float DeltaAngX;
+		public float DeltaAngY;
+		public float DeltaAngZ;
+		public float DeltaVelX;
+		public float DeltaVelY;
+		public float DeltaVelZ;
+		
+		public float accelX;
+		public float accelY;
+		public float accelZ;
+		public float M11;
+		public float M12;
+		public float M13;
+		public float M21;
+		public float M22;
+		public float M23;
+		public float M31;
+		public float M32;
+		public float M33;
+		
+		double timer;  
+		
+		public String toString()
+		{
+			return ("IMU: " + dataPoint + " cnt " + ensCnt + " IMU ID " + AHRSId);
+		}
+    }
+    
+    private Object readVectorIMUData()
+    {
+    	IMU imu = new IMU();
+    	
+    	imu.ensCnt = buffer.get() & 0xff;
+    	imu.AHRSId = buffer.get() & 0xff;
+    	
+    	if (imu.AHRSId == 0xD2)
+    	{
+    		imu.stabX = buffer.getFloat();
+    		imu.stabY = buffer.getFloat();
+    		imu.stabZ = buffer.getFloat();
+    		imu.AngRateX = buffer.getFloat();
+    		imu.AngRateY = buffer.getFloat();
+    		imu.AngRateZ = buffer.getFloat();
+    		imu.StabMagX = buffer.getFloat();
+    		imu.StabMagY = buffer.getFloat();
+    		imu.StabMagZ = buffer.getFloat();
+    		imu.timer = (buffer.getInt() & 0xffffffff)/62.5;
+    		
+    		log.trace("IMU gryo stab accel, ang rate, mag " + imu.stabZ + " timer " + imu.timer);
+    	}
+    	else if (imu.AHRSId == 0xc3)
+    	{
+    		imu.DeltaAngX = buffer.getFloat();
+    		imu.DeltaAngY = buffer.getFloat();
+    		imu.DeltaAngZ = buffer.getFloat();
+    		imu.DeltaVelX = buffer.getFloat();
+    		imu.DeltaVelY = buffer.getFloat();
+    		imu.DeltaVelZ = buffer.getFloat();    		
+
+    		imu.timer = (buffer.getInt() & 0xffffffff)/62.5;
+
+    		log.trace("IMU deltaAng,deltaVel timer " + imu.timer);
+    	}
+    	else if (imu.AHRSId == 0xcc)
+    	{
+    		imu.accelX = buffer.getFloat();
+    		imu.accelY = buffer.getFloat();
+    		imu.accelZ = buffer.getFloat();
+    		imu.AngRateX = buffer.getFloat();
+    		imu.AngRateY = buffer.getFloat();
+    		imu.AngRateZ = buffer.getFloat();
+    		imu.StabMagX = buffer.getFloat();
+    		imu.StabMagY = buffer.getFloat();
+    		imu.StabMagZ = buffer.getFloat();
+    		imu.M11 = buffer.getFloat();
+    		imu.M12 = buffer.getFloat();
+    		imu.M13 = buffer.getFloat();
+    		imu.M21 = buffer.getFloat();
+    		imu.M22 = buffer.getFloat();
+    		imu.M23 = buffer.getFloat();
+    		imu.M31 = buffer.getFloat();
+    		imu.M32 = buffer.getFloat();
+    		imu.M33 = buffer.getFloat();
+
+    		imu.timer = (buffer.getInt() & 0xffffffff)/62.5;
+
+    		log.trace("IMU accel, ang rate, mag, MAT " + imu.accelX + " " + imu.accelY + " " + imu.accelZ + " timer " + imu.timer);
+    	
+    	}
+    	else
+    	{
+    		log.warn("Unknown IMU message " + imu.AHRSId);
+    	}
+    	
+    	imuData.add(imu);
+    	
+    	if (imuData.size() == NRecords)
+    	{
+    		log.info("IMU data Records " + imuData.size());
+    		
+    		return imuData;
+    	}
+    	
+    	return imu;
+    }
+    
+    // config packets
+    public Date clockDeploy = null;
+    public int NBins = -1;
+    public int Mode = 0;
+    public int wMode = 0;
+    public int NSamp = 0;
+    
+    private ArrayList<Attribute> readUserConfig()
+    {
+    	// This is the last config packet at the start of the datafile
+    	
         SimpleDateFormat netcdfDate = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
 
     	int T1 = buffer.getShort() & 0xffff; // transmit pulse length (counts)
@@ -352,7 +543,7 @@ public class NortekParse
     		case 2:
     			attributes.add(new Attribute("nortek_userconfig_coordsystem", "BEAM"));    		    	
     	}
-    	int NBins = buffer.getShort() & 0xffff;
+    	NBins = buffer.getShort() & 0xffff;
     	int BinLength = buffer.getShort() & 0xffff;
 		attributes.add(new Attribute("nortek_userconfig_binlength", BinLength));
 		
@@ -362,11 +553,16 @@ public class NortekParse
 		byte[] DeployName = new byte[6];
         buffer.get(DeployName);
     	int WrapMode = buffer.getShort() & 0xffff;
-    	Date clockDeploy = readTimestamp();
-    	attributes.add(new Attribute("nortek_userconfig_clock_deploy", sdf.format(clockDeploy)));
+    	clockDeploy = readTimestamp();
+    	attributes.add(new Attribute("nortek_userconfig_clock_deploy", netcdfDate.format(clockDeploy)));
     	
     	int DiagInterval = buffer.getInt() & 0xffffffff;
-    	int Mode = buffer.getShort() & 0xffff;
+    	Mode = buffer.getShort() & 0xffff;
+    	int AdjSoundSpeed = buffer.getShort() & 0xffff;
+    	int NSampDiag = buffer.getShort() & 0xffff;
+    	int NBeamsCellDiag = buffer.getShort() & 0xffff;
+    	int NPingsDiag = buffer.getShort() & 0xffff;
+    	    	
     	int ModeTest = buffer.getShort() & 0xffff;
     	int AnaInAddr = buffer.getShort() & 0xffff;
     	int SWVersion = buffer.getShort() & 0xffff;
@@ -377,12 +573,14 @@ public class NortekParse
         buffer.get(VelAdjTable);
         byte[] Comments = new byte[180];
         buffer.get(Comments);
-    	int wMode = buffer.getShort() & 0xffff;
+        log.debug("User Comment " + cleanString(Comments));
+    	wMode = buffer.getShort() & 0xffff;
+    	
     	int DynPercPos = buffer.getShort() & 0xffff;
     	int wT1 = buffer.getShort() & 0xffff;
     	int wT2 = buffer.getShort() & 0xffff;
     	int wT3 = buffer.getShort() & 0xffff;
-    	int NSamp = buffer.getShort() & 0xffff;
+    	NSamp = buffer.getShort() & 0xffff;
     	int wA1 = buffer.getShort() & 0xffff;
     	int wB0 = buffer.getShort() & 0xffff;
     	int wB1 = buffer.getShort() & 0xffff; // samples / burst for ArrayList
@@ -396,7 +594,16 @@ public class NortekParse
         byte[] QualConst = new byte[16];
         buffer.get(QualConst);
         
+    	log.debug(String.format("Mode 0x%02x WAVE Mode 0x%02x DiagInt %d NSampDiag %d NSampWave %d",  Mode, wMode, DiagInterval, NSampDiag, NSamp));
+    	
         log.info("User NBins " + NBins + " NPings " + NPings + " time deploy "  + clockDeploy);
+        
+        for(Attribute a : attributes)
+        {
+        	log.info("Attribute : " + a.toString());
+        }
+        
+        return attributes;
     }
     
     private void readHeadConfig()
@@ -406,6 +613,8 @@ public class NortekParse
         int Type = buffer.getShort() & 0xffff;
         byte[] SerialNo = new byte[12];
         buffer.get(SerialNo);
+        String sn = cleanString(SerialNo);
+        
         byte[] System = new byte[176];
         buffer.get(System);
         byte[] Spare = new byte[22];
@@ -440,90 +649,32 @@ public class NortekParse
     	attributes.add(new Attribute("nortek_headconfig_config", ConfigS));
     	attributes.add(new Attribute("nortek_headconfig_frequency", Frequency));
     	attributes.add(new Attribute("nortek_headconfig_beams", NBeams));
-    	attributes.add(new Attribute("nortek_headconfig_serialno", new String(SerialNo)));
+    	attributes.add(new Attribute("nortek_headconfig_serialno", sn));
     	attributes.add(new Attribute("nortek_headconfig_type", Type));
 
-        log.info("Head Beams " + NBeams + " freq " + Frequency + " kHz" + " serial no. " + new String(SerialNo));
+        log.info("Head Beams " + NBeams + " freq " + Frequency + " kHz" + " serial no. " + sn);
     }
     
-    
-    public ArrayList<Timestamp> ts = new ArrayList<Timestamp>();
-    public int NRecords = -1;
-    
-    private void readVectorVelocityHeader()
-	{
-    	Timestamp ts = readTimestamp();
-    
-    	this.ts.add(ts);
-    	
-    	saveData();
-
-    	dataPoint = -1;
-    	
-    	NRecords = buffer.getShort() & 0xffff;
-
-    	vel = new float[NRecords][3];
-    	amp = new int[NRecords][3];
-    	cor = new int[NRecords][3];
-    	ana1 = new float[NRecords];
-    	ana2 = new float[NRecords];
-    	pressure = new float[NRecords];
-
-    	stabAccel = new float[NRecords][3];
-    	angRate = new float[NRecords][3];
-    	stabMag = new float[NRecords][3];
-
-    	log.debug(sdf.format(ts) + " NRecords " + NRecords);
-	}
-    
-    public ArrayList<Timestamp> sdTS = new ArrayList<Timestamp>();
-    public ArrayList sdBattery = new ArrayList();
-    public ArrayList sdTemp = new ArrayList();
-    public ArrayList sdHead = new ArrayList();
-    public ArrayList sdPitch = new ArrayList();
-    public ArrayList sdRoll = new ArrayList();
-    
-    private void readVectorSystemData()
-	{
-    	Timestamp ts = readTimestamp();
-    	sdTS.add(ts);
-    	
-    	float battery = (buffer.getShort() & 0xffff) * 0.1f;
-    	sdBattery.add(battery);
-    	
-    	float soundSpeed = (buffer.getShort() & 0xffff) * 0.1f;
-    	float heading = (buffer.getShort() & 0xffff) * 0.1f;
-    	float pitch = (buffer.getShort() & 0xffff) * 0.1f;
-    	float roll = (buffer.getShort() & 0xffff) * 0.1f;
-    	float temp = (buffer.getShort() & 0xffff) * 0.01f;
-    	
-    	sdTemp.add(temp);
-    	sdHead.add(heading);
-    	sdPitch.add(pitch);
-    	sdRoll.add(roll);
-    	
-    	int error = buffer.get() & 0xff;
-    	int status = buffer.get() & 0xff;
-    	float anaIn = (buffer.getShort() & 0xffff) * 0.01f;
-    	
-    	log.debug(sdf.format(ts) + " battery " + battery + " temperature " + temp);
-	}
-
     public String serialNo;
+    
+    public String cleanString(byte[] ba)
+    {
+    	for(int i=0;i<ba.length;i++)
+    	{
+    		if (!Character.isLetterOrDigit(ba[i]) && ba[i] != '.')
+    		{
+    			ba[i] = ' ';
+    		}
+    	}
+    	
+    	return new String(ba, StandardCharsets.UTF_8).trim();
+    }
+    
 	public void readHWconfig()
     {    
     	byte[] SerialNo = new byte[14];
     	buffer.get(SerialNo);
-    	int trim = 14;
-    	for (int i=0;i<14;i++)
-    	{
-    		if (SerialNo[i] < 0)
-    			trim = i;
-    		
-    		log.trace(i + " " + SerialNo[i]);
-    	}
-    	
-    	serialNo = new String(SerialNo).substring(0, trim);
+    	serialNo = cleanString(SerialNo);
     	
     	int Config = buffer.getShort() & 0xffff;
     	int Frequency = buffer.getShort() & 0xffff;
@@ -535,42 +686,334 @@ public class NortekParse
     	attributes.add(new Attribute("nortek_hwconfig_recsize", RecSize));
     	attributes.add(new Attribute("nortek_hwconfig_serialno", serialNo));
     	
-    	log.info("HW Serial Number '" + serialNo + "'");
+    	log.info(String.format("HW Config 0x%02x Serial Number '%s' ", Config, serialNo));
     }
     
-	protected void saveData()
-	{
-    	if (dataPoint > 0)
-    	{
-    		velData.add(vel);
-    		ampData.add(amp);
-    		corData.add(cor);
-    		
-    		pressureData.add(this.pressure);
-    		ana1Data.add(this.ana1);
-    		ana2Data.add(this.ana2);
-    		
-        	stabAccelData.add(stabAccel);
-        	angRateData.add(angRate);
-        	stabMagData.add(stabMag);
-
-        	log.debug("Vel " + dataPoint + " P " + pressure[0] + " " + pressureData.size() + " ts " + this.ts.size());
-    	}
-		
-	}
-    public void close() throws IOException
+    // self contained data
+    
+    private void readProbeCheck()
     {
-    	saveData();
+    	int samples = buffer.getShort() & 0xffff;
     	
-        buffer.clear();
-        in.close();
-        fileInputStream.close();
+    	log.debug("Probe Check samples " + samples );
+    }   
+    
+    public class VelocityDataHeader
+    {
+    	public Timestamp ts;
+    	
+    	public String toString()
+    	{
+    		return ("VelocityDataHeader: " + sdf.format(ts) + " NRecords " + NRecords);
+    	}
     }
     
+    private VelocityDataHeader readVectorVelocityHeader()
+	{
+    	VelocityDataHeader vdh = new VelocityDataHeader();
+    	
+    	vdh.ts = readTimestamp();
+    
+    	dataPoint = 0;
+    	imuData.clear();
+    	velocityData.clear();
+    	
+    	NRecords = buffer.getShort() & 0xffff;
+
+    	return vdh;
+	}
+
+	public int NRecords;
+
+	public class WaveDataHeader
+    {
+    	public Timestamp ts;
+    	public float blanking;
+    	public float battery;
+    	public float soundSpeed;
+    	public float head;
+    	public float pitch;
+    	public float roll;
+    	public float minPres;
+    	public float maxPres;
+    	public float temp;
+    	public float cellSize;
+    	
+    	public int noise1;
+    	public int noise2;
+    	public int noise3;
+    	public int noise4;
+
+    	public int procMagn1;
+    	public int procMagn2;
+    	public int procMagn3;
+    	public int procMagn4;
+
+    	public String toString()
+    	{
+    		return ("WaveDataHeader: " + sdf.format(ts) + " NRecords " + NRecords + " Blanking " + blanking);
+    	}
+    }
+    
+    private WaveDataHeader readAwacWaveDataHeader()
+	{
+    	WaveDataHeader wdh = new WaveDataHeader();
+    	
+    	wdh.ts = readTimestamp();
+    
+    	dataPoint = 0;
+    	
+    	waveData.clear();
+    	
+    	NRecords = buffer.getShort() & 0xffff;
+    	wdh.blanking = (buffer.getShort() & 0xffff) * 0.1f;
+    	wdh.battery = (buffer.getShort() & 0xffff) * 0.1f;
+    	wdh.soundSpeed = (buffer.getShort() & 0xffff) * 0.1f;
+    	wdh.head = (buffer.getShort()) * 0.1f;
+    	wdh.pitch = (buffer.getShort()) * 0.1f;
+    	wdh.roll = (buffer.getShort()) * 0.1f;
+    	wdh.minPres = (buffer.getShort() & 0xffff) * 0.001f;
+    	wdh.maxPres = (buffer.getShort() & 0xffff) * 0.001f;
+    	wdh.temp = (buffer.getShort()) * 0.01f;
+    	wdh.cellSize = (buffer.getShort() & 0xffff);
+
+    	wdh.noise1 = (buffer.get() & 0xff);
+    	wdh.noise2 = (buffer.get() & 0xff);
+    	wdh.noise3 = (buffer.get() & 0xff);
+    	wdh.noise4 = (buffer.get() & 0xff);
+    	
+    	wdh.procMagn1 = (buffer.getShort() & 0xffff);
+    	wdh.procMagn2 = (buffer.getShort() & 0xffff);
+    	wdh.procMagn3 = (buffer.getShort() & 0xffff);
+    	wdh.procMagn4 = (buffer.getShort() & 0xffff);
+
+    	log.debug(wdh);
+
+    	return wdh;
+	}
+        
+    public class ProfileVelocityData
+    {
+    	public Timestamp ts;
+    	public float battery;
+    	float soundSpeed;
+    	public float anaIn1;
+    	public float anaIn2;
+    	public float heading;
+    	public float pitch;
+    	public float roll;
+    	public float temp;
+    	int error;
+    	int status;
+    	public float anaIn;
+    	public int pressureMSB;
+    	public int pressureLSW;
+    	public float pressure;
+    	public float velocityA[];
+    	public float velocityB[];
+    	public float velocityC[];
+    	byte ampA[];
+    	byte ampB[];
+    	byte ampC[];
+    }
+    
+    private ProfileVelocityData readAquadoppProfileVelocityData()
+	{
+    	ProfileVelocityData vd = new ProfileVelocityData();
+    	
+    	vd.ts = readTimestamp();
+    	vd.error = buffer.getShort() & 0xffff;
+    	vd.anaIn1 = (buffer.getShort() & 0xffff);
+    	vd.battery = (buffer.getShort() & 0xffff) * 0.1f;
+    	
+    	vd.anaIn2 = (buffer.getShort() & 0xffff);
+    	vd.soundSpeed =  vd.anaIn2 * 0.1f;
+
+    	vd.heading = (buffer.getShort() & 0xffff) * 0.1f;
+    	vd.pitch = (buffer.getShort() & 0xffff) * 0.1f;
+    	vd.roll = (buffer.getShort() & 0xffff) * 0.1f;
+    	
+    	vd.pressureMSB = buffer.get() & 0xff;
+    	vd.status = buffer.get() & 0xff;
+    	vd.pressureLSW = buffer.getShort() & 0xffff;
+    	
+    	vd.pressure = (vd.pressureMSB * 65536 + vd.pressureLSW) * 0.001f;
+
+    	vd.temp = (buffer.getShort() & 0xffff) * 0.01f;
+    	
+    	// creating these will have to be GC'ed later, is there a better way?
+    	vd.velocityA = new float[NBins]; 
+    	vd.velocityB = new float[NBins]; 
+    	vd.velocityC = new float[NBins]; 
+    	vd.ampA = new byte[NBins]; 
+    	vd.ampB = new byte[NBins]; 
+    	vd.ampC = new byte[NBins]; 
+    
+    	for (int i=0;i<NBins;i++)
+    	{
+    		vd.velocityA[i] = buffer.getShort();
+    	}
+    	for (int i=0;i<NBins;i++)
+    	{
+    		vd.velocityB[i] = buffer.getShort();
+    	}
+    	for (int i=0;i<NBins;i++)
+    	{
+    		vd.velocityC[i] = buffer.getShort();
+    	}
+    	for (int i=0;i<NBins;i++)
+    	{
+    		vd.ampA[i] = buffer.get();
+    	}
+    	for (int i=0;i<NBins;i++)
+    	{
+    		vd.ampB[i] = buffer.get();
+    	}
+    	for (int i=0;i<NBins;i++)
+    	{
+    		vd.ampC[i] = buffer.get();
+    	}
+
+    	log.debug("ProfileVelocityData:" + sdf.format(vd.ts) + " pressure " + vd.pressure + " temp " + vd.temp + " head " + vd.heading);
+    	
+    	return vd;
+	}
+    public class HRProfileVelocityData
+    {
+    	public Timestamp ts;
+    	public int millisec;
+    	public float battery;
+    	float soundSpeed;
+    	public float anaIn1;
+    	public float anaIn2;
+    	public float heading;
+    	public float pitch;
+    	public float roll;
+    	public float temp;
+    	int error;
+    	int status;
+    	public float anaIn;
+    	public int pressureMSB;
+    	public int pressureLSW;
+    	public float pressure;
+    	public int beams;
+    	public int cells;
+    	public int vlag2[] = new int[3];
+    	public int alag[] = new int[3];;
+    	public int clag[] = new int[3];;
+    	public float velocity[][];
+    	byte amp[][];
+    	byte cor[][];
+    	
+    	public String toString()
+    	{
+        	return ("HRProfileVelocityData:" + sdfms.format(ts) + " ms " + millisec + " pressure " + pressure + " temp " + temp + " beams " + beams + " cells " + cells + " pitch " + pitch + " roll " + roll);
+    	}
+    }
+
+    private HRProfileVelocityData readHRAquadoppProfileVelocityData()
+	{
+    	HRProfileVelocityData vd = new HRProfileVelocityData();
+    	
+    	vd.ts = readTimestamp();
+    	vd.millisec = buffer.getShort() & 0xffff;
+    	vd.error = buffer.getShort() & 0xffff;
+    	vd.battery = (buffer.getShort() & 0xffff) * 0.1f;
+    	
+    	vd.ts.setTime(vd.ts.getTime() + vd.millisec);
+    	
+    	vd.soundSpeed =  (buffer.getShort() & 0xffff) * 0.1f;
+
+    	vd.heading = (buffer.getShort()) * 0.1f;
+    	vd.pitch = (buffer.getShort()) * 0.1f;
+    	vd.roll = (buffer.getShort()) * 0.1f;
+    	
+    	vd.pressureMSB = buffer.get() & 0xff;
+    	vd.status = buffer.get() & 0xff;
+    	vd.pressureLSW = buffer.getShort() & 0xffff;
+    	
+    	vd.pressure = (vd.pressureMSB * 65536 + vd.pressureLSW) * 0.001f;
+
+    	vd.temp = (buffer.getShort() & 0xffff) * 0.01f;
+    	vd.anaIn1 = (buffer.getShort() & 0xffff) * 0.01f;
+    	vd.anaIn2 = (buffer.getShort() & 0xffff) * 0.01f;
+    	vd.beams = buffer.get() & 0xff;
+    	vd.cells = buffer.get() & 0xff;
+    	
+    	// creating these will have to be GC'ed later, is there a better way?
+    	vd.velocity = new float[vd.beams][vd.cells]; 
+    	vd.amp = new byte[vd.beams][vd.cells]; 
+    	vd.cor = new byte[vd.beams][vd.cells]; 
+    
+    	for (int beam=0;beam<vd.beams;beam++)
+    	{
+	    	for (int cell=0;cell<vd.cells;cell++)
+	    	{
+	    		vd.velocity[beam][cell] = buffer.getShort();
+	    	}
+    	}
+    	for (int beam=0;beam<vd.beams;beam++)
+    	{
+	    	for (int cell=0;cell<vd.cells;cell++)
+	    	{
+	    		vd.amp[beam][cell] = buffer.get();
+	    	}
+    	}
+    	for (int beam=0;beam<vd.beams;beam++)
+    	{
+	    	for (int cell=0;cell<vd.cells;cell++)
+	    	{
+	    		vd.cor[beam][cell] = buffer.get();
+	    	}
+    	}
+
+    	return vd;
+	}
+    
+    public class VectorSystemData
+    {
+    	public Timestamp ts;
+    	public float battery;
+    	float soundSpeed;
+    	public float heading;
+    	public float pitch;
+    	public float roll;
+    	public float temp;
+    	int error;
+    	int status;
+    	public float anaIn;
+    	
+    	public String toString()
+    	{
+    		return sdf.format(ts) + " battery " + battery + " temperature " + temp;
+    	}
+    }
+    	    
+    private VectorSystemData readVectorSystemData()
+	{
+    	VectorSystemData sd = new VectorSystemData();
+    			
+    	sd.ts = readTimestamp();
+    	
+    	sd.battery = (buffer.getShort() & 0xffff) * 0.1f;
+    	
+    	sd.soundSpeed = (buffer.getShort() & 0xffff) * 0.1f;
+    	sd.heading = (buffer.getShort() & 0xffff) * 0.1f;
+    	sd.pitch = (buffer.getShort() & 0xffff) * 0.1f;
+    	sd.roll = (buffer.getShort() & 0xffff) * 0.1f;
+    	sd.temp = (buffer.getShort() & 0xffff) * 0.01f;
+    	
+    	sd.error = buffer.get() & 0xff;
+    	sd.status = buffer.get() & 0xff;
+    	sd.anaIn = (buffer.getShort() & 0xffff) * 0.01f;
+    	
+    	return sd;
+	}
+
     public static void main(String args[])
     {
     	String home = System.getProperty("user.home");
-        PropertyConfigurator.configure(home + "/ABOS/log4j.properties");
+        PropertyConfigurator.configure("log4j.properties");
 
     	NortekParse np = new NortekParse();
     	
@@ -578,17 +1021,11 @@ public class NortekParse
 		{
 			np.open(new File(args[0]));
 			
-			while(np.read() != -1)
+			Object o;
+			while((o = np.read()) != null)
 			{
-				
+				NortekParse.log.trace("Read Object : " + o);
 			}
-			
-			int sdSize = np.sdTS.size();
-			int tsSize = np.ts.size();
-			
-			np.log.info("N system data " + sdSize + " N vel " + tsSize);
-			np.log.info("Data Start " + np.sdf.format(np.ts.get(0)) + " to " + np.sdf.format(np.ts.get(tsSize-1)));
-			np.log.info("System data Start " + np.sdf.format(np.sdTS.get(0)) + " to " + np.sdf.format(np.sdTS.get(sdSize-1)));
 			
 			np.close();
 		}

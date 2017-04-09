@@ -366,7 +366,7 @@ public class ISUSDataCreationForm extends MemoryWindow implements DataProcessor
         String $HOME = System.getProperty("user.home");
 
         PropertyConfigurator.configure("log4j.properties");
-        Common.build($HOME + "/ABOS/ABOS.properties");
+        Common.build("ABOS.properties");
 
         ISUSDataCreationForm form = new ISUSDataCreationForm();
         

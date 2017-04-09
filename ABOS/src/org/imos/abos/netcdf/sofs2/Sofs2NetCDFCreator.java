@@ -35,7 +35,7 @@ public class Sofs2NetCDFCreator extends BaseNetCDFCreator
         if(args.length == 0)
         {
             PropertyConfigurator.configure("log4j.properties");
-            Common.build($HOME + "/ABOS/ABOS.properties");
+            Common.build("ABOS.properties");
         }
 
         Sofs2NetCDFCreator cdf = new Sofs2NetCDFCreator();

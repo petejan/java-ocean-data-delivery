@@ -19,8 +19,8 @@ import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
 import org.imos.abos.dbms.Instrument;
 import org.imos.abos.dbms.Mooring;
-import org.imos.abos.parsers.NortekParse;
-import org.imos.abos.parsers.RawAWCPdata;
+
+import org.imos.abos.parsers.RawAZFPdata;
 import org.wiley.core.Common;
 import ucar.ma2.Array;
 import ucar.ma2.DataType;
@@ -30,15 +30,15 @@ import ucar.nc2.Attribute;
 import ucar.nc2.Dimension;
 import ucar.nc2.Variable;
 
-public class WriteAWCP
+public class WriteAZFP
 {
-    private static Logger log = Logger.getLogger(WriteAWCP.class);
+    private static Logger log = Logger.getLogger(WriteAZFP.class);
 
     public static void main(String args[]) throws Exception
     {
         String $HOME = System.getProperty("user.home");
         PropertyConfigurator.configure("log4j.properties");
-        Common.build($HOME + "/ABOS/ABOS.properties");
+        Common.build("ABOS.properties");
         
         TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
                 
@@ -47,7 +47,7 @@ public class WriteAWCP
 
         // run with something like
         //
-        // java -Djna.library.path=/usr/lib64 -cp dist/ABOS.jar org.imos.abos.netcdf.WriteAWCP -x ~/ABOS/AWCP/SOFS-4-2014/201303/13032423.XML -m SOFS-4-2013 ~/ABOS/AWCP/SOFS-4-2014/201305
+        // java -Djna.library.path=/usr/lib64 -cp dist/ABOS.jar org.imos.abos.netcdf.WriteAZFP -x ~/ABOS/AZFP/SOFS-4-2014/201303/13032423.XML -m SOFS-4-2013 ~/ABOS/AZFP/SOFS-4-2014/201305
         
         ArrayList<File> listOfFiles = new ArrayList<File>();
         try
@@ -110,7 +110,7 @@ public class WriteAWCP
         Date tsStart = null;
         Date tsEnd = null;
         
-        RawAWCPdata an = new RawAWCPdata(xmlFile);
+        RawAZFPdata an = new RawAZFPdata(xmlFile);
         
         Mooring m = Mooring.selectByMooringID(mooring_id);
         String deployment = m.getMooringID();
@@ -121,6 +121,8 @@ public class WriteAWCP
 
         for(File datfile : listOfFiles)
         {
+        	log.debug("Open " + datfile);
+        	
             len += an.open(datfile);
             if ((tsStart == null) || (tsStart.after(an.tsStart)))
                     tsStart = an.tsStart;
@@ -154,7 +156,7 @@ public class WriteAWCP
                 
         String filename = ndf.getFileName(inst, dataStartTime, dataEndTime, "raw", "RA");
         
-        //filename = "AWCP-NetCDF.nc";
+        //filename = "AZFP-NetCDF.nc";
         
         try
         {
@@ -240,7 +242,9 @@ public class WriteAWCP
             Array dataTiltY = Array.factory(DataType.FLOAT, iDim);
             
             Array dataABSI[] = new Array[4];
+            Array dataSv[] = new Array[4];
             Variable vABSI[] = new Variable[4];
+            Variable vSv[] = new Variable[4];
 
             Variable distance[] = new Variable[4];
             Array dataDistance[] = new Array[4];
@@ -298,23 +302,32 @@ public class WriteAWCP
                 vABSI[i].addAttribute(new Attribute("valid_min", 0f));
                 vABSI[i].addAttribute(new Attribute("valid_max", 65536f));
 
-                vABSI[i].addAttribute(new Attribute("sv_calculation", "Sv = ELmax –2.5/ds + N/(26214·ds) – TVR – 20·logVTX + 20·logR + 2·α·R – 10log(1⁄2c·τ·Ψ)"));
 
-                vABSI[i].addAttribute(new Attribute("tvr_transmit_voltage_response", (double)an.getTvr()[i]));      
-                vABSI[i].addAttribute(new Attribute("vtx_transmit_voltage", (double)an.getVtx()[i]));      
-                vABSI[i].addAttribute(new Attribute("bp_beam_pattern_factor", (double)an.getBp()[i]));      
-                vABSI[i].addAttribute(new Attribute("ds_detector_slope", (double)an.getDs()[i]));      
-                vABSI[i].addAttribute(new Attribute("el_echo_level_max", (double)an.getEl()[i]));      
-                                                               
-//                vABSI[i].addAttribute(new Attribute("sensor_depth", 30f));
-//                vABSI[i].addAttribute(new Attribute("sensor_name", "ASL AZFP"));
-//                vABSI[i].addAttribute(new Attribute("sensor_serial_number", String.format("%d", an.serialNo)));
+                vSv[i] = ndf.dataFile.addVariable(null, "Sv"+an.freq[i], DataType.FLOAT, dims1);
+                vSv[i].addAttribute(new Attribute("sample_rate_sps", (float)an.rate[i]));            
+                vSv[i].addAttribute(new Attribute("frequency_kHz", (float)an.freq[i]));            
+                vSv[i].addAttribute(new Attribute("units", "dB"));
+                vSv[i].addAttribute(new Attribute("long_name", "acoustic_return_volume_scattering"));
+                vSv[i].addAttribute(new Attribute("name", "acoustic return signal volume scattering"));
+                vSv[i].addAttribute(new Attribute("coordinates", "TIME LATITUDE LONGITUDE depth_"+an.freq[i]));
+                vSv[i].addAttribute(new Attribute("_FillValue", Float.NaN));                                
+                vSv[i].addAttribute(new Attribute("valid_min", -200f));
+                vSv[i].addAttribute(new Attribute("valid_max", 200f));
 
+                vSv[i].addAttribute(new Attribute("sv_calculation", "Sv = ELmax –2.5/ds + N/(26214.ds) – TVR – 20.logVTX + 20.logR + 2.α.R – 10log(1/2c.t.Ψ)"));
+
+                vSv[i].addAttribute(new Attribute("tvr_transmit_voltage_response", (double)an.getTvr()[i]));      
+                vSv[i].addAttribute(new Attribute("vtx_transmit_voltage", (double)an.getVtx()[i]));      
+                vSv[i].addAttribute(new Attribute("bp_beam_pattern_factor", (double)an.getBp()[i]));      
+                vSv[i].addAttribute(new Attribute("ds_detector_slope", (double)an.getDs()[i]));      
+                vSv[i].addAttribute(new Attribute("el_echo_level_max", (double)an.getEl()[i]));      
+                                
                 int[] iDim1 = new int[]
                 {
                     ndf.timeDim.getLength(), sampleDim1.getLength()
                 };
                 dataABSI[i] = Array.factory(DataType.FLOAT, iDim1);
+                dataSv[i] = Array.factory(DataType.FLOAT, iDim1);
             }
             
             int i = 0;
@@ -339,11 +352,13 @@ public class WriteAWCP
                     {
                         Index idx = dataABSI[k].getIndex();
                         
-                        double[] sv = an.getData(k);
+                        double[] absi = an.getData(k);
+                        double[] sv = an.getSV(k);
                         for(int j=0;j<an.bins[k];j++)
                         {
                             idx.set(i, j);
-                            dataABSI[k].setFloat(idx, (float)sv[j]);
+                            dataABSI[k].setFloat(idx, (float)absi[j]);
+                            dataSv[k].setFloat(idx, (float)sv[j]);
                         }
                     }
 
@@ -372,6 +387,7 @@ public class WriteAWCP
             {
                 ndf.dataFile.write(distance[k], dataDistance[k]);
                 ndf.dataFile.write(vABSI[k], dataABSI[k]);
+                ndf.dataFile.write(vSv[k], dataSv[k]);
             }
 
             System.out.println("SUCCESS writing file " + filename);

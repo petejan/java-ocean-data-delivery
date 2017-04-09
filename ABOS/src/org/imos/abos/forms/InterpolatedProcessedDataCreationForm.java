@@ -704,7 +704,7 @@ public class InterpolatedProcessedDataCreationForm extends MemoryWindow implemen
         String $HOME = System.getProperty("user.home");
 
         PropertyConfigurator.configure("log4j.properties");
-        Common.build($HOME + "/ABOS/ABOS.properties");
+        Common.build("ABOS.properties");
 
         InterpolatedProcessedDataCreationForm form = new InterpolatedProcessedDataCreationForm();
         

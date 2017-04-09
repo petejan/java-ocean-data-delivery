@@ -150,6 +150,10 @@ public class AsimetDataParser extends AbstractDataParser
             {
                 type = "LSR";
             }
+            else if (fName.contains("LGR"))
+            {
+                type = "LSR";
+            }
             else if (fName.matches("L\\d\\d.*"))
             {
                 type = "LSR";
@@ -177,6 +181,10 @@ public class AsimetDataParser extends AbstractDataParser
             else if (fName.contains("SWND"))
             {
                 type = "SWND"; // SOFS-1 uses the old WND format for the Sonic Wind Sensors
+            }
+            else if (fName.contains("WND"))
+            {
+                type = "SWND"; 
             }
             logger.info("File Type : " + type);
             

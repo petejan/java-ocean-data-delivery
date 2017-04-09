@@ -781,10 +781,12 @@ public class InstrumentDataFile  implements Cloneable
             psql.setString(i++, filePath);
             psql.setString(i++, fileName);
             psql.setBinaryStream(i++, fis, (int) dataFile.length());
+            //psql.setBinaryStream(i++, null, 0);
             psql.setString(i++, processingStatus);
             psql.setTimestamp(i++, processingDate);
             psql.setString(i++, processingClass);
 
+            logger.trace("doInsert " + psql);
             int affectedRows = psql.executeUpdate();
             if(affectedRows == 1)
             {
@@ -810,6 +812,7 @@ public class InstrumentDataFile  implements Cloneable
         catch (SQLException ex)
         {
             logger.error(ex);
+            ex.printStackTrace();
             message = ex.getMessage();
             return false;
         }

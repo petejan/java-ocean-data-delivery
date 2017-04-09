@@ -269,4 +269,11 @@ public class InstrumentCalibrationValueCollection extends AbstractTableModel
         return true;
     }
 
+	@Override
+	public void selectDataByFilter(int arg0, int arg1, String arg2)
+	{
+		// TODO Auto-generated method stub
+		
+	}
+
 }

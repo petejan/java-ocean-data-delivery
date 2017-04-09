@@ -23,7 +23,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.imos.abos.parsers.AWCP;
+package org.imos.abos.parsers.AZFP;
 
 import java.io.File;
 import java.io.IOException;
@@ -45,13 +45,13 @@ import org.xml.sax.SAXException;
  *
  * @author jan079
  */
-public class ParseAWCPxml
+public class ParseAZFPxml
 {
 
     File file;
     Document doc;
 
-    public ParseAWCPxml(String filename) throws ParserConfigurationException, SAXException, IOException
+    public ParseAZFPxml(String filename) throws ParserConfigurationException, SAXException, IOException
     {
         file = new File(filename);
         DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
@@ -407,7 +407,7 @@ public class ParseAWCPxml
     {
         try
         {
-            ParseAWCPxml ml = new ParseAWCPxml(args[0]);
+            ParseAZFPxml ml = new ParseAZFPxml(args[0]);
 
             // ml.parse();
             
@@ -418,15 +418,15 @@ public class ParseAWCPxml
         }
         catch (ParserConfigurationException ex)
         {
-            Logger.getLogger(ParseAWCPxml.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(ParseAZFPxml.class.getName()).log(Level.SEVERE, null, ex);
         }
         catch (SAXException ex)
         {
-            Logger.getLogger(ParseAWCPxml.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(ParseAZFPxml.class.getName()).log(Level.SEVERE, null, ex);
         }
         catch (IOException ex)
         {
-            Logger.getLogger(ParseAWCPxml.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(ParseAZFPxml.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
 

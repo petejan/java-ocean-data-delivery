@@ -87,6 +87,7 @@ public class NetCDFcreateForm extends MemoryWindow
     {
         TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
         netcdfDate = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
+        
         netcdfDate.setTimeZone(tz);
     }
     
@@ -250,7 +251,7 @@ public class NetCDFcreateForm extends MemoryWindow
                 .add(jPanel2, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
         );
 
-        getAccessibleContext().setAccessibleName("SBE16 Extraction Processing Form");
+        getAccessibleContext().setAccessibleName("NetCDF create form");
 
         pack();
     }// </editor-fold>//GEN-END:initComponents
@@ -265,6 +266,13 @@ public class NetCDFcreateForm extends MemoryWindow
 
     private void runButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_runButtonActionPerformed
 
+    	if (instanceCoords != null)
+    		instanceCoords.clear();
+    	if (timeArray != null)
+    		timeArray.clear();
+    	if (dimensionCoords != null)
+    	dimensionCoords.clear();
+    	
         selectedMooring = mooringCombo1.getSelectedMooring();
         sourceInstrument = sourceInstrumentCombo.getSelectedInstrument();
 
@@ -295,10 +303,10 @@ public class NetCDFcreateForm extends MemoryWindow
                         runButton.setForeground(Color.BLACK);
                         runButton.setText("Run");
                         repaint();
-                        if (sourceInstrument != null)
-                        {
-                            table = "raw_instrument_data";
-                        }
+//                        if (sourceInstrument != null)
+//                        {
+//                            table = "raw_instrument_data";
+//                        }
                         if (jCBraw.isSelected())
                         {
                             table = "raw_instrument_data";                            
@@ -350,15 +358,18 @@ public class NetCDFcreateForm extends MemoryWindow
         {
             selectInstrument = " AND s.instrument_id = " + sourceInstrument.getInstrumentID();
         }
-        String SQL =  "SELECT parameter_code, array_agg(instrument_id) AS instruments, array_agg(source) AS source, array_agg(depth) AS depths FROM "
-                    + "      (SELECT parameter_code::varchar, d.mooring_id, d.instrument_id, s.instrument_id AS source, avg(depth)::numeric(8,3) AS depth FROM  " + table + " AS d JOIN instrument_data_files AS s ON (source_file_id = datafile_pk) "
+        logger.debug("dataStart " + dataStartTime + " dataEnd " + dataEndTime);
+        
+        String SQL =  "SELECT parameter_code, imos_data_code, array_agg(instrument_id) AS instruments, array_agg(source) AS source, array_agg(depth) AS depths FROM "
+                    + "      (SELECT CAST(parameter_code AS varchar(20)), imos_data_code , d.mooring_id, d.instrument_id, s.instrument_id AS source, CAST(avg(depth) AS numeric(8,3)) AS depth FROM  " + table + " AS d JOIN instrument_data_files AS s ON (source_file_id = datafile_pk) "
                     + "                        JOIN instrument ON (d.instrument_id = instrument.instrument_id) "
+                    + "                        JOIN parameters ON (d.parameter_code = parameters.code)"
                     +         " WHERE d.mooring_id = " + StringUtilities.quoteString(selectedMooring.getMooringID()) 
                     + selectInstrument + " " + selectLimited
                     + " AND data_timestamp BETWEEN " + StringUtilities.quoteString(Common.getRawSQLTimestamp(dataStartTime)) + " AND " + StringUtilities.quoteString(Common.getRawSQLTimestamp(dataEndTime))
-                    + "          GROUP BY parameter_code, d.mooring_id, d.instrument_id, s.instrument_id, make, model, serial_number ORDER BY 1, 2, depth, make, model, serial_number "
+                    + "          GROUP BY parameter_code, imos_data_code, d.mooring_id, d.instrument_id, s.instrument_id, make, model, serial_number ORDER BY 1, 2, depth, make, model, serial_number "
                     + "      ) AS a"
-                    + "    GROUP BY parameter_code ORDER BY depths";
+                    + "    GROUP BY parameter_code, imos_data_code ORDER BY depths";
         
         instanceCoords = new ArrayList<InstanceCoord>();
         logger.debug(SQL);
@@ -372,20 +383,21 @@ public class NetCDFcreateForm extends MemoryWindow
             {
                 Vector row = (Vector) depthSet.get(i);
                 String param = (String)row.get(0);
-                logger.debug("param " + param);
+                String imos_data_code = (String)row.get(1);
+                logger.debug("param " + param + " data_code " + imos_data_code);
                 
                 InstanceCoord dc = f.new InstanceCoord();
 //                try
                 {
-                    dc.createParam(param);                                       
+                    dc.createParam(param, imos_data_code);                                       
                 }
 //                catch (SQLException ex)
                 {
 //                    java.util.logging.Logger.getLogger(NetCDFcreateForm.class.getName()).log(Level.SEVERE, null, ex);
                 }
-                Array instruments = (Array)row.get(1);
+                Array instruments = (Array)row.get(2);
                 logger.debug("instruments " + instruments);
-                Array source = (Array)row.get(2);
+                Array source = (Array)row.get(3);
                 logger.debug("source_instrument " + source);
                 try
                 {
@@ -397,7 +409,7 @@ public class NetCDFcreateForm extends MemoryWindow
                     java.util.logging.Logger.getLogger(NetCDFcreateForm.class.getName()).log(Level.SEVERE, null, ex);
                 }
                                 
-                Array depths = (Array)row.get(3);
+                Array depths = (Array)row.get(4);
                 logger.debug("depths " + depths);
                 try
                 {
@@ -439,6 +451,7 @@ public class NetCDFcreateForm extends MemoryWindow
         {
             proc = conn.createStatement();
             conn.setAutoCommit(false);
+            logger.debug("SQL " + SQL);
             proc.execute(SQL);  
             ResultSet results = (ResultSet) proc.getResultSet();
             results.next();
@@ -470,9 +483,10 @@ public class NetCDFcreateForm extends MemoryWindow
         Timestamp currentTimestamp = new Timestamp(currentMillis);
         
         
-        if (jCBraw.isSelected())
+//        if (jCBraw.isSelected())
         {
-            SQL = "SELECT DISTINCT(date_trunc('second', data_timestamp))" 
+            //SQL = "SELECT DISTINCT(date_trunc('second', data_timestamp))" 
+            SQL = "SELECT DISTINCT(data_timestamp)" 
                     + " FROM " + table + " AS d "
                     + " WHERE mooring_id = " + StringUtilities.quoteString(selectedMooring.getMooringID());
             
@@ -500,17 +514,17 @@ public class NetCDFcreateForm extends MemoryWindow
                 logger.warn(ex);
             }
         }
-        else
-        {
-            logger.debug("Starting timestamp is " + currentTimestamp);
-            while (currentTimestamp.before(mooringOutWaterDate))
-            {
-                timeArray.add(new Timestamp(currentMillis));
-                currentMillis += 3600000;
-                currentTimestamp.setTime(currentMillis);
-            }
-            timeArray.add(currentTimestamp);
-        }
+//        else
+//        {
+//            logger.debug("Starting timestamp is " + currentTimestamp);
+//            while (currentTimestamp.before(mooringOutWaterDate))
+//            {
+//                timeArray.add(new Timestamp(currentMillis));
+//                currentMillis += 3600000;
+//                currentTimestamp.setTime(currentMillis);
+//            }
+//            timeArray.add(currentTimestamp);
+//        }
         dataEndTime = currentTimestamp;
         
         logger.debug("Finished generating time array, last timestamp was " + currentTimestamp + "\nTotal Elements: " + timeArray.size());
@@ -524,7 +538,7 @@ public class NetCDFcreateForm extends MemoryWindow
                 + " instrument_id,"
                 + " depth,"
                 + " parameter_code,"
-                + " parameter_value,"
+                + " CAST(parameter_value AS double precision),"
                 + " quality_code"
                 + " FROM " + table + " AS d "
                 + " WHERE mooring_id = " + StringUtilities.quoteString(selectedMooring.getMooringID())
@@ -586,11 +600,11 @@ public class NetCDFcreateForm extends MemoryWindow
                 ic.dimVar.addAttribute(new Attribute("standard_name", "depth"));
                 ic.dimVar.addAttribute(new Attribute("long_name", "nominal depth of each sensor"));
                 ic.dimVar.addAttribute(new Attribute("positive", "down"));
-                ic.dimVar.addAttribute(new Attribute("comment", "These are nominal values. Use PRES to derive time-varying depths of instruments, as the mooring may tilt in ambient currents."));
+                //ic.dimVar.addAttribute(new Attribute("comment", "These are nominal values. Use PRES to derive time-varying depths of instruments, as the mooring may tilt in ambient currents."));
                 comment = "depths for parameter ";
             }
             ic.dimVar.addAttribute(new Attribute("axis", "Z"));
-            ic.dimVar.addAttribute(new Attribute("reference", "sea_level"));
+            ic.dimVar.addAttribute(new Attribute("reference_datum", "Mean Sea Level (MSL)"));
             ic.dimVar.addAttribute(new Attribute("valid_min", 0.0f));
             ic.dimVar.addAttribute(new Attribute("valid_max", 5000.0f));
             for(int i=0;i<dc.size();i++)                
@@ -616,7 +630,19 @@ public class NetCDFcreateForm extends MemoryWindow
         f.setMooring(selectedMooring);
         f.setFacility(selectedMooring.getFacility());
 
-        String filename = f.getFileName(sourceInstrument, dataStartTime, dataEndTime, table);
+        // get imos data file codes
+        String dataCodes = "";
+        for(InstanceCoord dc : instanceCoords)
+        {
+        	if (!dataCodes.contains(dc.dataCode))
+        	{
+        		dataCodes += dc.dataCode;
+        	}
+        }
+        
+        String filename;
+        filename = f.getFileName(sourceInstrument, dataStartTime, dataEndTime, table, dataCodes);
+        
         int RECORD_COUNT = timeArray.size();
         try
         {
@@ -629,11 +655,11 @@ public class NetCDFcreateForm extends MemoryWindow
             // Set the file_version, not sure how we're going to do Derived product?
             if (table.startsWith("raw"))
             {   
-                f.addGroupAttribute(null, new Attribute("file_version", "Level 0 - RAW data "));                
+                f.addGroupAttribute(null, new Attribute("file_version", "Level 0 - RAW data"));                
             }
             else
             {
-                f.addGroupAttribute(null, new Attribute("file_version", "Level 1 - Quality Controlled data "));                                
+                f.addGroupAttribute(null, new Attribute("file_version", "Level 1 - Quality Controlled data"));                                
             }
             
             f.writeGlobalAttributes();
@@ -688,12 +714,7 @@ public class NetCDFcreateForm extends MemoryWindow
                 {
                     for(InstanceCoord dc : sameD)
                     {
-						String pn = dc.params.substring(0, 2);
-						
-                    	if (!dimensionName.substring(5).contains(pn))
-                    	{
-                    		dimensionName += "_" + pn;
-                    	}
+                        dimensionName += "_" + dc.params.substring(0, Math.min(2,dc.params.length()));
                     }
                     
                 }
@@ -776,6 +797,10 @@ public class NetCDFcreateForm extends MemoryWindow
                         {
                             logger.debug("Processing instrument/parameter " + pt + " at depth " + masterSet.get(0).depth + " size " + masterSet.size());
 
+                            if (pt.contains("DURATION"))
+                            {
+                            	f.timeBndsOffset = masterSet.get(0).val;
+                            }
                             int record = 0;
                             int matchedElements = 0;
                             Double value;
@@ -803,37 +828,49 @@ public class NetCDFcreateForm extends MemoryWindow
                                     byte b = 0;
                                     if (table.startsWith("raw"))
                                     {
-                                        if (currentTime.after(mooringInWaterTime) && currentTime.before(mooringOutWaterTime))
+                                        if (currentTime.before(mooringInWaterTime) || currentTime.after(mooringOutWaterTime))
                                         {
-                                            b = 0;                                            
-                                        }
-                                        else
-                                        {
-                                            b = 4;
+                                            b = 4;                                            
                                         }
                                     }
                                     else
+                                    {	
+	                                    if (currentValue.quality.trim().equals("RAW"))
+	                                    {
+	                                        b = 1;
+	                                    }
+	                                    else if ((currentValue.quality.trim().equals("DERIVED")) || (currentValue.quality.trim().equals("EXTRACTED")))
+	                                    {
+	                                        b = 1;
+	                                    }
+	                                    else if (currentValue.quality.trim().equals("AVG"))
+	                                    {
+	                                        b = 1;
+	                                    }
+	                                    else if (currentValue.quality.trim().equals("INTERPOLATED"))
+	                                    {
+	                                        b = 1;
+	                                    }
+	                                    else if (currentValue.quality.trim().equals("GOOD"))
+	                                    {
+	                                        b = 1;
+	                                    }
+                                	}
+                                    if (currentValue.quality.trim().equals("PGOOD"))
                                     {
-                                        if (currentValue.quality.trim().equals("RAW"))
-                                        {
-                                            b = 1;
-                                        }
-                                        else if ((currentValue.quality.trim().equals("DERIVED")) || (currentValue.quality.trim().equals("EXTRACTED")))
-                                        {
-                                            b = 1;
-                                        }
-                                        else if (currentValue.quality.trim().equals("AVG"))
-                                        {
-                                            b = 1;
-                                        }
-                                        else if (currentValue.quality.trim().equals("INTERPOLATED"))
-                                        {
-                                            b = 1;
-                                        }
-                                        else if (currentValue.quality.trim().equals("BAD"))
-                                        {
-                                            b = 4;
-                                        }
+                                        b = 2;
+                                    }
+                                    else if (currentValue.quality.trim().equals("PBAD"))
+                                    {
+                                        b = 3;
+                                    }
+                                    else if (currentValue.quality.trim().equals("BAD"))
+                                    {
+                                        b = 4;
+                                    }
+                                    else if (currentValue.quality.trim().equals("OOR"))
+                                    {
+                                        b = 4;
                                     }
                                     if (f.fileOrderTimeDepth)
                                     {
@@ -964,7 +1001,7 @@ public class NetCDFcreateForm extends MemoryWindow
 
         String $HOME = System.getProperty("user.home");
         PropertyConfigurator.configure("log4j.properties");
-        Common.build($HOME + "/ABOS/ABOS.properties");
+        Common.build("ABOS.properties");
         
         NetCDFcreateForm form = new NetCDFcreateForm();
         form.setLocationRelativeTo(null);

@@ -15,16 +15,16 @@ import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.TimeZone;
 import javax.xml.parsers.ParserConfigurationException;
-import org.imos.abos.parsers.AWCP.ParseAWCPxml;
+import org.imos.abos.parsers.AZFP.ParseAZFPxml;
 import org.jfree.util.Log;
 import org.xml.sax.SAXException;
 
-public class RawAWCPdata
+public class RawAZFPdata
 {
     SimpleDateFormat sdf;
     Calendar c;
     String xmlFile;
-    ParseAWCPxml cal;
+    ParseAZFPxml cal;
     double calTiltX[] = new double[4];
     double calTiltY[] = new double[4];
     double calTemp[] = new double[3];
@@ -37,14 +37,14 @@ public class RawAWCPdata
     public double alpha[] = new double[4];
     public double sos = 1500; // m/s
 
-    public RawAWCPdata(String xmlfile) throws ParserConfigurationException, SAXException, IOException
+    public RawAZFPdata(String xmlfile) throws ParserConfigurationException, SAXException, IOException
     {
         TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
 
         sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSSS");
         c = new GregorianCalendar();
         
-        cal = new ParseAWCPxml(xmlfile);
+        cal = new ParseAZFPxml(xmlfile);
         calTiltX[0] = cal.getTiltXA();
         calTiltX[1] = cal.getTiltXB();
         calTiltX[2] = cal.getTiltXC();
@@ -73,10 +73,10 @@ public class RawAWCPdata
         alpha[3] = -0.065;
 
         // From http://resource.npl.co.uk/acoustics/techguides/seaabsorption/ t = 10C, depth = 0.05, sal = 35, ph=8, (Ainslie and McColm 1998)
-        alpha[0] = 10.298; // dB/km
-        alpha[1] = 40.583; 
-        alpha[2] = 55.674; 
-        alpha[3] = 116.741;
+        alpha[0] = 10.298/1000; 
+        alpha[1] = 40.583/1000; 
+        alpha[2] = 55.674/1000; 
+        alpha[3] = 116.741/1000;
         
         for(int i=0;i<4;i++)
         {
@@ -94,7 +94,7 @@ public class RawAWCPdata
         
         try
         {
-            RawAWCPdata an = new RawAWCPdata(args[i++]);
+            RawAZFPdata an = new RawAZFPdata(args[i++]);
 
             for (;i<args.length;i++)
             {
@@ -258,16 +258,17 @@ public class RawAWCPdata
     
     public double[] getSV(int ch)
     {
+    	// Sv = ELmax –2.5/ds + N/(26214.ds) – TVR – 20.logVTX + 20.logR + 2.α.R – 10log(1/2c.t.Ψ)
         double[] sv = new double[bins[ch]];
         double r;
         
-        double c = el[ch] - 2.5/ds[ch] - tvr[ch] - 20 * Math.log10(vtx[ch]) - 10 * Math.log10(bp[ch]);
+        double c = el[ch] - 2.5/ds[ch] - tvr[ch] - 20 * Math.log10(vtx[ch]) - 10 * Math.log10(bp[ch] * sos / rate[ch] / 2.0);
         
         for(int i=0;i<bins[ch];i++)
         {
-            r = sos * (i + 1) / rate[ch] / 2; // range, m
+            r = sos * (i + 1) / rate[ch] / 2; // range
             // sv = const + data (dB) + range_spread + range_water_attenuation
-            sv[i] = c + data[ch][i]/(26214 * ds[ch])  + 20 * Math.log10(r) + 2 * alpha[ch] * r/1000 ; // 26214 = 65536/2.5, r in m, alpha in dB/km
+            sv[i] = c + data[ch][i]/(26214 * ds[ch])  + 20 * Math.log10(r) + 2 * alpha[ch] * r ; // 26214 = 65536/2.5 
             
         }
         return sv;

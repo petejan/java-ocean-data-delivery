@@ -27,7 +27,7 @@ import org.imos.abos.dbms.Instrument;
 import org.imos.abos.dbms.InstrumentDataFile;
 import org.imos.abos.dbms.Mooring;
 import org.imos.abos.dbms.RawInstrumentData;
-import org.imos.abos.processors.AWCPdataProcessor;
+import org.imos.abos.processors.AZFPdataProcessor;
 import org.wiley.core.Common;
 import org.wiley.util.DateUtilities;
 import org.wiley.util.StringUtilities;
@@ -36,7 +36,7 @@ import org.wiley.util.StringUtilities;
  *
  * @author peter
  */
-public class AWCPdataParser extends AbstractDataParser
+public class AZFPdataParser extends AbstractDataParser
 {
 
     boolean insert = true;
@@ -64,7 +64,7 @@ public class AWCPdataParser extends AbstractDataParser
     Timestamp lastTimestamp;
     RawInstrumentData row = null;
     ArrayInstrumentData array = null;
-    AWCPdataProcessor dp = new AWCPdataProcessor();
+    AZFPdataProcessor dp = new AZFPdataProcessor();
     
     @Override
     protected void parseData(String dataLine) throws ParseException, NoSuchElementException
@@ -85,7 +85,7 @@ public class AWCPdataParser extends AbstractDataParser
         String ts = split[0] + " " + split[1] + " " + split[2];
         
         dataTimestamp = new Timestamp(dateParser.parse(ts).getTime());
-        //System.out.println("AWCPdataParser::parseData() ts " + ts + " " + sdfms.format(dataTimestamp) + " last " + sdfms.format(lastTimestamp));
+        //System.out.println("AZFPdataParser::parseData() ts " + ts + " " + sdfms.format(dataTimestamp) + " last " + sdfms.format(lastTimestamp));
         
         if (dataTimestamp.equals(lastTimestamp))
         {
@@ -135,7 +135,7 @@ public class AWCPdataParser extends AbstractDataParser
             dp.sample(sv, fileType);
             dp.output();
 
-            //System.out.println("AWCPdataParser::parseData() " + sdfms.format(array.getDataTimestamp()) + " " + array.getParameterCode() + " length = " + n);
+            //System.out.println("AZFPdataParser::parseData() " + sdfms.format(array.getDataTimestamp()) + " " + array.getParameterCode() + " length = " + n);
             if (insert)            
                 ok |= array.insert();
         }
@@ -225,7 +225,7 @@ public class AWCPdataParser extends AbstractDataParser
         }
         String $HOME = System.getProperty("user.home");
         PropertyConfigurator.configure("log4j.properties");
-        Common.build($HOME + "/ABOS/ABOS.properties");        
+        Common.build("ABOS.properties");        
         
         int argsi = 0;
         boolean insert = true;
@@ -264,14 +264,14 @@ public class AWCPdataParser extends AbstractDataParser
             java.util.logging.Logger.getLogger(AbstractDataParser.class.getName()).log(Level.SEVERE, null, ex);
         }
         
-        AWCPdataParser awcp = new AWCPdataParser();
+        AZFPdataParser AZFP = new AZFPdataParser();
                 
-        System.err.println("AWCPdataParser::main():: using mooring " + m + " instrument " + inst + " depth " + d);
+        System.err.println("AZFPdataParser::main():: using mooring " + m + " instrument " + inst + " depth " + d);
         
-        awcp.setMooring(m);
-        awcp.setInstrument(inst);
-        awcp.setInstrumentDepth(d);
-        awcp.setInsert(insert);
+        AZFP.setMooring(m);
+        AZFP.setInstrument(inst);
+        AZFP.setInstrumentDepth(d);
+        AZFP.setInsert(insert);
         
         InstrumentDataFile idf = new InstrumentDataFile();
         
@@ -293,10 +293,10 @@ public class AWCPdataParser extends AbstractDataParser
                 idf.insert();
             }
 
-            awcp.setInstrumentDataFile(idf);
-            awcp.processFile(f);
+            AZFP.setInstrumentDataFile(idf);
+            AZFP.processFile(f);
 
-            System.err.println("AWCPdataParser::main() data file id = " + idf.getDataFilePrimaryKey() + " " + idf.getLastErrorMessage());
+            System.err.println("AZFPdataParser::main() data file id = " + idf.getDataFilePrimaryKey() + " " + idf.getLastErrorMessage());
         }
     }
     

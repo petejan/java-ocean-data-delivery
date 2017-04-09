@@ -545,7 +545,7 @@ public class SeabirdSBE37CalculationForm  extends MemoryWindow implements DataPr
         String $HOME = System.getProperty("user.home");
 
         PropertyConfigurator.configure("log4j.properties");
-        Common.build($HOME + "/ABOS/ABOS.properties");
+        Common.build("ABOS.properties");
 
         SeabirdSBE37CalculationForm form = new SeabirdSBE37CalculationForm();
 

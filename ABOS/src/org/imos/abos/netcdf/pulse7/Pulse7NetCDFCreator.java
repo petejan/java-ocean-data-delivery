@@ -36,7 +36,7 @@ public class Pulse7NetCDFCreator extends BaseNetCDFCreator
         if(args.length == 0)
         {
             PropertyConfigurator.configure("log4j.properties");
-            Common.build($HOME + "/ABOS/ABOS.properties");
+            Common.build("ABOS.properties");
         }
 
         Pulse7NetCDFCreator cdf = new Pulse7NetCDFCreator();

@@ -33,7 +33,7 @@ public class GetFile
      {
         String $HOME = System.getProperty("user.home");
         PropertyConfigurator.configure("log4j.properties");
-        Common.build($HOME + "/ABOS/ABOS.properties");
+        Common.build("ABOS.properties");
 
         Connection conn = Common.getConnection();
 

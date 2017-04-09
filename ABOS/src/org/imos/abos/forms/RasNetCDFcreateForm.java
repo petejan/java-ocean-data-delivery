@@ -934,7 +934,7 @@ public class RasNetCDFcreateForm extends MemoryWindow
 
         String $HOME = System.getProperty("user.home");
         PropertyConfigurator.configure("log4j.properties");
-        Common.build($HOME + "/ABOS/ABOS.properties");
+        Common.build("ABOS.properties");
         
         RasNetCDFcreateForm form = new RasNetCDFcreateForm();
         form.setLocationRelativeTo(null);

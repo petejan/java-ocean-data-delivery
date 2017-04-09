@@ -64,6 +64,7 @@ public class InstrumentDataForm extends MemoryWindow
         TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
     }
 
+    
     public class myFilter implements FileFilter
     {
         String filter;
@@ -93,7 +94,7 @@ public class InstrumentDataForm extends MemoryWindow
        }
         String $HOME = System.getProperty("user.home");
 
-        optionsFile = new File($HOME + "/ABOS/ABOS.properties");
+        optionsFile = new File("ABOS.properties");
         
         BufferedReader br = null;
         try
