@@ -921,7 +921,7 @@ public class ArrayInstrumentData  implements Cloneable
         if(args.length == 0)
         {
             PropertyConfigurator.configure("log4j.properties");
-            org.wiley.core.Common.build($HOME + "/ABOS/ABOS.properties");
+            org.wiley.core.Common.build("ABOS.properties");
         }
         
         ArrayInstrumentData d = new ArrayInstrumentData();

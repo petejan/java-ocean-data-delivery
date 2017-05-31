@@ -695,7 +695,7 @@ public class SBE16CalculationForm extends MemoryWindow implements DataProcessor
 
         String $HOME = System.getProperty("user.home");
         PropertyConfigurator.configure("log4j.properties");
-        Common.build($HOME + "/ABOS/ABOS.properties");
+        Common.build("ABOS.properties");
 
         SBE16CalculationForm form = new SBE16CalculationForm();
         if (args.length > 0)

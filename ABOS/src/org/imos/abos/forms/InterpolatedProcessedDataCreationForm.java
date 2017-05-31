@@ -205,13 +205,13 @@ public class InterpolatedProcessedDataCreationForm extends MemoryWindow implemen
         
         // TODO: should only form ones do this, or should all create a record in the table?
         String insProc = "INSERT INTO instrument_data_processors (processors_pk, mooring_id, class_name, parameters, processing_date, display_code) VALUES ("
-     + "nextval('instrument_data_processor_sequence'),"
-     + "'" + selectedMooring.getMooringID() + "',"
-     + "'" + this.getClass().getName() + "',"
-     + "'" + paramToString() + "',"
-     + "'" + Common.current() + "',"
-     + "'Y'"
-     + ")";
+		     + "nextval('instrument_data_processor_sequence'),"
+		     + "'" + selectedMooring.getMooringID() + "',"
+		     + "'" + this.getClass().getName() + "',"
+		     + "'" + paramToString() + "',"
+		     + "'" + Common.current() + "',"
+		     + "'Y'"
+		     + ")";
 
         Connection conn = Common.getConnection();
 
@@ -265,6 +265,7 @@ public class InterpolatedProcessedDataCreationForm extends MemoryWindow implemen
 
         x = new double[(int) p.count];
         y = new double[(int) p.count];
+        String[] quality = new String[(int) p.count];
 
         ProcessedInstrumentData pid = new ProcessedInstrumentData();
 
@@ -276,7 +277,6 @@ public class InterpolatedProcessedDataCreationForm extends MemoryWindow implemen
         Double lat = null;
         Double lon = null;
         Double value = null;
-        String q = null;
 
         while (results.next())
         {
@@ -286,7 +286,7 @@ public class InterpolatedProcessedDataCreationForm extends MemoryWindow implemen
             lat = results.getDouble(4);
             lon = results.getDouble(5);
             value = results.getDouble(6);
-            q = results.getString(7);
+            quality[i] = results.getString(7);
             
             x[i] = ts.getTime();
             y[i] = value;
@@ -303,18 +303,23 @@ public class InterpolatedProcessedDataCreationForm extends MemoryWindow implemen
         pid.setMooringID(selectedMooring.getMooringID());
         pid.setParameterCode(p.param);
         pid.setSourceFileID(sf);
-        pid.setQualityCode(q);
         double t;
         i = 0;
+        pid.setQualityCode(quality[i]);
         for (t = s + 1; t < e; t++)
         {
-            pid.setDataTimestamp(new Timestamp((long) t * outputPeriod));
+        	while ( (i < count) && (x[i] < (t * outputPeriod)) )
+        	{
+        		i++;
+                pid.setQualityCode(quality[i]);
+                //logger.debug("Quality " + quality[i]);
+        	}
+        	pid.setDataTimestamp(new Timestamp((long) t * outputPeriod));
             pid.setParameterValue(function.value(t * outputPeriod) * p.coeffs[1] + p.coeffs[0]);
-            i++;
-            //logger.debug(pid.getDataTimestamp() + " ," + pid.getParameterValue());
 
             boolean ok = pid.insert();
         }
+                
         
         return count;
     }
@@ -615,7 +620,7 @@ public class InterpolatedProcessedDataCreationForm extends MemoryWindow implemen
                     }
                     totalCount += count;
 
-                    // conn.commit();
+                    conn.commit();
                 }
                 catch(SQLException sex)
                 {
@@ -704,7 +709,7 @@ public class InterpolatedProcessedDataCreationForm extends MemoryWindow implemen
         String $HOME = System.getProperty("user.home");
 
         PropertyConfigurator.configure("log4j.properties");
-        Common.build($HOME + "/ABOS/ABOS.properties");
+        Common.build("ABOS.properties");
 
         InterpolatedProcessedDataCreationForm form = new InterpolatedProcessedDataCreationForm();
         

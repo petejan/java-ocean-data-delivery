@@ -28,6 +28,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.TimeZone;
 import java.util.Vector;
@@ -53,6 +54,7 @@ import ucar.ma2.ArrayDouble;
 import ucar.ma2.ArrayFloat;
 import ucar.ma2.ArrayInt;
 import ucar.ma2.DataType;
+import ucar.ma2.Index;
 import ucar.ma2.InvalidRangeException;
 import ucar.nc2.Attribute;
 import ucar.nc2.Dimension;
@@ -77,8 +79,9 @@ public class NetCDFcreateForm extends MemoryWindow
     private Instrument sourceInstrument;
     
     private String selectLimited = "";
-//    private String selectLimited = " AND d.instrument_id IN (SELECT instrument_id FROM instrument WHERE make = 'WHOI')";
-//    private String selectLimited = " AND source_file_id > 300000";// AND data_timestamp between '2010-06-01' AND '2010-06-10'";
+    
+    private HashMap<String, String> limitList = new HashMap<String, String>();
+    private ArrayList<String> instList = new ArrayList<String>();
     
     private String table = "processed_instrument_data";
     
@@ -87,7 +90,14 @@ public class NetCDFcreateForm extends MemoryWindow
     {
         TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
         netcdfDate = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
+        
         netcdfDate.setTimeZone(tz);
+        
+        limitList.put("", "");
+        limitList.put("ASIMET", " AND d.instrument_id IN (SELECT instrument_id FROM instrument WHERE make = 'WHOI')");
+        
+        instList.add(null);
+        instList.add("subsurface");
     }
     
     @Override
@@ -112,6 +122,9 @@ public class NetCDFcreateForm extends MemoryWindow
         mooringCombo1 = new org.imos.abos.dbms.fields.MooringCombo();
         mooringDescriptionField = new org.wiley.util.basicField();
         authorityCombo = new javax.swing.JComboBox();
+        limitCombo = new javax.swing.JComboBox();
+        instCombo = new javax.swing.JComboBox();
+        instCombo.setEditable(true);
         jLabel1 = new javax.swing.JLabel();
         sourceInstrumentCombo = new org.imos.abos.dbms.fields.InstrumentSelectorCombo();
         jTextFile = new javax.swing.JTextField();
@@ -144,6 +157,8 @@ public class NetCDFcreateForm extends MemoryWindow
         mooringDescriptionField.setEnabled(false);
 
         authorityCombo.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "IMOS", "OS" }));
+        limitCombo.setModel(new javax.swing.DefaultComboBoxModel(limitList.keySet().toArray()));
+        instCombo.setModel(new javax.swing.DefaultComboBoxModel(instList.toArray()));
 
         jLabel1.setText("Authority");
 
@@ -169,6 +184,8 @@ public class NetCDFcreateForm extends MemoryWindow
                 .addContainerGap()
                 .add(jPanel1Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
                     .add(org.jdesktop.layout.GroupLayout.TRAILING, sourceInstrumentCombo, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 558, Short.MAX_VALUE)
+                    .add(org.jdesktop.layout.GroupLayout.TRAILING, limitCombo, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 558, Short.MAX_VALUE)
+                    .add(org.jdesktop.layout.GroupLayout.TRAILING, instCombo, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 558, Short.MAX_VALUE)
                     .add(jPanel1Layout.createSequentialGroup()
                         .add(jPanel1Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
                             .add(jPanel1Layout.createSequentialGroup()
@@ -201,6 +218,10 @@ public class NetCDFcreateForm extends MemoryWindow
                         .add(mooringCombo1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 21, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)))
                 .add(18, 18, 18)
                 .add(sourceInstrumentCombo, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 26, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                .add(18, 18, 18)
+                .add(limitCombo, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 26, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                .add(18, 18, 18)
+                .add(instCombo, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 26, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                 .add(18, 18, 18)
                 .add(jCBraw)
                 .add(34, 34, 34)
@@ -250,7 +271,7 @@ public class NetCDFcreateForm extends MemoryWindow
                 .add(jPanel2, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
         );
 
-        getAccessibleContext().setAccessibleName("SBE16 Extraction Processing Form");
+        getAccessibleContext().setAccessibleName("NetCDF create form");
 
         pack();
     }// </editor-fold>//GEN-END:initComponents
@@ -265,8 +286,16 @@ public class NetCDFcreateForm extends MemoryWindow
 
     private void runButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_runButtonActionPerformed
 
+    	if (instanceCoords != null)
+    		instanceCoords.clear();
+    	if (timeArray != null)
+    		timeArray.clear();
+    	//if (dimensionCoords != null)
+    	//dimensionCoords.clear();
+    	
         selectedMooring = mooringCombo1.getSelectedMooring();
         sourceInstrument = sourceInstrumentCombo.getSelectedInstrument();
+        selectLimited = limitList.get(limitCombo.getSelectedItem());
 
         if(selectedMooring == null)
         {
@@ -295,10 +324,10 @@ public class NetCDFcreateForm extends MemoryWindow
                         runButton.setForeground(Color.BLACK);
                         runButton.setText("Run");
                         repaint();
-                        if (sourceInstrument != null)
-                        {
-                            table = "raw_instrument_data";
-                        }
+//                        if (sourceInstrument != null)
+//                        {
+//                            table = "raw_instrument_data";
+//                        }
                         if (jCBraw.isSelected())
                         {
                             table = "raw_instrument_data";                            
@@ -342,6 +371,8 @@ public class NetCDFcreateForm extends MemoryWindow
     protected ArrayList<Timestamp> timeArray;    
     
     ArrayList<InstanceCoord> instanceCoords;
+    
+    HashSet<BigDecimal> allDepths = new HashSet<BigDecimal>();
 
     protected void createDepthArray(String mooringID)
     {
@@ -350,21 +381,24 @@ public class NetCDFcreateForm extends MemoryWindow
         {
             selectInstrument = " AND s.instrument_id = " + sourceInstrument.getInstrumentID();
         }
-        String SQL =  "SELECT parameter_code, array_agg(instrument_id) AS instruments, array_agg(source) AS source, array_agg(depth) AS depths FROM "
-                    + "      (SELECT parameter_code::varchar, d.mooring_id, d.instrument_id, s.instrument_id AS source, avg(depth)::numeric(8,3) AS depth FROM  " + table + " AS d JOIN instrument_data_files AS s ON (source_file_id = datafile_pk) "
+        logger.debug("dataStart " + dataStartTime + " dataEnd " + dataEndTime);
+        
+        String SQL =  "SELECT parameter_code, imos_data_code, array_agg(instrument_id) AS instruments, array_agg(source) AS source, array_agg(depth) AS depths FROM "
+                    + "      (SELECT CAST(parameter_code AS varchar(20)), imos_data_code , d.mooring_id, d.instrument_id, s.instrument_id AS source, CAST(avg(depth) AS numeric(8,3)) AS depth FROM  " + table + " AS d JOIN instrument_data_files AS s ON (source_file_id = datafile_pk) "
                     + "                        JOIN instrument ON (d.instrument_id = instrument.instrument_id) "
-                    +         " WHERE d.mooring_id = " + StringUtilities.quoteString(selectedMooring.getMooringID()) 
+                    + "                        JOIN parameters ON (d.parameter_code = parameters.code)"
+                    +         " WHERE d.mooring_id = " + StringUtilities.quoteString(selectedMooring.getMooringID()) + " AND quality_code not in ('INTERPOLATED', 'BAD') "
                     + selectInstrument + " " + selectLimited
                     + " AND data_timestamp BETWEEN " + StringUtilities.quoteString(Common.getRawSQLTimestamp(dataStartTime)) + " AND " + StringUtilities.quoteString(Common.getRawSQLTimestamp(dataEndTime))
-                    + "          GROUP BY parameter_code, d.mooring_id, d.instrument_id, s.instrument_id, make, model, serial_number ORDER BY 1, 2, depth, make, model, serial_number "
+                    + "          GROUP BY parameter_code, imos_data_code, d.mooring_id, d.instrument_id, s.instrument_id, make, model, serial_number ORDER BY 1, 2, depth, make, model, serial_number "
                     + "      ) AS a"
-                    + "    GROUP BY parameter_code ORDER BY depths";
+                    + "    GROUP BY parameter_code, imos_data_code ORDER BY depths, parameter_code";
         
         instanceCoords = new ArrayList<InstanceCoord>();
         logger.debug(SQL);
         query.setConnection(Common.getConnection());
         query.executeQuery(SQL);
-        Vector depthSet = NetCDFcreateForm.query.getData();
+        Vector depthSet = query.getData();
         
         if (depthSet != null && depthSet.size() > 0)
         {
@@ -372,21 +406,17 @@ public class NetCDFcreateForm extends MemoryWindow
             {
                 Vector row = (Vector) depthSet.get(i);
                 String param = (String)row.get(0);
-                logger.debug("param " + param);
+                String imos_data_code = (String)row.get(1);
+                logger.debug("param " + param + " data_code " + imos_data_code);
                 
                 InstanceCoord dc = f.new InstanceCoord();
-//                try
-                {
-                    dc.createParam(param);                                       
-                }
-//                catch (SQLException ex)
-                {
-//                    java.util.logging.Logger.getLogger(NetCDFcreateForm.class.getName()).log(Level.SEVERE, null, ex);
-                }
-                Array instruments = (Array)row.get(1);
+                dc.createParam(param, imos_data_code);
+                
+                Array instruments = (Array)row.get(2);
                 logger.debug("instruments " + instruments);
-                Array source = (Array)row.get(2);
+                Array source = (Array)row.get(3);
                 logger.debug("source_instrument " + source);
+                
                 try
                 {
                     dc.instruments = (Integer[])instruments.getArray();
@@ -397,27 +427,32 @@ public class NetCDFcreateForm extends MemoryWindow
                     java.util.logging.Logger.getLogger(NetCDFcreateForm.class.getName()).log(Level.SEVERE, null, ex);
                 }
                                 
-                Array depths = (Array)row.get(3);
+                Array depths = (Array)row.get(4);
                 logger.debug("depths " + depths);
+                
                 try
                 {
-                    dc.createDepths((BigDecimal[])depths.getArray());
-                    
+                    BigDecimal[] d = (BigDecimal[])depths.getArray();
+
+                    dc.createDepths(d);
+                    for (int i1=0;i1<d.length;i1++)
+                    {
+                    	allDepths.add(d[i1]);
+                    }
                 }
                 catch (SQLException ex)
                 {
                     java.util.logging.Logger.getLogger(NetCDFcreateForm.class.getName()).log(Level.SEVERE, null, ex);
                 }
                 instanceCoords.add(dc);
-                System.out.println();
             }
         }
-        logger.debug("Finished generating depth array, number of params is " + instanceCoords.size());
+        logger.debug("Finished generating depth array, number of params is " + instanceCoords.size() + " n depths " + allDepths.size());
     }
 
     protected void createTimeArray(String mooringID)
     {
-        timeArray = new ArrayList();
+        timeArray = new ArrayList<Timestamp>();
                 
         TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
         selectedMooring = Mooring.selectByMooringID(mooringID);
@@ -439,6 +474,7 @@ public class NetCDFcreateForm extends MemoryWindow
         {
             proc = conn.createStatement();
             conn.setAutoCommit(false);
+            logger.debug("SQL " + SQL);
             proc.execute(SQL);  
             ResultSet results = (ResultSet) proc.getResultSet();
             results.next();
@@ -452,65 +488,36 @@ public class NetCDFcreateForm extends MemoryWindow
 
         logger.debug("DataStart " + dataStartTime + " End " + dataEndTime);
         
-        tz = TimeZone.getTimeZone("GMT");
-        GregorianCalendar cal = (GregorianCalendar) Calendar.getInstance();
-        cal.setTimeZone(tz);
+        Timestamp currentTimestamp = null;
         
-        cal.setTimeInMillis(mooringOutWaterTime.getTime());
-        cal.set(Calendar.MINUTE, 59);
-        cal.set(Calendar.SECOND, 59);
-        cal.set(Calendar.MILLISECOND, 0);
-        java.util.Date mooringOutWaterDate = cal.getTime();        
+        SQL = "SELECT DISTINCT(data_timestamp)" 
+                + " FROM " + table + " AS d "
+                + " WHERE mooring_id = " + StringUtilities.quoteString(selectedMooring.getMooringID());
         
-        cal.setTimeInMillis(mooringInWaterTime.getTime());
-        cal.set(Calendar.MINUTE, 0);
-        cal.set(Calendar.SECOND, 0);
-        cal.set(Calendar.MILLISECOND, 0);
-        long currentMillis = cal.getTimeInMillis();
-        Timestamp currentTimestamp = new Timestamp(currentMillis);
-        
-        
-        if (jCBraw.isSelected())
-        {
-            SQL = "SELECT DISTINCT(date_trunc('second', data_timestamp))" 
-                    + " FROM " + table + " AS d "
-                    + " WHERE mooring_id = " + StringUtilities.quoteString(selectedMooring.getMooringID());
-            
-            if (sourceInstrument != null)
-            {                    
-                SQL += " AND instrument_id = " + sourceInstrument.getInstrumentID();
-            }
-            SQL += selectLimited;
+        if (sourceInstrument != null)
+        {                    
+            SQL += " AND instrument_id = " + sourceInstrument.getInstrumentID();
+        }
+        SQL += selectLimited;
 
-            SQL += " ORDER BY 1";
-            
-            try
-            {
-                proc.execute(SQL);  
-                logger.debug("Time Array SQL : " + SQL);
-                ResultSet results = (ResultSet) proc.getResultSet();
-                while (results.next())
-                {
-                    currentTimestamp = results.getTimestamp(1);
-                    timeArray.add(currentTimestamp);
-                }
-            }
-            catch (SQLException ex)
-            {
-                logger.warn(ex);
-            }
-        }
-        else
+        SQL += " ORDER BY 1";
+        
+        try
         {
-            logger.debug("Starting timestamp is " + currentTimestamp);
-            while (currentTimestamp.before(mooringOutWaterDate))
+            proc.execute(SQL);  
+            logger.debug("Time Array SQL : " + SQL);
+            ResultSet results = (ResultSet) proc.getResultSet();
+            while (results.next())
             {
-                timeArray.add(new Timestamp(currentMillis));
-                currentMillis += 3600000;
-                currentTimestamp.setTime(currentMillis);
+                currentTimestamp = results.getTimestamp(1);
+                timeArray.add(currentTimestamp);
             }
-            timeArray.add(currentTimestamp);
         }
+        catch (SQLException ex)
+        {
+            logger.warn(ex);
+        }
+
         dataEndTime = currentTimestamp;
         
         logger.debug("Finished generating time array, last timestamp was " + currentTimestamp + "\nTotal Elements: " + timeArray.size());
@@ -524,7 +531,7 @@ public class NetCDFcreateForm extends MemoryWindow
                 + " instrument_id,"
                 + " depth,"
                 + " parameter_code,"
-                + " parameter_value,"
+                + " CAST(parameter_value AS double precision),"
                 + " quality_code"
                 + " FROM " + table + " AS d "
                 + " WHERE mooring_id = " + StringUtilities.quoteString(selectedMooring.getMooringID())
@@ -565,13 +572,15 @@ public class NetCDFcreateForm extends MemoryWindow
         return null;
     }
 
-    HashMap<String, ArrayList<InstanceCoord>> dimensionCoords = new HashMap();
+    //HashMap<String, ArrayList<InstanceCoord>> dimensionCoords = new HashMap();
+    //ArrayList<String, ArrayList<InstanceCoord>> dimensionCoords = new ArrayList();
 
     protected void writeInstanceCoordinateVariableAttributes()
     {
-        for(ArrayList<InstanceCoord> dc : dimensionCoords.values())
+        //for(ArrayList<InstanceCoord> dc : dimensionCoords.values())
+        for (InstanceCoord ic : instanceCoords)
         {
-            InstanceCoord ic = dc.get(0);
+            //InstanceCoord ic = dc.get(0);
             ic.dimVar.addAttribute(new Attribute("units", "meters"));
             String comment = null;
             if (ic.useHeight)
@@ -586,22 +595,15 @@ public class NetCDFcreateForm extends MemoryWindow
                 ic.dimVar.addAttribute(new Attribute("standard_name", "depth"));
                 ic.dimVar.addAttribute(new Attribute("long_name", "nominal depth of each sensor"));
                 ic.dimVar.addAttribute(new Attribute("positive", "down"));
-                ic.dimVar.addAttribute(new Attribute("comment", "These are nominal values. Use PRES to derive time-varying depths of instruments, as the mooring may tilt in ambient currents."));
+                //ic.dimVar.addAttribute(new Attribute("comment", "These are nominal values. Use PRES to derive time-varying depths of instruments, as the mooring may tilt in ambient currents."));
                 comment = "depths for parameter ";
             }
             ic.dimVar.addAttribute(new Attribute("axis", "Z"));
-            ic.dimVar.addAttribute(new Attribute("reference", "sea_level"));
+            ic.dimVar.addAttribute(new Attribute("reference_datum", "Mean Sea Level (MSL)")); // TODO: should this be sea surface heights for float sensors?
             ic.dimVar.addAttribute(new Attribute("valid_min", 0.0f));
             ic.dimVar.addAttribute(new Attribute("valid_max", 5000.0f));
-            for(int i=0;i<dc.size();i++)                
-            {
-                InstanceCoord icp = dc.get(i);
-                comment += icp.params.trim();
-                if (i < dc.size()-1)
-                {
-                    comment += " ";
-                }
-            }
+
+            comment += ic.params.trim();
             ic.dimVar.addAttribute(new Attribute("params", comment));
         }
     }
@@ -616,7 +618,19 @@ public class NetCDFcreateForm extends MemoryWindow
         f.setMooring(selectedMooring);
         f.setFacility(selectedMooring.getFacility());
 
-        String filename = f.getFileName(sourceInstrument, dataStartTime, dataEndTime, table);
+        // get imos data file codes
+        String dataCodes = "";
+        for(InstanceCoord dc : instanceCoords)
+        {
+        	if (!dataCodes.contains(dc.dataCode))
+        	{
+        		dataCodes += dc.dataCode;
+        	}
+        }
+        
+        String filename;
+        filename = f.getFileName(sourceInstrument, dataStartTime, dataEndTime, table, dataCodes, (String)instCombo.getSelectedItem());
+        
         int RECORD_COUNT = timeArray.size();
         try
         {
@@ -629,17 +643,19 @@ public class NetCDFcreateForm extends MemoryWindow
             // Set the file_version, not sure how we're going to do Derived product?
             if (table.startsWith("raw"))
             {   
-                f.addGroupAttribute(null, new Attribute("file_version", "Level 0 - RAW data "));                
+                f.addGroupAttribute(null, new Attribute("file_version", "Level 0 - RAW data"));                
             }
             else
             {
-                f.addGroupAttribute(null, new Attribute("file_version", "Level 1 - Quality Controlled data "));                                
+                f.addGroupAttribute(null, new Attribute("file_version", "Level 1 - Quality Controlled data"));                                
             }
             
             f.writeGlobalAttributes();
 
             f.addGroupAttribute(null, new Attribute("time_coverage_start", netcdfDate.format(dataStartTime)));
             f.addGroupAttribute(null, new Attribute("time_coverage_end", netcdfDate.format(dataEndTime)));
+
+            f.addGroupAttribute(null, new Attribute("history", netcdfDate.format(new Date(System.currentTimeMillis()))+ " file created"));
             
             // Define the coordinate variables.
             // Add TIME coordinate
@@ -647,113 +663,87 @@ public class NetCDFcreateForm extends MemoryWindow
             f.writeCoordinateVariables(timeArray);
             
             // Add Depth coords
-            ArrayList<InstanceCoord> sameDepths = null;
-            
-            for(InstanceCoord dc : instanceCoords)
-            {  
-                String depths = Arrays.toString(dc.depths).trim(); 
-                if (dimensionCoords.containsKey(depths))
-                {
-                    sameDepths.add(dc);
-                }
-                else
-                {
-                    sameDepths = new ArrayList();
-                    sameDepths.add(dc);
-                    dimensionCoords.put(depths, sameDepths);
-                }                        
-            }
-            
-            int dimNo = 1;
             ArrayList <String>dimNames = new ArrayList<String>();
+            ArrayList<Dimension> dimListDepth = null;
+            ArrayList<Dimension> dims = null;
+            Dimension dim = null;
+            Variable depthVar = null;
+            ArrayFloat.D1 depthData = null;
             
-            for (ArrayList<InstanceCoord> sameD : dimensionCoords.values())
-            {
-                Collections.sort(sameD, new Comparator<InstanceCoord>() 
-                {
-                        @Override
-                        public int compare(InstanceCoord  i1, InstanceCoord  i2)
-                        {
-
-                            return  i1.params.compareTo(i2.params);
-                        }
-                });
-                
+            for (InstanceCoord ic : instanceCoords)
+            {                
                 String dimensionName = "DEPTH";
-                if (sameD.get(0).useHeight)
+                if (ic.useHeight)
                 {
                     dimensionName = "HEIGHT";
                 }
-                if (dimensionCoords.size() > 1)
+                if (allDepths.size() > 1)
                 {
-                    for(InstanceCoord dc : sameD)
-                    {
-						String pn = dc.params.substring(0, 2);
-						
-                    	if (!dimensionName.substring(5).contains(pn))
-                    	{
-                    		dimensionName += "_" + pn;
-                    	}
-                    }
-                    
+	                dimensionName += "_" + ic.params;
+	
+	                String origName = dimensionName;
+	                int dimNo = 1;
+	                while (dimNames.contains(dimensionName))
+	                {
+	                	dimensionName = origName + "_" + dimNo;
+	                	dimNo++;
+	                }
+	                dimNames.add(dimensionName);
                 }
-                String origName = dimensionName;
-                dimNo = 1;
-                while (dimNames.contains(dimensionName))
-                {
-                	dimensionName = origName + "_" + dimNo;
-                	dimNo++;
+                if ((dims == null) || (allDepths.size() > 1))
+                {               
+	                logger.debug("Create Dimension " + dimensionName);
+	                
+	                dimListDepth = new ArrayList<Dimension>();
+	                dims = new ArrayList<Dimension>();
+	                dim = null;
+	
+	                if (ic.depths.length > 1)
+	                {
+		                dim = f.dataFile.addDimension(null, "n" + dimensionName, ic.depths.length);
+		                dimListDepth.add(dim);
+		                
+		                logger.debug("Create Dimension " + dimensionName + " " + f.timeDim.getLength() + " x " + dim.getLength());
+		                if (f.fileOrderTimeDepth)
+		                {
+		                	dims.add(f.timeDim);
+		                	dims.add(dim);
+		                }
+		                else
+		                {
+		                	dims.add(dim);
+		                	dims.add(f.timeDim);
+		                }
+	                }
+	                else
+	                {
+	                	dims.add(f.timeDim);                	
+	                }
+	                
+	                // create the depth/height list variable
+	                
+	                depthVar = f.dataFile.addVariable(null, dimensionName, DataType.FLOAT, dimListDepth);
+	                depthData = new ArrayFloat.D1(ic.depths.length);
+	                
+	                for (int i=0;i<ic.depths.length;i++)
+	                {
+	                    float currentDepth = ic.depths[i].floatValue();                        
+	                    if (ic.useHeight)
+	                    {
+	                        currentDepth = currentDepth * -1;
+	                        if (Math.abs(currentDepth) < 0.01)
+	                            currentDepth = 0.00f;
+	                    }
+	                    depthData.set(i, currentDepth);
+	                }
                 }
-                dimNames.add(dimensionName);
-                
-                logger.debug("Create Dimension " + dimensionName);
-                
-                Dimension dim = f.dataFile.addDimension(null, dimensionName, sameD.get(0).depths.length);
-                ArrayList<Dimension> dimList = new ArrayList<Dimension>();
-                dimList.add(dim);
-                
-                Variable dimVar = f.dataFile.addVariable(null, dimensionName, DataType.FLOAT, dimList);
-                ArrayFloat.D1 dimData = new ArrayFloat.D1(dim.getLength());
-                
-                for (int i=0;i<sameD.get(0).depths.length;i++)
-                {
-                    float currentDepth = sameD.get(0).depths[i].floatValue();                        
-                    if (sameD.get(0).useHeight)
-                    {
-                        currentDepth = currentDepth * -1;
-                        if (Math.abs(currentDepth) < 0.01)
-                            currentDepth = 0.00f;
-                        
-                        dimData.set(i, currentDepth);
-                    }
-                    else
-                    {
-                        dimData.set(i, currentDepth);                        
-                    }
-                }
+                                
+                ic.dim = dim;
+                ic.dimVar = depthVar;
+                ic.dimData = depthData;
 
-                logger.debug("Create Dimension " + dimensionName + " " + f.timeDim.getLength() + " x " + dim.getLength());
-                ArrayList dims = new ArrayList();
-                if (f.fileOrderTimeDepth)
-                {
-                	dims.add(f.timeDim);
-                	dims.add(dim);
-                }
-                else
-                {
-                	dims.add(dim);
-                	dims.add(f.timeDim);
-                }
-                
-                for(InstanceCoord ic : sameD)
-                {
-                    ic.dim = dim;
-                    ic.dimVar = dimVar;
-                    ic.dimData = dimData;
-
-                    ic.timeAndDim = dims;
-                    ic.dimensionName = dimensionName;
-                }                
+                ic.timeAndDim = dims;
+                ic.dimensionName = dimensionName;
             }
 
             //
@@ -769,80 +759,97 @@ public class NetCDFcreateForm extends MemoryWindow
                 //for (int p=0;p<ic.params.length;p++)
                 {
                     String pt = ic.createParams(RECORD_COUNT);
+                    Index idx = ic.dataVar.getIndex();
+                    
                     for (int d=0;d<ic.instruments.length;d++)
                     {
+                    	idx.setDim(ic.depthDim, d);
+
                         ArrayList<ParamDatum> masterSet = getDataForParameter(pt, ic.instruments[d]);
                         if (masterSet != null && masterSet.size() > 0)
                         {
                             logger.debug("Processing instrument/parameter " + pt + " at depth " + masterSet.get(0).depth + " size " + masterSet.size());
 
-                            int record = 0;
-                            int matchedElements = 0;
-                            Double value;
-                            for (int setSize = 0; setSize < masterSet.size(); setSize++)
+                            if (pt.contains("DURATION"))
                             {
-                                Timestamp currentTime = timeArray.get(record);
-                                ParamDatum currentValue = masterSet.get(setSize);
+                            	f.timeBndsOffset = masterSet.get(0).val;
+                            }
+                            int matchedElements = 0;
+                            int record = 0;
+                            Double value;
+                        	Timestamp currentTime = timeArray.get(record);
+
+                        	for (int rec = 0; rec < masterSet.size(); rec++)
+                            {
+                                ParamDatum currentValue = masterSet.get(rec);
+                                
+                            	//logger.debug("Index for " + ic.varName + " idx " + idx + " record " + record + " rec " + rec + " timestamp " + currentTime + " " + currentValue.ts);
+
+                                // index to the first time record
                                 while (currentTime.before(currentValue.ts))
                                 {
                                     currentTime = timeArray.get(++record);
                                 }
                                 //logger.debug("timestamp " + currentTime + " " + currentValue.ts);
+                                
+                                // do we have data for this timestamp, or should we skip it
                                 if (currentValue.ts.equals(currentTime))
                                 {
                                     matchedElements++;
                                     value = currentValue.val;
-                                    if (f.fileOrderTimeDepth)
-                                    {
-                                    	ic.dataVar.set(record, d, value.floatValue());
-                                    }
-                                    else
-                                    {
-                                    	ic.dataVar.set(d, record, value.floatValue());
-                                    }
+                                	idx.setDim(ic.timeDim, record);
+                                	
+                                    ic.dataVar.set(idx, value.floatValue());
+                                    
+                                    // deal with the quality_control
                                     byte b = 0;
                                     if (table.startsWith("raw"))
                                     {
-                                        if (currentTime.after(mooringInWaterTime) && currentTime.before(mooringOutWaterTime))
+                                        if (currentTime.before(mooringInWaterTime) || currentTime.after(mooringOutWaterTime))
                                         {
-                                            b = 0;                                            
-                                        }
-                                        else
-                                        {
-                                            b = 4;
+                                            b = 4;                                            
                                         }
                                     }
                                     else
+                                    {	
+	                                    if (currentValue.quality.trim().equals("RAW"))
+	                                    {
+	                                        b = 1;
+	                                    }
+	                                    else if ((currentValue.quality.trim().equals("DERIVED")) || (currentValue.quality.trim().equals("EXTRACTED")))
+	                                    {
+	                                        b = 1;
+	                                    }
+	                                    else if (currentValue.quality.trim().equals("AVG"))
+	                                    {
+	                                        b = 1;
+	                                    }
+	                                    else if (currentValue.quality.trim().equals("INTERPOLATED"))
+	                                    {
+	                                        b = 1;
+	                                    }
+	                                    else if (currentValue.quality.trim().equals("GOOD"))
+	                                    {
+	                                        b = 1;
+	                                    }
+                                	}
+                                    if (currentValue.quality.trim().equals("PGOOD"))
                                     {
-                                        if (currentValue.quality.trim().equals("RAW"))
-                                        {
-                                            b = 1;
-                                        }
-                                        else if ((currentValue.quality.trim().equals("DERIVED")) || (currentValue.quality.trim().equals("EXTRACTED")))
-                                        {
-                                            b = 1;
-                                        }
-                                        else if (currentValue.quality.trim().equals("AVG"))
-                                        {
-                                            b = 1;
-                                        }
-                                        else if (currentValue.quality.trim().equals("INTERPOLATED"))
-                                        {
-                                            b = 1;
-                                        }
-                                        else if (currentValue.quality.trim().equals("BAD"))
-                                        {
-                                            b = 4;
-                                        }
+                                        b = 2;
                                     }
-                                    if (f.fileOrderTimeDepth)
+                                    else if (currentValue.quality.trim().equals("PBAD"))
                                     {
-                                    	ic.dataVarQC.set(record, d, b);                                    	
+                                        b = 3;
                                     }
-                                    else
+                                    else if (currentValue.quality.trim().equals("BAD"))
                                     {
-                                    	ic.dataVarQC.set(d, record, b);
+                                        b = 4;
                                     }
+                                    else if (currentValue.quality.trim().equals("OOR"))
+                                    {
+                                        b = 4;
+                                    }
+                                    ic.dataVarQC.set(idx, b);
                                 }
                                 //record++;                                                
                             }
@@ -855,9 +862,10 @@ public class NetCDFcreateForm extends MemoryWindow
             f.create();
             
             // this is a problem as only unique dims need adding
-            for(ArrayList<InstanceCoord> dc : dimensionCoords.values())
+            //for(ArrayList<InstanceCoord> dc : dimensionCoords.values())
+            for(InstanceCoord ic : instanceCoords)
             {
-                InstanceCoord ic = dc.get(0);
+                //InstanceCoord ic = dc.get(0);
                 
                 f.dataFile.write(ic.dimVar, ic.dimData);
             }
@@ -964,7 +972,7 @@ public class NetCDFcreateForm extends MemoryWindow
 
         String $HOME = System.getProperty("user.home");
         PropertyConfigurator.configure("log4j.properties");
-        Common.build($HOME + "/ABOS/ABOS.properties");
+        Common.build("ABOS.properties");
         
         NetCDFcreateForm form = new NetCDFcreateForm();
         form.setLocationRelativeTo(null);
@@ -974,6 +982,8 @@ public class NetCDFcreateForm extends MemoryWindow
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JComboBox authorityCombo;
+    private javax.swing.JComboBox limitCombo;
+    private javax.swing.JComboBox instCombo;
     private javax.swing.JCheckBox jCBraw;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JPanel jPanel1;

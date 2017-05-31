@@ -402,7 +402,7 @@ public class ProcessedDataCreationForm extends MemoryWindow implements DataProce
         String $HOME = System.getProperty("user.home");
 
         PropertyConfigurator.configure("log4j.properties");
-        Common.build($HOME + "/ABOS/ABOS.properties");
+        Common.build("ABOS.properties");
 
         ProcessedDataCreationForm form = new ProcessedDataCreationForm();
         

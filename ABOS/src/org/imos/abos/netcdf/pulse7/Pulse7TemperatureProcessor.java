@@ -60,7 +60,7 @@ public class Pulse7TemperatureProcessor
         if(args.length == 0)
         {
             PropertyConfigurator.configure("log4j.properties");
-            Common.build($HOME + "/ABOS/ABOS.properties");
+            Common.build("ABOS.properties");
         }
 
         Pulse7TemperatureProcessor cdf = new Pulse7TemperatureProcessor();

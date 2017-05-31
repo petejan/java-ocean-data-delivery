@@ -9,6 +9,7 @@
 
 package org.imos.abos;
 
+import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Toolkit;
 import java.util.TimeZone;
@@ -17,6 +18,7 @@ import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
+import javax.swing.UIDefaults;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 import org.apache.log4j.Logger;
@@ -75,7 +77,7 @@ public class Main
         }
         else
         {
-            PropertyConfigurator.configure(home + "/ABOS/log4j.properties");
+            PropertyConfigurator.configure("log4j.properties");
         }
         if (args.length > 0)
         {
@@ -88,11 +90,15 @@ public class Main
         else
         {
             Common.closeConnection();
-            Common.build(home + "/ABOS/ABOS.properties");
+            Common.build("ABOS.properties");
         }
         log.debug("Common.getDBMSUser " + Common.getDBMSUser());
 
         TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
+        
+        UIDefaults defaults = UIManager.getLookAndFeelDefaults();
+        if (defaults.get("Table.alternateRowColor") == null)
+            defaults.put("Table.alternateRowColor", new Color(224,255,255));
         
         startMenu mm = new startMenu();
 
@@ -204,18 +210,18 @@ public class Main
 //          table.initialise();
 //          table.setSize(s.width-100, s.height-100);
           
-          SQLtable tab;
-          try
-          {
-        	  tab = new SQLtable(Common.dbURL, "SELECT * FROM mooring");
-        	  JTable table = tab.getTable();
-        	  mm.addComponent(new JScrollPane(table));
-          }
-          catch (Exception e)
-          {
-        	  // TODO Auto-generated catch block
-        	  e.printStackTrace();
-          }
+//          SQLtable tab;
+//          try
+//          {
+//        	  tab = new SQLtable(Common.dbURL, "SELECT * FROM mooring");
+//        	  JTable table = tab.getTable();
+//        	  //mm.addComponent(new JScrollPane(table));
+//          }
+//          catch (Exception e)
+//          {
+//        	  // TODO Auto-generated catch block
+//        	  e.printStackTrace();
+//          }
 
 
         }

@@ -131,7 +131,16 @@ public class PlotComponent extends MemoryWindow
             plot.setAxisOffset(RectangleInsets.ZERO_INSETS);
             XYItemRenderer r = plot.getRenderer();
             r.setBaseToolTipGenerator(new StandardXYToolTipGenerator(StandardXYToolTipGenerator.DEFAULT_TOOL_TIP_FORMAT, new SimpleDateFormat("yyyy-MM-dd HH:mm:ss"), new DecimalFormat("#0.000")));
-            
+            for (int i=1;i<dataset.getSeriesCount();i+=2)
+            {
+	            if (r instanceof XYLineAndShapeRenderer)
+	            {
+	                XYLineAndShapeRenderer renderer = (XYLineAndShapeRenderer) r;
+	                renderer.setSeriesShapesVisible(i, true);
+	                renderer.setSeriesLinesVisible(i, false);
+	            }
+            }
+
             chart.getLegend().setPosition(RectangleEdge.RIGHT);
 
             final DateAxis axis = (DateAxis) plot.getDomainAxis();
@@ -207,7 +216,7 @@ public class PlotComponent extends MemoryWindow
                 {
                     System.out.println("Selecting " + d);
 
-                    resultSet = statement.executeQuery("SELECT data_timestamp, parameter_value FROM " + table + " WHERE " + where
+                    resultSet = statement.executeQuery("SELECT data_timestamp, parameter_value, quality_code FROM " + table + " WHERE " + where
                             + " AND depth = " + d.depth
                             + " AND parameter_code = '" + d.param + "'"
                             //+ " AND source_file_id = " + d.file 
@@ -218,15 +227,23 @@ public class PlotComponent extends MemoryWindow
                     int numberOfColumns = metaData.getColumnCount();
 
                     TimeSeries ts = new TimeSeries(d.make + "-" + d.param + "-" + d.depth);
+                    TimeSeries tsQ = new TimeSeries(d.make + "-" + d.param + "-" + d.depth + "-BAD");
                     while (resultSet.next())
                     {
                         Timestamp tstamp = resultSet.getTimestamp(1);
                         double v = resultSet.getDouble(2);
+                        String q = resultSet.getString(3);
+                        
                         Second s = new Second(tstamp);
                         ts.addOrUpdate(s, v);
+                        if (q.startsWith("PBAD") || q.startsWith("BAD"))
+                        {
+                        	tsQ.addOrUpdate(s, v);
+                        }
                     }
                     resultSet.close();
                     collection.addSeries(ts);
+                    collection.addSeries(tsQ);
                 }
             }
             catch (SQLException ex)
@@ -765,7 +782,7 @@ public class PlotComponent extends MemoryWindow
 
         String $HOME = System.getProperty("user.home");
         PropertyConfigurator.configure("log4j.properties");
-        Common.build($HOME + "/ABOS/ABOS.properties");
+        Common.build("ABOS.properties");
 
         if (args.length == 0)
         {

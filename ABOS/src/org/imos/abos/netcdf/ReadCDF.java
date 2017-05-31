@@ -92,7 +92,7 @@ public class ReadCDF
             {
                 for (Dimension d : var.getDimensions())
                 {
-                    System.err.print(" " + d.getShortName());
+                    System.err.print(d.getShortName() + " ");
                     if (d.getShortName().startsWith(tvarString))
                     {
                         timeVars.add(var);
@@ -115,45 +115,45 @@ public class ReadCDF
     {   
         // print header
         System.out.print("TIME");
-//        for (ListIterator<Variable> it = timeVars.listIterator(); it.hasNext();)
-//        {
-//            Variable v = it.next();
-//            
-//            if (!auxVarNames.contains(v.getShortName()))
-//            {
-//                Attribute aSn = v.findAttribute("standard_name");
-//                Attribute aLn = v.findAttribute("long_name");
-//                String name = v.getShortName();
-//                if (aSn != null)
-//                {
-//                    name = aSn.getStringValue();
-//                }
-//                else if (aLn != null)
-//                {
-//                    name = aLn.getStringValue();
-//                }
-//                Dimension dDepth = v.getDimension(1);
-//                //System.out.print("Dim : " + dDepth.getShortName());
-//                Variable vDepth = ncd.findVariable(dDepth.getShortName());
-//                Array depths;
-//                try 
-//                {
-//                    depths = vDepth.read();
-//                    Index idx = depths.getIndex();
-//                    for(int i=0;i<depths.getSize();i++)
-//                    {
-//                        System.out.print(",");
-//                        idx.set(i);
-//                        System.out.print(name + "(" + String.format("%4.2f", depths.getFloat(idx)) + ")");
-//                    }
-//                }
-//                catch (IOException ex) 
-//                {
-//                    ex.printStackTrace();
-//                }
-//            }
-//        }
-//        System.out.println();
+        for (ListIterator<Variable> it = timeVars.listIterator(); it.hasNext();)
+        {
+            Variable v = it.next();
+            
+            if (!auxVarNames.contains(v.getShortName()))
+            {
+                Attribute aSn = v.findAttribute("standard_name");
+                Attribute aLn = v.findAttribute("long_name");
+                String name = v.getShortName();
+                if (aSn != null)
+                {
+                    name = aSn.getStringValue();
+                }
+                else if (aLn != null)
+                {
+                    name = aLn.getStringValue();
+                }
+                Dimension dDepth = v.getDimension(1);
+                //System.out.print("Dim : " + dDepth.getShortName());
+                Variable vDepth = ncd.findVariable(dDepth.getShortName());
+                Array depths;
+                try 
+                {
+                    depths = vDepth.read();
+                    Index idx = depths.getIndex();
+                    for(int i=0;i<depths.getSize();i++)
+                    {
+                        System.out.print(",");
+                        idx.set(i);
+                        System.out.print(name + "(" + String.format("%4.0f", depths.getFloat(idx)) + ")");
+                    }
+                }
+                catch (IOException ex) 
+                {
+                    ex.printStackTrace();
+                }
+            }
+        }
+        System.out.println();
         
         // print data
         Date t = new Date();
@@ -192,10 +192,11 @@ public class ReadCDF
                         for(int j=0;j<len2nd;j++)
                         {
                             System.out.print(",");
-                            //idx.set(j);
+                            idx.set1(j);
                             d = data.get(idx);
                             if (!Float.isNaN(d))
-                                System.out.print(v.getShortName() + "=" + d);
+                                //System.out.print(v.getShortName() + "=" + d);
+                            	System.out.print(d);
                             else
                                 System.out.print("");
                         }

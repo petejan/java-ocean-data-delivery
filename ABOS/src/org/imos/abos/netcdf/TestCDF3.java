@@ -54,7 +54,7 @@ public class TestCDF3
         if(args.length == 0)
         {
             PropertyConfigurator.configure("log4j.properties");
-            Common.build($HOME + "/ABOS/ABOS.properties");
+            Common.build("ABOS.properties");
         }
 
         TestCDF3 cdf = new TestCDF3();

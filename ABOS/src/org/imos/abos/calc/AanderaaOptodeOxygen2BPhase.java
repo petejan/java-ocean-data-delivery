@@ -277,7 +277,7 @@ public class AanderaaOptodeOxygen2BPhase
     {
         String $HOME = System.getProperty("user.home");
         PropertyConfigurator.configure("log4j.properties");
-        Common.build($HOME + "/ABOS/ABOS.properties");
+        Common.build("ABOS.properties");
 
         BufferedReader input = null;
         TimeZone.setDefault(TimeZone.getTimeZone("UTC"));

@@ -26,7 +26,7 @@ public class EcoFLNTUSParser extends AbstractDataParser
     @Override
     protected boolean isHeader(String dataLine)
     {
-        return !dataLine.matches("\\d{2}/\\d{2}/\\d{2}\\t\\d{2}:\\d{2}:\\d{2}\\t.+");
+        return !dataLine.matches("\\d{2}/\\d{2}/\\d{2}[\\t ]\\d{2}:\\d{2}:\\d{2}[\\t ].+");
     }
 
     @Override
@@ -52,7 +52,7 @@ public class EcoFLNTUSParser extends AbstractDataParser
         Double turbVal = null;
         Double tempVal = null;
 
-        String[] splt = dataLine.split("\t");
+        String[] splt = dataLine.split("[\t ]");
         
         dataTimestamp = new Timestamp(dateParser.parse(splt[0] + " " + splt[1]).getTime());
         

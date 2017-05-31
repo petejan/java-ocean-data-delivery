@@ -9,6 +9,14 @@ import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.nio.file.DirectoryStream;
+import java.nio.file.FileSystems;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.sql.Timestamp;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -20,6 +28,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.TimeZone;
 import java.util.Vector;
+import java.util.logging.Level;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -29,10 +38,13 @@ import org.imos.abos.dbms.Instrument;
 import org.imos.abos.dbms.InstrumentCalibrationValue;
 import org.imos.abos.dbms.Mooring;
 import org.imos.abos.dbms.ParameterCodes;
+import org.imos.abos.parsers.AbstractDataParser;
 import org.jfree.util.Log;
 import org.wiley.core.Common;
 import org.wiley.util.SQLWrapper;
 import org.wiley.util.StringUtilities;
+
+import ucar.ma2.Array;
 import ucar.ma2.ArrayByte;
 import ucar.ma2.ArrayChar;
 import ucar.ma2.ArrayDouble;
@@ -40,6 +52,7 @@ import ucar.ma2.ArrayFloat;
 import ucar.ma2.ArrayInt;
 import ucar.ma2.ArrayString;
 import ucar.ma2.DataType;
+import ucar.ma2.Index;
 import ucar.ma2.InvalidRangeException;
 import ucar.nc2.Attribute;
 import ucar.nc2.Dimension;
@@ -64,18 +77,26 @@ public class NetCDFfile
 
     private Mooring mooring = null;
     
-    public boolean fileOrderTimeDepth = true;
+    public boolean fileOrderTimeDepth = false;
 
     public Variable vTime;
+    public Variable vTimeBnds;
 //    public Variable vPos;
     public Variable vLat;
     public Variable vLon;
+    
     public Dimension timeDim;
+    public Dimension bndsDim;
     public Dimension name_strlenDim;
+    
     public Variable vStationName;
     public final boolean timeIsDoubleDays = true;
     public SimpleDateFormat netcdfDate;
     long anchorTime;
+    
+    // FIXME: better integrate this for SAZ traps
+    boolean addTimeBnds = false;
+    public double timeBndsOffset = 38.0;
 
     public NetCDFfile() 
     {        
@@ -93,6 +114,7 @@ public class NetCDFfile
         {
             logger.error(pex);
         }
+        addTimeBnds = false;
     }
     
     boolean multiPart = false;
@@ -104,25 +126,58 @@ public class NetCDFfile
     }
     public String getFileName(Instrument sourceInstrument, Timestamp dataStartTime, Timestamp dataEndTime, String table)
     {
-    	return getFileName(sourceInstrument, dataStartTime, dataEndTime, table, "RTSCP");
+    	return getFileName(sourceInstrument, dataStartTime, dataEndTime, table, "RTSCP", null);
     }
     
-    public String getFileName(Instrument sourceInstrument, Timestamp dataStartTime, Timestamp dataEndTime, String table, String dataType)
+    public String getFileName(Instrument sourceInstrument, Timestamp dataStartTime, Timestamp dataEndTime, String table, String dataType, String instrument)
     {
         SimpleDateFormat nameFormatter = new SimpleDateFormat("yyyyMMdd'T'HHmmss'Z'");
         nameFormatter.setTimeZone(tz);
 
         String filename = "ABOS_NetCDF.nc";
         String deployment = mooring.getMooringID();
-        String mooring = deployment.substring(0, deployment.indexOf("-"));
+        String mooringName = deployment.substring(0, deployment.indexOf("-"));
+        if (instrument != null)
+        {
+        	deployment += "-" + instrument;        	
+        }
         if (sourceInstrument != null)
         {
         	String sn = sourceInstrument.getSerialNumber().replaceAll("[()_]", "").trim();
             deployment += "-" + sourceInstrument.getModel().trim() + "-" + sn;
+            
+            String SQL = "SELECT depth FROM mooring_attached_instruments WHERE mooring_id = "
+                    + StringUtilities.quoteString(mooring.getMooringID())
+                    + " AND instrument_id = " + sourceInstrument.getInstrumentID();
+    
+		    Connection conn = Common.getConnection();
+		    Statement proc;
+		    double depth = Double.NaN;
+		    try
+		    {
+		        proc = conn.createStatement();
+		        proc.execute(SQL);  
+		        ResultSet results = (ResultSet) proc.getResultSet();
+		        results.next();
+		        depth = results.getBigDecimal(1).doubleValue();
+		        logger.info("Depth from database " + depth);
+		        
+		        proc.close();
+		    }
+		    catch (SQLException ex)
+		    {
+		        java.util.logging.Logger.getLogger(AbstractDataParser.class.getName()).log(Level.SEVERE, null, ex);
+		    }
+		    deployment += "-" + String.format("%-4.0f", depth).trim() + "m";		                
         }
+        if (mooringName.startsWith("SAZ"))
+        {
+        	addTimeBnds = true;
+        }
+        String filter = "";
         if (authority.equals("IMOS"))
         {
-            // IMOS_<Facility-Code>_<Data-Code>_<Start-date>_<Platform-Code>_FV<File-Version>_ <Product-Type>_END-<End-date>_C-<Creation_date>_<PARTX>.nc
+            // IMOS_<Facility-Code>_<Data-Code>_<Start-date>_<Platform-Code>_FV<File-Version>_<Product-Type>_END-<End-date>_C-<Creation_date>_<PARTX>.nc
             
             // IMOS_ABOS-SOTS_20110803T115900Z_PULSE_FV01_PULSE-8-2011_END-20120719T214600Z_C-20130724T051434Z.nc
             filename = //System.getProperty("user.home")
@@ -131,27 +186,33 @@ public class NetCDFfile
                             + "_" + facility + "_" 
                             + dataType + "_"
                             + nameFormatter.format(dataStartTime)
-                            + "_" + mooring;
+                            + "_" + mooringName;
                     
             if (table.startsWith("raw"))
             {
-                filename        += "_FV00";
+                filename        += "_FV01";
             }
             else
             {
-                filename        += "_FV01";                
+                filename        += "_FV02"; // its a data product from the processed table                
             }
             filename        += "_" + deployment
                             + "_END-"
                             + nameFormatter.format(dataEndTime)
-                            + "_C-"               
-                            + nameFormatter.format(System.currentTimeMillis());
+                            + "_C-";
+
+            filename = filename.replaceAll("\\s+", "-"); // replace any spaces with a - character
+                        
+            // hacks to get the next filename in a mulitpart set
+            filter = filename + ".*(PART\\d+)\\.nc";
             
+            filename        += nameFormatter.format(new Date(System.currentTimeMillis()));
             if (multiPart)
+            {
             	filename	+= "_PART01";
+            }
             
-            filename        += ".nc"
-                            ;
+            filename        += ".nc";
         }
         else if (authority.equals("OS"))
         {
@@ -163,34 +224,17 @@ public class NetCDFfile
                         ;
         }
 
-        filename = filename.replaceAll("\\s+", "-"); // replace any spaces with a - character
-        
-        // hacks to get the next filename in a mulitpart set
-        final String filter = authority 
-                            + "_" + facility + "_" 
-                            + dataType + "_"
-                            + "(\\d{8}T\\d{6}Z)"
-                            + "_" + mooring
-                            + "_FV00"
-                            + "_" + deployment
-                            + "_END-"
-                            + "(\\d{8}T\\d{6}Z)"
-                            + "_C-"               
-                            + "\\d{8}T\\d{6}Z"
-                            + "_(PART\\d+)"
-                            + "\\.nc";
-        
         final Pattern pattern = Pattern.compile(filter);
         File fl = new File(".");
         File[] files = fl.listFiles(new FilenameFilter()
+                    {
+                        @Override
+                        public boolean accept(File dir, String name)
                         {
-                            @Override
-                            public boolean accept(File dir, String name)
-                            {
-//                                System.out.println("name " + name + " " + name.matches(filter));
-                                return pattern.matcher(name).matches();
-                            }
-                        });
+                            //System.out.println("name " + name + " " + name.matches(filter));
+                            return pattern.matcher(name).matches();
+                        }
+                    });
         
         int fileno = 1;
         for (File datfile : files)
@@ -202,10 +246,7 @@ public class NetCDFfile
         Matcher mat = pattern.matcher(filename);
         if (mat.find())
         {
-	        filename = filename.replaceAll(mat.group(1), nameFormatter.format(dataStartTime));
-	        filename = filename.replaceAll(mat.group(2), nameFormatter.format(dataEndTime));
-
-	        filename = filename.replaceAll(mat.group(3), String.format("PART%02d", fileno));
+	        filename = filename.replaceAll(mat.group(1), String.format("PART%02d", fileno));
         }
         
         System.out.println("Next filename " + filename);        
@@ -330,7 +371,7 @@ public class NetCDFfile
 
         String SQL = "SELECT attribute_name, attribute_type, attribute_value FROM netcdf_attributes "
                 + " WHERE naming_authority = '*'"
-                + " AND facility = '*' AND mooring = '*' AND deployment = '*' AND instrument_id ISNULL AND parameter = '*'"
+                + " AND facility = '*' AND mooring = '*' AND deployment = '*' AND instrument_id IS NULL AND parameter = '*'"
                 + " ORDER BY attribute_name";
 
         query.executeQuery(SQL);
@@ -339,7 +380,7 @@ public class NetCDFfile
 
         SQL = "SELECT attribute_name, attribute_type, attribute_value FROM netcdf_attributes "
                 + " WHERE naming_authority = " + StringUtilities.quoteString(authority)
-                + " AND facility = '*' AND mooring = '*' AND deployment = '*' AND instrument_id ISNULL AND parameter = '*'"
+                + " AND facility = '*' AND mooring = '*' AND deployment = '*' AND instrument_id IS NULL AND parameter = '*'"
                 + " ORDER BY attribute_name";
 
         query.executeQuery(SQL);
@@ -349,7 +390,7 @@ public class NetCDFfile
         SQL = "SELECT attribute_name, attribute_type, attribute_value FROM netcdf_attributes "
                 + " WHERE (naming_authority = " + StringUtilities.quoteString(authority) + " OR naming_authority = '*')"
                 + " AND facility = " + StringUtilities.quoteString(facility)
-                + " AND mooring = '*' AND deployment = '*' AND instrument_id ISNULL AND parameter = '*'"
+                + " AND mooring = '*' AND deployment = '*' AND instrument_id IS NULL AND parameter = '*'"
                 + " ORDER BY attribute_name";
 
         query.executeQuery(SQL);
@@ -360,7 +401,7 @@ public class NetCDFfile
                 + " WHERE (naming_authority = " + StringUtilities.quoteString(authority) + " OR naming_authority = '*')"
                 + " AND (facility = " + StringUtilities.quoteString(facility) + " OR facility = '*')"
                 + " AND mooring = " + StringUtilities.quoteString(mooringString)
-                + " AND deployment = '*' AND instrument_id ISNULL AND parameter = '*'"
+                + " AND deployment = '*' AND instrument_id IS NULL AND parameter = '*'"
                 + " ORDER BY attribute_name";
 
         query.executeQuery(SQL);
@@ -372,20 +413,22 @@ public class NetCDFfile
                 + " AND (facility = " + StringUtilities.quoteString(facility) + " OR facility = '*')"
                 + " AND (mooring = " + StringUtilities.quoteString(mooringString) + " OR mooring = '*')"
                 + " AND deployment = " + StringUtilities.quoteString(deployment)
-                + " AND instrument_id ISNULL AND parameter = '*'"
+                + " AND instrument_id IS NULL AND parameter = '*'"
                 + " ORDER BY attribute_name";
 
         query.executeQuery(SQL);
         attributeSet = query.getData();
         addGlobal("DEPLOYMENT", attributeSet);
 
-        if (authority.equals("IMOS"))
-        {
-            addGroupAttribute(null, new Attribute("date_update", df.format(Calendar.getInstance().getTime())));
-        }
-        else
+//        if (authority.equals("IMOS"))
+//        {
+//            addGroupAttribute(null, new Attribute("date_update", df.format(Calendar.getInstance().getTime())));
+//        }
+//        else
         {
             addGroupAttribute(null, new Attribute("date_created", df.format(Calendar.getInstance().getTime())));
+            addGroupAttribute(null, new Attribute("geospatial_vertical_min", depthMin));
+            addGroupAttribute(null, new Attribute("geospatial_vertical_max", depthMax));
         }
     }
 
@@ -403,10 +446,22 @@ public class NetCDFfile
             vTime.addAttribute(new Attribute("units", "hours since 1950-01-01T00:00:00 UTC"));
         }
         vTime.addAttribute(new Attribute("axis", "T"));
-        vTime.addAttribute(new Attribute("valid_min", 10957));
-        vTime.addAttribute(new Attribute("valid_max", 54787));
+        vTime.addAttribute(new Attribute("valid_min", 10957.0));
+        vTime.addAttribute(new Attribute("valid_max", 54787.0));
         vTime.addAttribute(new Attribute("calendar", "gregorian"));
 
+        if (addTimeBnds)
+        {
+            vTime.addAttribute(new Attribute("ancillary_variables", "TIME_bnds"));
+
+            vTimeBnds.addAttribute(new Attribute("name", "time open/closed"));
+	        vTimeBnds.addAttribute(new Attribute("long_name", "time sample open, closed"));
+	      	vTimeBnds.addAttribute(new Attribute("units", "days since 1950-01-01T00:00:00 UTC"));
+	        vTimeBnds.addAttribute(new Attribute("valid_min", 10957.0));
+	        vTimeBnds.addAttribute(new Attribute("valid_max", 54787.0));
+	        vTimeBnds.addAttribute(new Attribute("calendar", "gregorian"));
+        }
+        
         //vPos.addAttribute(new Attribute("long_name", "deployment_location_position_index"));
 
         vStationName.addAttribute(new Attribute("long_name", "instance station name"));
@@ -418,7 +473,7 @@ public class NetCDFfile
         vLat.addAttribute(new Attribute("axis", "Y"));
         vLat.addAttribute(new Attribute("valid_min", -90.0));
         vLat.addAttribute(new Attribute("valid_max", 90.0));
-        vLat.addAttribute(new Attribute("reference", "WGS84"));
+        vLat.addAttribute(new Attribute("reference_datum", "WGS84 coordinate reference system"));
         vLat.addAttribute(new Attribute("coordinate_reference_frame", "urn:ogc:crs:EPSG::4326"));
         vLat.addAttribute(new Attribute("comment", "Anchor Location"));
 
@@ -428,7 +483,7 @@ public class NetCDFfile
         vLon.addAttribute(new Attribute("axis", "X"));
         vLon.addAttribute(new Attribute("valid_min", -180.0));
         vLon.addAttribute(new Attribute("valid_max", 180.0));
-        vLon.addAttribute(new Attribute("reference", "WGS84"));
+        vLon.addAttribute(new Attribute("reference_datum", "WGS84 coordinate reference system"));        
         vLon.addAttribute(new Attribute("coordinate_reference_frame", "urn:ogc:crs:EPSG::4326"));
         vLon.addAttribute(new Attribute("comment", "Anchor Location"));
     }
@@ -453,9 +508,23 @@ public class NetCDFfile
 //        dataFile.write(vPos, pos);
         dataFile.write(vLat, lat);
         dataFile.write(vLon, lon);
+        if (addTimeBnds)
+        {
+	        Index idx = timesBnds.getIndex(); 
+	        for (int i = 0; i < times.getSize(); i++)
+	        {
+	        	idx = idx.set(i, 0);
+	        	timesBnds.setDouble(idx, times.getDouble(i) - timeBndsOffset/2.0);
+	        	idx = idx.set(i, 1);
+	        	timesBnds.setDouble(idx, times.getDouble(i) + timeBndsOffset/2.0);
+	        }
+
+        	dataFile.write(vTimeBnds, timesBnds);        	
+        }
     }
 
     public ucar.ma2.Array times;
+    public ucar.ma2.ArrayDouble.D2 timesBnds;
 
     public void createCoordinateVariables(int RECORD_COUNT)
     {
@@ -470,16 +539,30 @@ public class NetCDFfile
 //        vLon = dataFile.addVariable(null, "LONGITUDE", DataType.DOUBLE, "POSITION");
         vLat = dataFile.addVariable(null, "LATITUDE", DataType.DOUBLE, new ArrayList());
         vLon = dataFile.addVariable(null, "LONGITUDE", DataType.DOUBLE, new ArrayList());
+
+        if (addTimeBnds)
+        	bndsDim = dataFile.addDimension(null, "bnds", 2);
+    }
+    public void createCoordinateUnlimitedVariables()
+    {
+        timeDim = dataFile.addUnlimitedDimension("TIME");
+        name_strlenDim = dataFile.addDimension(null, "name_strlen", 40);
+        vStationName = dataFile.addVariable(null, "station_name", DataType.CHAR, "name_strlen");
+
+        vLat = dataFile.addVariable(null, "LATITUDE", DataType.DOUBLE, new ArrayList());
+        vLon = dataFile.addVariable(null, "LONGITUDE", DataType.DOUBLE, new ArrayList());
     }
 
     public void writeCoordinateVariables(ArrayList<Timestamp> timeArray)
     {
         if (timeIsDoubleDays)
         {
+        	Log.info("writeCoordinateVariables timeArray " + timeArray.size() + " timeDim " + timeDim.toString());
+        	
             times = new ArrayDouble.D1(timeDim.getLength());
             Calendar cal = Calendar.getInstance();
             cal.setTimeZone(tz);
-            for (int i = 0; i < timeDim.getLength(); i++)
+            for (int i = 0; i < timeArray.size(); i++)
             {
                 Timestamp ts = timeArray.get(i);
                 long offsetTime = (ts.getTime() - anchorTime) / 1000;
@@ -511,11 +594,25 @@ public class NetCDFfile
         {
             vTime = dataFile.addVariable(null, "TIME", DataType.INT, tdlist);
         }
+        
+        if (addTimeBnds)
+        {
+	        ArrayList<Dimension> tdbndsList = new ArrayList<Dimension>();
+	        tdbndsList.add(timeDim);
+	        tdbndsList.add(bndsDim);
+	        timesBnds = new ArrayDouble.D2(timeDim.getLength(), 2);
+	        vTimeBnds = dataFile.addVariable(null, "TIME_bnds", DataType.DOUBLE, tdbndsList);
+        }
     }
+
+
+    double depthMax = 0;
+    double depthMin = 10000;
 
     public class InstanceCoord
     {
         public String params;
+        public String dataCode;
         public Double[] depths;
         public Integer[] instruments;
 
@@ -527,23 +624,28 @@ public class NetCDFfile
 
         public String varName;
         public String varNameQC;
-        public ArrayFloat.D2 dataVar;
-        public ArrayByte.D2 dataVarQC;
+        public ArrayFloat dataVar;
+        public ArrayByte dataVarQC;
         public Variable var;
         public Variable varQC;
         public boolean useHeight = false;
+        public Attribute stdNameSF = null;
 
         public Integer[] source;
+        
+    	public int depthDim = 0;
+    	public int timeDim = 1;
         
         public InstanceCoord()
         {
             
         }
 
-        public void createParam(String string)
+        public void createParam(String string, String fileDataCode)
         {
             params = string;
 
+            dataCode = fileDataCode;
             varName = new String();
             varNameQC = new String();
         }
@@ -586,10 +688,36 @@ public class NetCDFfile
 
             return ds;
         }
-
-        public void createDepths(BigDecimal[] bigDecimal)
+        private Array getHeightsFloat()
         {
+            ArrayFloat.D1 ds = new ArrayFloat.D1(depths.length);
             
+            for (int d = 0; d < depths.length; d++)
+            {
+                float dh = depths[d].floatValue();
+                dh = dh * -1;
+                if (Math.abs(dh) < 0.01)
+                    dh = 0.0f;
+                ds.set(d, dh);
+            }
+
+            return ds;
+        }
+        private Array getDepthsFloat()
+        {
+            ArrayFloat.D1 ds = new ArrayFloat.D1(depths.length);
+            
+            for (int d = 0; d < depths.length; d++)
+            {
+                float dh = depths[d].floatValue();
+                ds.set(d, dh);
+            }
+
+            return ds;
+        }
+        
+        public void createDepths(BigDecimal[] bigDecimal)
+        {            
             int l = bigDecimal.length;
             Double[] dDepths = new Double[l];
             int j = 0;
@@ -599,6 +727,10 @@ public class NetCDFfile
                 BigDecimal s = bigDecimal[d];
                 dDepths[j++] = s.doubleValue();
                 depth += s.floatValue();
+                if (depthMax < s.doubleValue())
+                	depthMax = s.doubleValue();
+                if (depthMin > s.doubleValue())
+                	depthMin = s.doubleValue();
             }
             depths = dDepths;
 
@@ -694,8 +826,9 @@ public class NetCDFfile
                 if (param.getNetCDFStandardName() != null && !(param.getNetCDFStandardName().trim().isEmpty()))
                 {
                     variable.addAttribute(new Attribute("standard_name", param.getNetCDFStandardName()));
+                    dc.stdNameSF = new Attribute("standard_name", param.getNetCDFStandardName() + " status_flag");
                 }
-                else if (param.getNetCDFStandardName() != null)
+                else if (param.getNetCDFLongName() != null)
                 {
                     variable.addAttribute(new Attribute("long_name", param.getNetCDFLongName()));
                 }
@@ -718,7 +851,7 @@ public class NetCDFfile
             String SQL = "SELECT attribute_name, attribute_type, attribute_value FROM netcdf_attributes "
                     + " WHERE (deployment = " + StringUtilities.quoteString(getDeployment()) + " OR deployment = '*')"
                     + " AND (naming_authority = " + StringUtilities.quoteString(authority) + " OR naming_authority = '*')"
-                    + " AND instrument_id ISNULL"
+                    + " AND instrument_id IS NULL"
                     + " AND parameter = " + StringUtilities.quoteString(dc.params.trim()) + " ORDER BY attribute_name";
 
             query.setConnection(Common.getConnection());
@@ -831,64 +964,74 @@ public class NetCDFfile
         public String createParams(int RECORD_COUNT)
         {
             String pt = params.trim();
-            ArrayFloat.D2 dataTemp;
-            ArrayByte.D2 dataTempQC;
-            if (fileOrderTimeDepth)
-            {
-            	dataTemp = new ArrayFloat.D2(RECORD_COUNT, depths.length);
-            	dataTempQC = new ArrayByte.D2(RECORD_COUNT, depths.length);            	
-            }
-            else
-            {
-            	dataTemp = new ArrayFloat.D2(depths.length, RECORD_COUNT);
-            	dataTempQC = new ArrayByte.D2(depths.length, RECORD_COUNT);
-            }
-            byte b = 9; // missing value
-            for (int i = 0; i < RECORD_COUNT; i++)
-            {
-                for (int j = 0; j < depths.length; j++)
-                {
-                	if (fileOrderTimeDepth)
-                	{
-                		dataTemp.set(i, j, Float.NaN);
-                		dataTempQC.set(i, j, b);
-                	}
-                	else
-                	{
-                		dataTemp.set(j, i, Float.NaN);
-                		dataTempQC.set(j, i, b);
-                	}
-                }
-            }
             varName = pt;
             if ((varName.compareTo("DEPTH") == 0) || (varName.compareTo("HEIGHT") == 0)) // because they are dimension names
             {
             	varName = varName + "_INST";
             }
+            String qc = varName + "_quality_control";
+            varNameQC = qc;
+
+            var = dataFile.addVariable(null, varName, DataType.FLOAT, timeAndDim);
+            varQC = dataFile.addVariable(null, varNameQC, DataType.BYTE, timeAndDim);
+                        
+            Log.debug("createParam " + var + " " + varQC);
+            
+            ArrayFloat dataTemp;
+            ArrayByte dataTempQC;
+        	dataTemp = new ArrayFloat(this.var.getShape());
+        	dataTempQC = new ArrayByte(this.var.getShape());            	
+
+        	Index idx = dataTemp.getIndex();
+        	if (idx.getRank() == 1)
+        	{
+        		timeDim = 0;
+        	}
+        	if (fileOrderTimeDepth)
+        	{
+        		depthDim = 1;
+        		timeDim = 0;
+        	}
+        	byte b = 9; // missing value
+            for (int i = 0; i < idx.getShape(depthDim); i++)
+            {
+            	idx.setDim(depthDim, i);
+                for (int j = 0; j < idx.getShape(timeDim); j++)
+                {
+                	idx.setDim(timeDim, j);
+
+                	dataTemp.set(idx, Float.NaN);
+               		dataTempQC.set(idx, b);
+                }
+            }
             dataVar = dataTemp;
             dataVarQC = dataTempQC;
-            var = dataFile.addVariable(null, varName, DataType.FLOAT, timeAndDim);
-            
             if (useHeight)
             {
                 var.addAttribute(new Attribute("sensor_height", getHeightsString()));
+                var.addAttribute(new Attribute("sensor_height_float", getHeightsFloat()));
+                var.addAttribute(new Attribute("sensor_height_positive", "up"));
             }
             else
             {
                 var.addAttribute(new Attribute("sensor_depth", getDepthsString()));
+                var.addAttribute(new Attribute("sensor_depth_float", getDepthsFloat()));
+                var.addAttribute(new Attribute("sensor_depth_positive", "down"));
             }
             addVariableAttributes(this);
 
-            String qc = varName + "_QC";
+            
             var.addAttribute(new Attribute("ancillary_variables", qc));
             var.addAttribute(new Attribute("coordinates", "TIME " + getDimensionName() + " LATITUDE LONGITUDE"));
 
             varNameQC = qc;
-            varQC = dataFile.addVariable(null, qc, DataType.BYTE, timeAndDim);
             varQC.addAttribute(new Attribute("long_name", "quality flag for " + varName));
+            if (stdNameSF != null)
+                varQC.addAttribute(stdNameSF);
+            	
             if (authority.equals("IMOS"))
             {
-                varQC.addAttribute(new Attribute("quality_control_conventions", "IMOS standard set using the IODE flags"));
+                varQC.addAttribute(new Attribute("quality_control_conventions", "IMOS standard flags"));
             }
             else
             {
@@ -904,17 +1047,21 @@ public class NetCDFfile
             b = 9;
             varQC.addAttribute(new Attribute("valid_max", b));
 
-            ArrayByte.D1 qcValues = new ArrayByte.D1(4);
+            ArrayByte.D1 qcValues = new ArrayByte.D1(6);
             b = 0;
             qcValues.set(0, b);
             b = 1;
             qcValues.set(1, b);
-            b = 4;
+            b = 2;
             qcValues.set(2, b);
-            b = 9;
+            b = 3;
             qcValues.set(3, b);
+            b = 4;
+            qcValues.set(4, b);
+            b = 9;
+            qcValues.set(5, b);
             varQC.addAttribute(new Attribute("flag_values", qcValues));
-            varQC.addAttribute(new Attribute("flag_meanings", "unknown good_data bad_data missing_value"));
+            varQC.addAttribute(new Attribute("flag_meanings", "unknown good_data probably_good_data probably_bad_data bad_data missing_value"));
 
             return pt;
         }

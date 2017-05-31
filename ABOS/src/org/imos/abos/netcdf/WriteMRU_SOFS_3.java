@@ -39,7 +39,7 @@ public class WriteMRU_SOFS_3
     {
         String $HOME = System.getProperty("user.home");
         PropertyConfigurator.configure("log4j.properties");
-        Common.build($HOME + "/ABOS/ABOS.properties");
+        Common.build("ABOS.properties");
         
         decode d = new decode();
         final int len = 35;

@@ -330,7 +330,7 @@ public class AnchorDistCalculationForm extends MemoryWindow implements DataProce
         String $HOME = System.getProperty("user.home");
 
         PropertyConfigurator.configure("log4j.properties");
-        Common.build($HOME + "/ABOS/ABOS.properties");
+        Common.build("ABOS.properties");
 
         AnchorDistCalculationForm form = new AnchorDistCalculationForm();
 
@@ -372,7 +372,7 @@ public class AnchorDistCalculationForm extends MemoryWindow implements DataProce
             conn.setAutoCommit(false);
             proc = conn.createStatement();
             
-            tab = "SELECT data_timestamp, source_file_id, instrument_id, depth, parameter_value AS xpos, depth AS pres INTO TEMP pos FROM raw_instrument_data WHERE parameter_code = 'XPOS' AND mooring_id = "+StringUtilities.quoteString(selectedMooring.getMooringID()) +" ORDER BY data_timestamp";
+            tab = "SELECT data_timestamp, source_file_id, instrument_id, depth, parameter_value AS xpos, depth AS pres INTO TEMP pos FROM raw_instrument_data WHERE parameter_code = 'XPOS' AND quality_code != 'BAD' AND mooring_id = "+StringUtilities.quoteString(selectedMooring.getMooringID()) +" ORDER BY data_timestamp";
             proc.execute(tab);
             
             tab = "ALTER TABLE pos ADD ypos  numeric";

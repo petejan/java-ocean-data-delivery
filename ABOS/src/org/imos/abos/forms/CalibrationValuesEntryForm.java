@@ -391,7 +391,7 @@ public class CalibrationValuesEntryForm extends MemoryWindow
         if(args.length == 0)
         {
             PropertyConfigurator.configure("log4j.properties");
-            Common.build($HOME + "/ABOS/ABOS.properties");
+            Common.build("ABOS.properties");
         }
 
         CalibrationValuesEntryForm form = new CalibrationValuesEntryForm();

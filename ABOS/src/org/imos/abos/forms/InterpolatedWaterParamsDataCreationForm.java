@@ -528,7 +528,7 @@ public class InterpolatedWaterParamsDataCreationForm extends MemoryWindow implem
         String $HOME = System.getProperty("user.home");
 
         PropertyConfigurator.configure("log4j.properties");
-        Common.build($HOME + "/ABOS/ABOS.properties");
+        Common.build("ABOS.properties");
 
         InterpolatedWaterParamsDataCreationForm form = new InterpolatedWaterParamsDataCreationForm();
         
