@@ -25,12 +25,12 @@ import org.wiley.util.StringUtilities;
  *
  * @author Peter Jansen
  */
-public class CrossTabDataAWCP
+public class CrossTabDataAZFP
 {
     private static Logger logger = Logger.getLogger(CrossTabData.class.getName());    
     protected static SQLWrapper query = new SQLWrapper();
     protected static String mooring_id = "'SOFS-3-2012', 'SOFS-4-2013'";
-    protected static String instrument_id = "1574, 2238"; // AWCP 55046 and 55052
+    protected static String instrument_id = "1574, 2238"; // AZFP 55046 and 55052
     
     
     public void CrossTabData()
@@ -95,7 +95,7 @@ public class CrossTabDataAWCP
 
             results.setFetchSize(50);
             Timestamp currentTs = new Timestamp(0);
-            CrossTabDataAWCP.ParamDatum[] foo = new CrossTabDataAWCP.ParamDatum[params];
+            CrossTabDataAZFP.ParamDatum[] foo = new CrossTabDataAZFP.ParamDatum[params];
 
             while (results.next())
             {
@@ -103,7 +103,7 @@ public class CrossTabDataAWCP
                 String p = results.getString(2);
                 int col = ((Integer) map.get(p)).intValue();
                 Double d = results.getDouble(3);
-                CrossTabDataAWCP.ParamDatum dd = new CrossTabDataAWCP.ParamDatum(t, p, d);
+                CrossTabDataAZFP.ParamDatum dd = new CrossTabDataAZFP.ParamDatum(t, p, d);
                 foo[col] = dd;
                 // System.out.println("data " + col + " " + dd);
                 if (count == 0)
@@ -149,7 +149,7 @@ public class CrossTabDataAWCP
             Common.build("ABOS.properties");
         }
 
-        CrossTabDataAWCP ctd = new CrossTabDataAWCP();
+        CrossTabDataAZFP ctd = new CrossTabDataAZFP();
         
         ctd.getData();
     }

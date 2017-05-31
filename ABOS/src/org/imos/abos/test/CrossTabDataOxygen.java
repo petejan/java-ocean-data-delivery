@@ -145,7 +145,7 @@ public class CrossTabDataOxygen
         if(args.length == 0)
         {
             PropertyConfigurator.configure("log4j.properties");
-            Common.build($HOME + "/ABOS/ABOS.properties");
+            Common.build("ABOS.properties");
         }
 
         CrossTabDataOxygen ctd = new CrossTabDataOxygen();
