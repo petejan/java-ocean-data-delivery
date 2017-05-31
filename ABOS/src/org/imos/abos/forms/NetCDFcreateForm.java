@@ -290,8 +290,6 @@ public class NetCDFcreateForm extends MemoryWindow
     		instanceCoords.clear();
     	if (timeArray != null)
     		timeArray.clear();
-    	//if (dimensionCoords != null)
-    	//dimensionCoords.clear();
     	
         selectedMooring = mooringCombo1.getSelectedMooring();
         sourceInstrument = sourceInstrumentCombo.getSelectedInstrument();
@@ -411,7 +409,7 @@ public class NetCDFcreateForm extends MemoryWindow
                 
                 InstanceCoord dc = f.new InstanceCoord();
                 dc.createParam(param, imos_data_code);
-                
+
                 Array instruments = (Array)row.get(2);
                 logger.debug("instruments " + instruments);
                 Array source = (Array)row.get(3);
@@ -517,7 +515,6 @@ public class NetCDFcreateForm extends MemoryWindow
         {
             logger.warn(ex);
         }
-
         dataEndTime = currentTimestamp;
         
         logger.debug("Finished generating time array, last timestamp was " + currentTimestamp + "\nTotal Elements: " + timeArray.size());

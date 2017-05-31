@@ -1020,7 +1020,6 @@ public class NetCDFfile
             }
             addVariableAttributes(this);
 
-            
             var.addAttribute(new Attribute("ancillary_variables", qc));
             var.addAttribute(new Attribute("coordinates", "TIME " + getDimensionName() + " LATITUDE LONGITUDE"));
 

@@ -266,7 +266,7 @@ public class RawAZFPdata
         
         for(int i=0;i<bins[ch];i++)
         {
-            r = sos * (i + 1) / rate[ch] / 2; // range
+            r = sos * (i + 1) / rate[ch] / 2; // range, m
             // sv = const + data (dB) + range_spread + range_water_attenuation
             sv[i] = c + data[ch][i]/(26214 * ds[ch])  + 20 * Math.log10(r) + 2 * alpha[ch] * r ; // 26214 = 65536/2.5 
             

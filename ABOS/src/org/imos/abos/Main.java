@@ -98,7 +98,7 @@ public class Main
         
         UIDefaults defaults = UIManager.getLookAndFeelDefaults();
         if (defaults.get("Table.alternateRowColor") == null)
-            defaults.put("Table.alternateRowColor", new Color(224,255,255));
+            defaults.put("Table.alternateRowColor", new Color(240, 210, 240));
         
         startMenu mm = new startMenu();
 
