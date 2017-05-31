@@ -14,6 +14,13 @@
 -- Pulse-6 Optode configuration not known
 delete from raw_instrument_data where mooring_id = 'Pulse-6-2009' and parameter_code = 'OPTODE_BPHASE';
 update raw_instrument_data set parameter_code = 'OPTODE_VOLT' where mooring_id = 'Pulse-6-2009' and parameter_code = 'OPTODE_BPHASE_VOLT';
+delete from raw_instrument_data where mooring_id = 'Pulse-6-2009' and parameter_code = 'XPOS' and parameter_value < 100;
+delete from raw_instrument_data where mooring_id = 'Pulse-6-2009' and parameter_code = 'YPOS' and parameter_value < -50;
+update raw_instrument_data set quality_code = 'BAD' 
+	where data_timestamp in 
+	(
+		select data_timestamp from raw_instrument_data where mooring_id = 'Pulse-6-2009' and parameter_code = 'PSAL' and (parameter_value < 34 and parameter_value > 2) order by data_timestamp
+	) and parameter_code in ('PSAL', 'DENSITY', 'OXSOL', 'DOX2', 'CNDC');
 
 UPDATE processed_instrument_data SET quality_code = 'BAD' WHERE quality_code != 'BAD' AND mooring_id = 'Pulse-8-2011' AND source_file_id = 200087 AND (data_timestamp > '2012-01-30 00:00');
 UPDATE processed_instrument_data SET quality_code = 'BAD' WHERE quality_code != 'BAD' AND mooring_id = 'Pulse-8-2011' AND instrument_id = 5;
@@ -64,4 +71,10 @@ update raw_instrument_data set quality_code = 'BAD' where instrument_id = 1381
 update raw_instrument_data set quality_code = 'BAD' where parameter_code = 'RAIT' and parameter_value <= 0;
 
 update processed_instrument_data set quality_code = 'BAD' where parameter_code = 'RAIT' and parameter_value <= 0;
+
+-- FluxPulse-1-2016
+
+delete from raw_instrument_data where mooring_id = 'FluxPulse-1-2016' and data_timestamp < '2015-01-01';
+
+
 
