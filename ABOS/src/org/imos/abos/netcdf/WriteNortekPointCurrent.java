@@ -121,7 +121,7 @@ public class WriteNortekPointCurrent
         {
             ndf.setMooring(m);
             ndf.setAuthority("IMOS");
-            ndf.setFacility("ABOS-ASFS");
+            ndf.setFacility("ABOS-SOFS");
             ndf.setMultiPart(true);
             
         	filename = ndf.getFileName(inst, dataStartTime, dataEndTime, "raw_instrument_data", "RVT", null);

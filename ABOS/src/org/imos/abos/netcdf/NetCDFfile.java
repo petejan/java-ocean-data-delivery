@@ -39,7 +39,7 @@ import org.imos.abos.dbms.InstrumentCalibrationValue;
 import org.imos.abos.dbms.Mooring;
 import org.imos.abos.dbms.ParameterCodes;
 import org.imos.abos.parsers.AbstractDataParser;
-import org.jfree.util.Log;
+
 import org.wiley.core.Common;
 import org.wiley.util.SQLWrapper;
 import org.wiley.util.StringUtilities;
@@ -557,7 +557,7 @@ public class NetCDFfile
     {
         if (timeIsDoubleDays)
         {
-        	Log.info("writeCoordinateVariables timeArray " + timeArray.size() + " timeDim " + timeDim.toString());
+        	logger.info("writeCoordinateVariables timeArray " + timeArray.size() + " timeDim " + timeDim.toString());
         	
             times = new ArrayDouble.D1(timeDim.getLength());
             Calendar cal = Calendar.getInstance();
@@ -803,16 +803,21 @@ public class NetCDFfile
                     differentSource = true;
                 }
             }
-            variable.addAttribute(new Attribute("sensor_name", sensor));
-            variable.addAttribute(new Attribute("sensor_serial_number", serialNo));
-            
             groupAttributeList.add(new Attribute("instrument", sensor));
             groupAttributeList.add(new Attribute("instrument_serial_number", serialNo));
             
             if (differentSource)
             {
+                variable.addAttribute(new Attribute("sensor_name", sensor));
+                variable.addAttribute(new Attribute("sensor_serial_number", serialNo));
+
                 variable.addAttribute(new Attribute("sensor_source_name", sourceSensor));
                 variable.addAttribute(new Attribute("sensor_source_serial_number", sourceSerialNo));
+            }
+            else
+            {
+                variable.addAttribute(new Attribute("sensor_name", sensor));
+                variable.addAttribute(new Attribute("sensor_serial_number", serialNo));
             }
 
             if (param != null)
@@ -961,10 +966,13 @@ public class NetCDFfile
             }
         }
 
-        public String createParams(int RECORD_COUNT)
+        public String createVariable(int RECORD_COUNT)
         {
             String pt = params.trim();
-            varName = pt;
+            
+            if (varName.length() == 0)
+            	varName = pt;
+            
             if ((varName.compareTo("DEPTH") == 0) || (varName.compareTo("HEIGHT") == 0)) // because they are dimension names
             {
             	varName = varName + "_INST";
@@ -975,7 +983,7 @@ public class NetCDFfile
             var = dataFile.addVariable(null, varName, DataType.FLOAT, timeAndDim);
             varQC = dataFile.addVariable(null, varNameQC, DataType.BYTE, timeAndDim);
                         
-            Log.debug("createParam " + var + " " + varQC);
+            logger.debug("createVariable " + var + " " + varQC);
             
             ArrayFloat dataTemp;
             ArrayByte dataTempQC;
@@ -993,7 +1001,10 @@ public class NetCDFfile
         		timeDim = 0;
         	}
         	byte b = 9; // missing value
-            for (int i = 0; i < idx.getShape(depthDim); i++)
+        	int depthLen = 1;
+        	if (idx.getRank() > 1)
+        		depthLen = idx.getShape(depthDim);
+            for (int i = 0; i < depthLen; i++)
             {
             	idx.setDim(depthDim, i);
                 for (int j = 0; j < idx.getShape(timeDim); j++)
@@ -1020,6 +1031,7 @@ public class NetCDFfile
             }
             addVariableAttributes(this);
 
+            
             var.addAttribute(new Attribute("ancillary_variables", qc));
             var.addAttribute(new Attribute("coordinates", "TIME " + getDimensionName() + " LATITUDE LONGITUDE"));
 

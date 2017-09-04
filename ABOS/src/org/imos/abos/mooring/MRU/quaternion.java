@@ -6,7 +6,7 @@ public class quaternion
 {
 	DecimalFormat df3 = new DecimalFormat("#0.000");
 	
-	double Q1, Q2, Q3, Q4;
+	public double Q1, Q2, Q3, Q4;
 	
 	public String toString()
 	{

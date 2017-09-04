@@ -16,6 +16,8 @@ import java.text.SimpleDateFormat;
 import java.util.HashMap;
 import java.util.NoSuchElementException;
 import java.util.StringTokenizer;
+
+import org.imos.abos.dbms.ProcessedInstrumentData;
 import org.imos.abos.dbms.RawInstrumentData;
 
 /**
@@ -102,13 +104,24 @@ public class NameValueParser extends AbstractDataParser
 
         hm.put("CHL", "ECO_FLNTUS_CHL");
         hm.put("NTU", "ECO_FLNTUS_TURB");
+        
+        hm.put("CHL_UGL", "CPHL");
+        hm.put("BB", "BB");
 
         hm.put("MLD", "MLD");
 
-        StringTokenizer st = new StringTokenizer(dataLine, ",");
+        hm.put("PHOS", "PHOS");
+        hm.put("SLCA", "SLCA");
+        hm.put("NTRI", "NTRI");
+        hm.put("TALK", "TALK");
+        hm.put("TCO2", "TCO2");
+        hm.put("WATER_SAMPLE", "WATER_SAMPLE");
+        hm.put("WEIGHT", "WEIGHT");
+        
+        String[] st = dataLine.split(",");
         try
         {
-            dateString = st.nextToken();
+            dateString = st[0];
             try
             {
                 java.util.Date d = dateParser.parse(dateString);
@@ -119,44 +132,82 @@ public class NameValueParser extends AbstractDataParser
                 throw new ParseException("Timestamp parse failed for text '" + dateString + "'",0);
             }
 
-            while(st.hasMoreElements())
+            String sQ;
+            for (int i=1;i<st.length;i++)
             {
-                String nvp = st.nextToken();
-                StringTokenizer nv = new StringTokenizer(nvp, "=");
-                sName = nv.nextToken();
-                if (hm.get(sName) != null)
+            	sQ = "RAW";
+                String nvp = st[i];
+                String[] nv = nvp.split("[=() ]");
+                if (nv.length > 1)
                 {
-                    if (nv.hasMoreTokens())
-                    {
-                        sValue = nv.nextToken();
+                	if (hm.get(nv[0]) != null)
+                	{
+                        sValue = nv[1];
 
                         try
                         {
                             value = new Double(sValue.trim());
-                        //
+                            
+                            //
                             // ok, we have parsed out the values we need, can now construct the raw data class
                             //
-                            RawInstrumentData row = new RawInstrumentData();
+                            
+                            if (nv.length > 2)
+                            {
+                            	// TODO: should the QC data go into RawData or ProcessedData?
+                            	
+                            	RawInstrumentData row = new RawInstrumentData(); 
+	
+	                            row.setDataTimestamp(dataTimestamp);
+	                            row.setDepth(instrumentDepth);
+	                            row.setInstrumentID(currentInstrument.getInstrumentID());
+	                            row.setLatitude(currentMooring.getLatitudeIn());
+	                            row.setLongitude(currentMooring.getLongitudeIn());
+	                            row.setMooringID(currentMooring.getMooringID());
+	                            row.setParameterCode(hm.get(nv[0]));
+	                            row.setParameterValue(value);
+	                            row.setSourceFileID(currentFile.getDataFilePrimaryKey());
+                            	int quality = Integer.parseInt(nv[2]);
+                            	switch (quality)
+                            	{
+                            		case 1: sQ = "GOOD"; break;
+                            		case 2: sQ = "PGOOD"; break;
+                            		case 3: sQ = "PBAD"; break;
+                            		case 4: sQ = "BAD"; break;
+                            		default : sQ = "RAW";
+                            	}
+                            	row.setQualityCode(sQ);
+                                paramsSent++;
 
-                            row.setDataTimestamp(dataTimestamp);
-                            row.setDepth(instrumentDepth);
-                            row.setInstrumentID(currentInstrument.getInstrumentID());
-                            row.setLatitude(currentMooring.getLatitudeIn());
-                            row.setLongitude(currentMooring.getLongitudeIn());
-                            row.setMooringID(currentMooring.getMooringID());
-                            row.setParameterCode(hm.get(sName));
-                            row.setParameterValue(value);
-                            row.setSourceFileID(currentFile.getDataFilePrimaryKey());
-                            row.setQualityCode("RAW");
-                            paramsSent++;
+                                boolean ok = row.insert();
+                            }
+                            else
+                            {
+	                            RawInstrumentData row = new RawInstrumentData();
+	                        	
+	                            row.setDataTimestamp(dataTimestamp);
+	                            row.setDepth(instrumentDepth);
+	                            row.setInstrumentID(currentInstrument.getInstrumentID());
+	                            row.setLatitude(currentMooring.getLatitudeIn());
+	                            row.setLongitude(currentMooring.getLongitudeIn());
+	                            row.setMooringID(currentMooring.getMooringID());
+	                            row.setParameterCode(hm.get(nv[0]));
+	                            row.setParameterValue(value);
+	                            row.setSourceFileID(currentFile.getDataFilePrimaryKey());
+                            	row.setQualityCode(sQ);
 
-                            boolean ok = row.insert();
+                            	paramsSent++;
+
+                                boolean ok = row.insert();                            	
+                            }
+                            logger.trace("name " + nv[0] + " = " + value + " quality " + sQ);
+
                         }
                         catch (NumberFormatException ex)
                         {
                             // just ignore, don't insert into database
                         }
-                    }
+                	}
                 }
             }
             // logger.debug("params" + paramsSent);

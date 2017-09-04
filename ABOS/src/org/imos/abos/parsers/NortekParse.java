@@ -480,7 +480,6 @@ public class NortekParse
     		imu.timer = (buffer.getInt() & 0xffffffff)/62.5;
 
     		log.trace("IMU accel, ang rate, mag, MAT " + imu.accelX + " " + imu.accelY + " " + imu.accelZ + " timer " + imu.timer);
-    	
     	}
     	else
     	{

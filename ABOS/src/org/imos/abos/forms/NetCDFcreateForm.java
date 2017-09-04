@@ -41,6 +41,7 @@ import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
 import org.imos.abos.dbms.Instrument;
 import org.imos.abos.dbms.InstrumentCalibrationValue;
+import org.imos.abos.dbms.InstrumentDataFile;
 import org.imos.abos.dbms.Mooring;
 import org.imos.abos.dbms.ParameterCodes;
 import org.imos.abos.netcdf.NetCDFfile;
@@ -70,20 +71,23 @@ public class NetCDFcreateForm extends MemoryWindow
     private static Logger logger = Logger.getLogger(NetCDFcreateForm.class.getName());
     protected static SQLWrapper query = new SQLWrapper();
     
-    private Mooring selectedMooring = null;
+    protected Mooring selectedMooring = null;
     
     private String authority = "IMOS";
     
     protected TimeZone tz = TimeZone.getTimeZone("UTC");
     protected SimpleDateFormat netcdfDate;
-    private Instrument sourceInstrument;
+    protected Instrument sourceInstrument;
+    protected InstrumentDataFile sourceFile;
     
     private String selectLimited = "";
     
     private HashMap<String, String> limitList = new HashMap<String, String>();
     private ArrayList<String> instList = new ArrayList<String>();
     
-    private String table = "processed_instrument_data";
+    protected String table = "processed_instrument_data";
+    
+    protected String appendInstrument = null;
     
     /** Creates new form NetCDFcreateForm */
     public NetCDFcreateForm()
@@ -290,6 +294,8 @@ public class NetCDFcreateForm extends MemoryWindow
     		instanceCoords.clear();
     	if (timeArray != null)
     		timeArray.clear();
+    	//if (dimensionCoords != null)
+    	//dimensionCoords.clear();
     	
         selectedMooring = mooringCombo1.getSelectedMooring();
         sourceInstrument = sourceInstrumentCombo.getSelectedInstrument();
@@ -333,9 +339,13 @@ public class NetCDFcreateForm extends MemoryWindow
                         
                         f = new NetCDFfile();
                         
+                        String appendInstrument = (String)instCombo.getSelectedItem();
                         createTimeArray(selectedMooring.getMooringID());
                         createDepthArray(selectedMooring.getMooringID());
-                        createCDFFile();                        
+                        createCDFFile();       
+                        
+                        jTextFile.setText("Generated File : " + filename);
+                        
                     }
                 });
             }
@@ -368,16 +378,20 @@ public class NetCDFcreateForm extends MemoryWindow
 
     protected ArrayList<Timestamp> timeArray;    
     
-    ArrayList<InstanceCoord> instanceCoords;
+    protected ArrayList<InstanceCoord> instanceCoords;
     
-    HashSet<BigDecimal> allDepths = new HashSet<BigDecimal>();
+    protected HashSet<BigDecimal> allDepths = new HashSet<BigDecimal>();
 
     protected void createDepthArray(String mooringID)
     {
         String selectInstrument = "";
         if (sourceInstrument != null)
         {
-            selectInstrument = " AND s.instrument_id = " + sourceInstrument.getInstrumentID();
+            selectInstrument = " AND d.instrument_id = " + sourceInstrument.getInstrumentID();
+        }
+        if (sourceFile != null)
+        {
+            selectInstrument = " AND d.source_file_id = " + sourceFile.getDataFilePrimaryKey();
         }
         logger.debug("dataStart " + dataStartTime + " dataEnd " + dataEndTime);
         
@@ -385,7 +399,8 @@ public class NetCDFcreateForm extends MemoryWindow
                     + "      (SELECT CAST(parameter_code AS varchar(20)), imos_data_code , d.mooring_id, d.instrument_id, s.instrument_id AS source, CAST(avg(depth) AS numeric(8,3)) AS depth FROM  " + table + " AS d JOIN instrument_data_files AS s ON (source_file_id = datafile_pk) "
                     + "                        JOIN instrument ON (d.instrument_id = instrument.instrument_id) "
                     + "                        JOIN parameters ON (d.parameter_code = parameters.code)"
-                    +         " WHERE d.mooring_id = " + StringUtilities.quoteString(selectedMooring.getMooringID()) + " AND quality_code not in ('INTERPOLATED', 'BAD') "
+//                    +         " WHERE d.mooring_id = " + StringUtilities.quoteString(selectedMooring.getMooringID()) + " AND quality_code not in ('INTERPOLATED', 'BAD') "
+                    +         " WHERE d.mooring_id = " + StringUtilities.quoteString(selectedMooring.getMooringID()) + " AND quality_code not in ('BAD') "
                     + selectInstrument + " " + selectLimited
                     + " AND data_timestamp BETWEEN " + StringUtilities.quoteString(Common.getRawSQLTimestamp(dataStartTime)) + " AND " + StringUtilities.quoteString(Common.getRawSQLTimestamp(dataEndTime))
                     + "          GROUP BY parameter_code, imos_data_code, d.mooring_id, d.instrument_id, s.instrument_id, make, model, serial_number ORDER BY 1, 2, depth, make, model, serial_number "
@@ -409,7 +424,7 @@ public class NetCDFcreateForm extends MemoryWindow
                 
                 InstanceCoord dc = f.new InstanceCoord();
                 dc.createParam(param, imos_data_code);
-
+                
                 Array instruments = (Array)row.get(2);
                 logger.debug("instruments " + instruments);
                 Array source = (Array)row.get(3);
@@ -466,6 +481,10 @@ public class NetCDFcreateForm extends MemoryWindow
         {                    
             SQL += " AND instrument_id = " + sourceInstrument.getInstrumentID();
         }
+        if (sourceFile != null)
+        {                    
+            SQL += " AND source_file_id = " + sourceFile.getDataFilePrimaryKey();
+        }
         SQL += selectLimited;
 
         try
@@ -515,6 +534,7 @@ public class NetCDFcreateForm extends MemoryWindow
         {
             logger.warn(ex);
         }
+
         dataEndTime = currentTimestamp;
         
         logger.debug("Finished generating time array, last timestamp was " + currentTimestamp + "\nTotal Elements: " + timeArray.size());
@@ -605,7 +625,8 @@ public class NetCDFcreateForm extends MemoryWindow
         }
     }
         
-    NetCDFfile f = null;
+    protected NetCDFfile f = null;
+    String filename;
 
     protected void createCDFFile()
     {
@@ -625,8 +646,7 @@ public class NetCDFcreateForm extends MemoryWindow
         	}
         }
         
-        String filename;
-        filename = f.getFileName(sourceInstrument, dataStartTime, dataEndTime, table, dataCodes, (String)instCombo.getSelectedItem());
+        filename = f.getFileName(sourceInstrument, dataStartTime, dataEndTime, table, dataCodes, appendInstrument);
         
         int RECORD_COUNT = timeArray.size();
         try
@@ -674,7 +694,7 @@ public class NetCDFcreateForm extends MemoryWindow
                 {
                     dimensionName = "HEIGHT";
                 }
-                if (allDepths.size() > 1)
+                if (ic.depths.length > 1)
                 {
 	                dimensionName += "_" + ic.params;
 	
@@ -687,7 +707,7 @@ public class NetCDFcreateForm extends MemoryWindow
 	                }
 	                dimNames.add(dimensionName);
                 }
-                if ((dims == null) || (allDepths.size() > 1))
+                if ((dims == null) || (ic.depths.length > 1))
                 {               
 	                logger.debug("Create Dimension " + dimensionName);
 	                
@@ -755,7 +775,7 @@ public class NetCDFcreateForm extends MemoryWindow
                 
                 //for (int p=0;p<ic.params.length;p++)
                 {
-                    String pt = ic.createParams(RECORD_COUNT);
+                    String pt = ic.createVariable(RECORD_COUNT);
                     Index idx = ic.dataVar.getIndex();
                     
                     for (int d=0;d<ic.instruments.length;d++)
@@ -877,8 +897,6 @@ public class NetCDFcreateForm extends MemoryWindow
             }
             
             System.out.println("*** SUCCESS writing file " + filename);
-        
-            jTextFile.setText("Generated File : " + filename);
         }
         catch (IOException e)
         {

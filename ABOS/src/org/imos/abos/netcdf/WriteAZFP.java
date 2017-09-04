@@ -41,6 +41,7 @@ public class WriteAZFP
         Common.build("ABOS.properties");
         
         TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
+        SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
                 
         String xmlFile = null;
         String mooring_id = "SOFS-4-2013";
@@ -48,6 +49,8 @@ public class WriteAZFP
         // run with something like
         //
         // java -Djna.library.path=/usr/lib64 -cp dist/ABOS.jar org.imos.abos.netcdf.WriteAZFP -x ~/ABOS/AZFP/SOFS-4-2014/201303/13032423.XML -m SOFS-4-2013 ~/ABOS/AZFP/SOFS-4-2014/201305
+        //
+        // for /D %i in (data\AZFP\SOFS-5-2015\20*) do java  -Xms8G -cp dist\ABOS.jar org.imos.abos.netcdf.WriteAZFP -m SOFS-5-2015 -x data\AZFP\SOFS-5-2015\15031703.XML %i
         
         ArrayList<File> listOfFiles = new ArrayList<File>();
         try
@@ -278,9 +281,14 @@ public class WriteAZFP
                     sampleDim1.getLength()
                 };
                 dataDistance[i] = Array.factory(DataType.FLOAT, iDimd);
+                float instrument_depth = 30.0f;
+                if (tsStart.after(df.parse("2016-01-01 00:00:00")))
+                {
+                	instrument_depth = 1.0f;
+                }
                 for(int j=0;j<sampleDim1.getLength();j++)
                 {
-                    dataDistance[i].setFloat(j, (float)(30.0 + an.sos * (j + 1) / an.rate[i] / 2));
+                    dataDistance[i].setFloat(j, instrument_depth + (float)(an.sos * (j + 1) / an.rate[i] / 2));
                 }
                 
                 List<Dimension> dims1 = new ArrayList<Dimension>();

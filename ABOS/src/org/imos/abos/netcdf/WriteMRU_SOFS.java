@@ -16,10 +16,14 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.StringTokenizer;
 import java.util.TimeZone;
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileReader;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -57,10 +61,10 @@ public class WriteMRU_SOFS
             File[] files = tree.listFiles();
             for (int i = 0; i < files.length; i++)
             {
-                String fileName = files[i].getName();
+                String fileName = files[i].getName().toLowerCase();
                 if (files[i].isFile())
                 {
-                    if (fileName.endsWith(shapeName))
+                    if (fileName.endsWith(shapeName.toLowerCase()))
                     {
                         endAll.add(files[i]);
                     }
@@ -74,8 +78,67 @@ public class WriteMRU_SOFS
         }
     }
     
+    // for SOFS-1 only
+    static HashMap<Integer, Date> dataTs;
+
+    public static void readDataFile(String file) throws IOException
+    {
+        String thisLine;
+        String token;
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+
+        int i;
+        int n = -1;
+        Date ts = null;
+        dataTs = new HashMap<Integer, Date>();
+
+        File f = new File(file);
+
+        FileReader is = new FileReader(f);
+
+        BufferedReader br = new BufferedReader(is);
+
+        while ((thisLine = br.readLine()) != null)
+        {
+            //System.out.println(thisLine);
+
+            String[] st = thisLine.split(",");
+            try
+            {
+	            n = Integer.parseInt(st[0]);
+	            ts = sdf.parse(st[1]);            
+            }
+            catch (ParseException pe)
+            {
+                // ignore
+                //pe.printStackTrace();
+            }
+            catch (NumberFormatException ne)
+            {
+                // ignore
+                //ne.printStackTrace();
+            }
+            if (n > 0)
+            {
+                dataTs.put(n, ts);
+
+                log.debug("SOFS-1 n " + n + " ts " + sdf.format(ts));
+            }
+        }
+
+        br.close();
+    }
+
+    
     public static void main(String args[]) throws Exception
     {
+        final TimeZone tz = TimeZone.getTimeZone("UTC");
+
+        TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
+        SimpleDateFormat netcdfDate = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
+        
+        netcdfDate.setTimeZone(tz);
+        
         String $HOME = System.getProperty("user.home");
         PropertyConfigurator.configure("log4j.properties");
         Common.build("ABOS.properties");
@@ -87,8 +150,6 @@ public class WriteMRU_SOFS
         final int NTIME = args.length;
         final int NSAMPLE = 3072;
         final int NSPEC = 256;
-
-        TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
 
         Mooring m = Mooring.selectByMooringID(args[0]);
 
@@ -128,9 +189,15 @@ public class WriteMRU_SOFS
         
         sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
         
+        int fileArg = 1;
+        if (m.getMooringID().startsWith("SOFS-1-2010"))
+        {
+        	readDataFile(args[1]);
+        	fileArg++;
+        }
         ListFiles lf = new ListFiles();
         
-        ArrayList listOfFiles = lf.listFilez(new File(args[1]), ".bin");
+        ArrayList listOfFiles = lf.listFilez(new File(args[fileArg]), ".BIN");
         
         log.info("Files to process " + listOfFiles.size());
         NetCDFfile ndf = new NetCDFfile();
@@ -175,7 +242,10 @@ public class WriteMRU_SOFS
             ndf.addGroupAttribute(null, new Attribute("instrument_serial_number", inst.getSerialNumber()));
             ndf.addGroupAttribute(null, new Attribute("file_version", "Level 0 – Raw data"));
             ndf.addGroupAttribute(null, new Attribute("history", ndf.netcdfDate.format(new Date()) + " File Created"));
-                        
+            
+            ndf.addGroupAttribute(null, new Attribute("time_deployment_start", netcdfDate.format(m.getTimestampIn())));
+            ndf.addGroupAttribute(null, new Attribute("time_deployment_end", netcdfDate.format(m.getTimestampOut())));            
+            
 //            Variable vLon = ndf.dataFile.addVariable(null, "XPOS", DataType.DOUBLE, "TIME");
 //            Variable vLat = ndf.dataFile.addVariable(null, "YPOS", DataType.DOUBLE, "TIME");
 //            vLat.addAttribute(new Attribute("standard_name", "latitude"));
@@ -202,11 +272,17 @@ public class WriteMRU_SOFS
             Dimension sampleDim = ndf.dataFile.addDimension(null, "sample", NSAMPLE);
             Dimension specDim = ndf.dataFile.addDimension(null, "spectrum", NSPEC);
             Dimension vectorDim = ndf.dataFile.addDimension(null, "vector", 3);
+            Dimension quetDim = ndf.dataFile.addDimension(null, "quaternion", 4);
 
             List<Dimension> vdims = new ArrayList<Dimension>();
             vdims.add(ndf.timeDim);
             vdims.add(sampleDim);
             vdims.add(vectorDim);
+
+            List<Dimension> qdims = new ArrayList<Dimension>();
+            vdims.add(ndf.timeDim);
+            vdims.add(sampleDim);
+            vdims.add(quetDim);
             
             Variable vSpecFreq = ndf.dataFile.addVariable(null, "frequency", DataType.FLOAT, "spectrum");
             vSpecFreq.addAttribute(new Attribute("long_name", "spectral_frequency"));
@@ -232,6 +308,16 @@ public class WriteMRU_SOFS
             vAttitude.addAttribute(new Attribute("long_name", "float_attitude_vector_HPR"));
             vAttitude.addAttribute(new Attribute("units", "degrees"));
             vAttitude.addAttribute(new Attribute("_FillValue", Float.NaN));
+
+            Variable vVelocity = ndf.dataFile.addVariable(null, "rotational_velocity", DataType.FLOAT, vdims);
+            vVelocity.addAttribute(new Attribute("long_name", "float_rotational_velocity"));
+            vVelocity.addAttribute(new Attribute("units", "deg/sec"));
+            vVelocity.addAttribute(new Attribute("_FillValue", Float.NaN));
+
+            Variable vQuet = ndf.dataFile.addVariable(null, "quaternion", DataType.FLOAT, vdims);
+            vQuet.addAttribute(new Attribute("long_name", "float_orientation_quaternion"));
+            vQuet.addAttribute(new Attribute("units", "1"));
+            vQuet.addAttribute(new Attribute("_FillValue", Float.NaN));
 
             List<Dimension> dims = new ArrayList<Dimension>();
             dims.add(ndf.timeDim);
@@ -264,9 +350,15 @@ public class WriteMRU_SOFS
             {
                 ndf.timeDim.getLength(), sampleDim.getLength(), 3
             };
+            int[] qDim = new int[]
+            {
+                ndf.timeDim.getLength(), sampleDim.getLength(), 4
+            };
             Array dataAccel = Array.factory(DataType.FLOAT, vDim);
             Array dataMag = Array.factory(DataType.FLOAT, vDim);
             Array dataAttitude = Array.factory(DataType.FLOAT, vDim);
+            Array dataVelocity = Array.factory(DataType.FLOAT, vDim);
+            Array dataQuet = Array.factory(DataType.FLOAT, qDim);
             IndexIterator iter = dataAccel.getIndexIterator();
             while (iter.hasNext()) 
             {
@@ -278,6 +370,16 @@ public class WriteMRU_SOFS
             	iter.setFloatNext(Float.NaN);
             }
             iter = dataAttitude.getIndexIterator();
+            while (iter.hasNext()) 
+            {
+            	iter.setFloatNext(Float.NaN);
+            }
+            iter = dataVelocity.getIndexIterator();
+            while (iter.hasNext()) 
+            {
+            	iter.setFloatNext(Float.NaN);
+            }
+            iter = dataQuet.getIndexIterator();
             while (iter.hasNext()) 
             {
             	iter.setFloatNext(Float.NaN);
@@ -316,6 +418,7 @@ public class WriteMRU_SOFS
             	zAccel[k] = -9.81;
             }
 
+            Index3D qidx = new Index3D(vDim);
             Index3D vidx = new Index3D(vDim);
             Index2D idx = new Index2D(iDim);
 
@@ -324,9 +427,15 @@ public class WriteMRU_SOFS
             {
             	pf.readLoad = true;
             }
+            int mode = 3;
             if (m.getMooringID().startsWith("SOFS-1"))
             {
+            	mode = 1;
             	pf.sofs1 = true;
+            }
+            else if (m.getMooringID().startsWith("SOFS-2"))
+            {
+            	mode = 2;
             }
 
             for (int fileNo = 0; fileNo < listOfFiles.size(); fileNo++)
@@ -337,16 +446,28 @@ public class WriteMRU_SOFS
 
                 log.info("Process file : " + f);
                 
-                // SOFS-2 file names
-                SimpleDateFormat fndf = new SimpleDateFormat("yyyy-MM-dd'T'HHmmss");
-                try
+                // SOFS-1 files
+                if (mode == 1)
                 {
-                	ts = fndf.parse(f.getName());
-                	dataTime.add(new Timestamp(ts.getTime()));
+	                int fNo = Integer.parseInt(f.getName().substring(4, 8));
+	
+	                ts = dataTs.get(fNo);  
+	                dataTime.add(new Timestamp(ts.getTime()));
                 }
-                catch (ParseException pe)
+                
+                if (mode == 2)
                 {
-                	
+	                // SOFS-2 file names
+	                SimpleDateFormat fndf = new SimpleDateFormat("yyyy-MM-dd'T'HHmmss");
+	                try
+	                {
+	                	ts = fndf.parse(f.getName());
+	                	dataTime.add(new Timestamp(ts.getTime()));
+	                }
+	                catch (ParseException pe)
+	                {
+	                	
+	                }
                 }
                 
                 loadStats.clear();
@@ -360,7 +481,7 @@ public class WriteMRU_SOFS
                 	if (r instanceof String)
                 	{
                 		String rs = (String)r;
-                		if (rs.contains("START RAW MRU DATA"))
+                		if (rs.contains("START RAW MRU DATA") && (mode >= 3))
                 		{
                 			ts = sdf.parse((String)r);
                 			if (ts.after(sdf.parse("2020-01-01 00:00:00"))) // Extream grudge to fix Pulse-11-2015 MRU timestamps
@@ -372,7 +493,7 @@ public class WriteMRU_SOFS
                             log.info("MRU file data " + ts);
                 		}        
                 	}
-                	else if (r instanceof Date)
+                	else if ((r instanceof Date) && (mode >= 3))
                 	{
                 		ts = (Date)r;
                 		
@@ -390,39 +511,52 @@ public class WriteMRU_SOFS
                         
                         log.trace("MRUstabQ sample " + sample + " idx " + idx);
 
-                        dataAccel.setFloat(vidx, (float) stab.accelWorld.x);
+                        dataAccel.setFloat(vidx, (float) stab.accel.x);
                         dataAttitude.setFloat(vidx, (float) stab.pry.x);
+                        dataVelocity.setFloat(vidx, (float) stab.pry.x);
                         dataMag.setFloat(vidx, (float) stab.mag.x);
 
                         vidx.set(fileNo, sample, 1);
-                        dataAccel.setFloat(vidx, (float) stab.accelWorld.y);
+                        dataAccel.setFloat(vidx, (float) stab.accel.y);
+                        dataVelocity.setFloat(vidx, (float) stab.pry.y);
                         dataAttitude.setFloat(vidx, (float) stab.pry.y);
+                       
                         dataMag.setFloat(vidx, (float) stab.mag.y);
 
                         vidx.set(fileNo, sample, 2);
-                        dataAccel.setFloat(vidx, (float) stab.accelWorld.z);
+                        dataAccel.setFloat(vidx, (float) stab.accel.z);
                         dataAttitude.setFloat(vidx, (float) stab.pry.z);
+                        dataVelocity.setFloat(vidx, (float) stab.pry.z);
                         dataMag.setFloat(vidx, (float) stab.mag.z);
+
+                        qidx.set(fileNo, sample, 0);
+                        dataQuet.setFloat(qidx, (float) stab.stab.Q1);                        
+                        qidx.set(fileNo, sample, 1);
+                        dataQuet.setFloat(qidx, (float) stab.stab.Q2);                        
+                        qidx.set(fileNo, sample, 2);
+                        dataQuet.setFloat(qidx, (float) stab.stab.Q3);                        
+                        qidx.set(fileNo, sample, 3);
+                        dataQuet.setFloat(qidx, (float) stab.stab.Q4);                        
                         
-                        sample++;
-                		
+                        sample++;             		
                 	}
                 	else if (r instanceof Float)
                 	{
                 		haveLoad = true;
                         double loadVolt = (Float)r; // loadCell recorded in mV
                         double dLoad = ((loadVolt/1000.0 - offset) * slope);
+                        
                         log.trace("Load = " + dLoad);
                         log.trace("load sample " + sample + " idx " + idx + " load " + dLoad);
                         
-                        if (dLoad > 0)
+                        //if (dLoad > 0)
                         {
                             dataLoad.setFloat(idx, (float) dLoad);
                             loadStats.addValue(dLoad);
                         }
-                        else
+                        //else
                         {
-                            dataLoad.setFloat(idx, Float.NaN);
+                            //dataLoad.setFloat(idx, Float.NaN);
                         }                		
                 	}					
 				}
@@ -455,7 +589,12 @@ public class WriteMRU_SOFS
                 }
 
                 
-                log.info("FILE " + f + " time " + sdf.format(ts) + " wave height " + waveHeight + " load av " + loadStats.getMean() + " load max " + loadStats.getMax());
+                log.info("FILE " + f);
+                log.info("time " + sdf.format(ts) + " wave height " + String.format("%5.2f", waveHeight) + 
+                		" load av " + String.format("%6.1f", loadStats.getMean()) + 
+                		" load max " + String.format("%4.1f", loadStats.getMax()) + 
+                		" load min " + String.format("%6.1f", loadStats.getMin()) + 
+                		" count " + loadStats.getN());
             }
             
             ndf.addGroupAttribute(null, new Attribute("time_coverage_start", ndf.netcdfDate.format(dataTime.get(0))));
@@ -503,6 +642,8 @@ public class WriteMRU_SOFS
             ndf.dataFile.write(vAccel, dataAccel);
             ndf.dataFile.write(vMag, dataMag);
             ndf.dataFile.write(vAttitude, dataAttitude);
+            ndf.dataFile.write(vVelocity, dataVelocity);
+            ndf.dataFile.write(vQuet, dataQuet);
 
             if (instLoad != null)            	
             	ndf.dataFile.write(vLoad, dataLoad);

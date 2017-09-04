@@ -48,7 +48,7 @@ public class WriteNortek
         PropertyConfigurator.configure("log4j.properties");
         Common.build("ABOS.properties");
         
-//        TiGmeZone.setDefault(TimeZone.getTimeZone("UTC"));
+//        TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
 //                
 //        String xmlFile = null;
 //        String mooring_id = "SOFS-5-2015";

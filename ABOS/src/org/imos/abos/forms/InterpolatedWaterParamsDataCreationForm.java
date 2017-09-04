@@ -436,7 +436,7 @@ public class InterpolatedWaterParamsDataCreationForm extends MemoryWindow implem
                     rid.setParameterValue(calculatedOxygenSolubilityValue);
                     ok = rid.insert();   
                     
-//                    conn.commit();
+                    conn.commit();
                     count++;
                 }
             }

@@ -218,10 +218,35 @@ public class InstrumentDataFile  implements Cloneable
      * @param id
      * @return a InstrumentDataFile object, or null if not found
      */
-    public static InstrumentDataFile selectByInstrumentDataFileID(Integer id)
+    public static InstrumentDataFile selectByInstrumentID(Integer id)
     {
         String sql = selectSQL
                 + " where instrument_id = "
+                + id
+                ;
+
+        query.setConnection( Common.getConnection() );
+        query.executeQuery( sql );
+
+            Vector dataSet = query.getData();
+            if ( ! ( dataSet == null ) )
+            {
+                for( int i = 0; i < dataSet.size(); i++ )
+                {
+                    Vector currentRow = (Vector) dataSet.elementAt( i );
+
+                    InstrumentDataFile row = new InstrumentDataFile();
+                    row.create( currentRow );
+                    return row;
+                }
+            }
+
+        return null;
+    }
+    public static InstrumentDataFile selectByInstrumentDataFileID(Integer id)
+    {
+        String sql = selectSQL
+                + " where datafile_pk = "
                 + id
                 ;
 

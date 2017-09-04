@@ -226,7 +226,7 @@ public class PlotComponent extends MemoryWindow
                     ResultSetMetaData metaData = resultSet.getMetaData();
                     int numberOfColumns = metaData.getColumnCount();
 
-                    TimeSeries ts = new TimeSeries(d.make + "-" + d.param + "-" + d.depth);
+                    TimeSeries ts = new TimeSeries(d.instrument + "-" + d.param + "-" + d.depth);
                     TimeSeries tsQ = new TimeSeries(d.make + "-" + d.param + "-" + d.depth + "-BAD");
                     while (resultSet.next())
                     {

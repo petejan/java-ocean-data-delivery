@@ -65,7 +65,7 @@ public class InstrumentCalibrationFileForm extends MemoryWindow
         BufferedReader br = null;
         String $HOME = System.getProperty("user.home");
 
-        optionsFile = new File($HOME + "/ABOS/ABOS.properties");
+        optionsFile = new File("ABOS.properties");
         
         try
         {
