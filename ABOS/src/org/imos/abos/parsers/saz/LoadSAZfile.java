@@ -38,7 +38,7 @@ public class LoadSAZfile
 	public static void main(String[] args)
 	{
 		boolean insert = true;
-		
+
 		if (args.length < 1)
 		{
 			System.err.println("At least one argument expected");
@@ -50,29 +50,29 @@ public class LoadSAZfile
         String $HOME = System.getProperty("user.home");
         PropertyConfigurator.configure("log4j.properties");
         Common.build("ABOS.properties");
-        
+
 		ReadDiSAZfile sf = new ReadDiSAZfile();
 		TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
 		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         InstrumentDataFile idf = new InstrumentDataFile();
-        
+
         Connection conn = Common.getConnection();
-    		
+
 		try
 		{
 			sf.readFile(fileName);
 			sf.parse(null);
-			
+
 			System.out.println("deployment " + sf.deployment);;
 
 			ArrayList <Date> time = sf.getTime();
 			ArrayList <Double> actualDepth = sf.getDepthActual();
 
-			String mooringStr = sf.deployment; 
+			String mooringStr = sf.deployment;
 			Mooring m = Mooring.selectByMooringID(mooringStr);
-			
+
 			log.debug("Mooring " + m.getMooringID());
-			
+
             File f = new File(fileName);
             idf.setFileName(f.getName());
             idf.setMooringID(m.getMooringID());
@@ -82,7 +82,7 @@ public class LoadSAZfile
             idf.setFileData(nullFile);
 
             RawInstrumentData raw = new RawInstrumentData();
-            
+
             raw.setLatitude(m.getLatitudeIn());
             raw.setLongitude(m.getLongitudeIn());
             raw.setMooringID(m.getMooringID());
@@ -90,7 +90,7 @@ public class LoadSAZfile
 
             int inst_id = -1;
             int loaded = 0;
-            
+
 			for(int i=0;i<time.size();i++)
 			{
 				double depth = sf.getDataAt(sf.depthCol).get(i);
@@ -104,44 +104,44 @@ public class LoadSAZfile
 						in = inn;
 					if (inn.getMake().startsWith("University of Washington"))
 						in = inn;
-					
+
 				}
-				
+
 				if (in != null)
 				{
 					int new_inst_id = in.getInstrumentID();
-					
+
 					log.debug(sdf.format(time.get(i)) + " mooring " + mooringStr + " depth " + depth + " instrument " + in);
-	
+
 					if (inst_id != new_inst_id)
 					{
 			            if (insert)
 			            {
 			            	log.info("new Instrument id " + new_inst_id);
-			            	
+
 			                idf.setDataFilePrimaryKey(InstrumentDataFile.getNextSequenceNumber());
 			                idf.setInstrumentID(new_inst_id);
 			                idf.setInstrumentDepth(depth);
 			                idf.insert();
-	
-			                raw.setSourceFileID(idf.getDataFilePrimaryKey());	            
-			            }							
+
+			                raw.setSourceFileID(idf.getDataFilePrimaryKey());
+			            }
 					}
 					inst_id = new_inst_id;
-					
+
 		            raw.setDataTimestamp(new Timestamp(time.get(i).getTime()));
 		            raw.setDepth(depth);
 		            raw.setInstrumentID(in.getInstrumentID());
-		            
+
 					for (DataCol dc : sf.dataCols)
 					{
 						if (dc.parameter_code == null)
 							continue;
-						
+
 						int sampleQc = 0;
 						if (sf.getDataAt(dc.qcCol) != null)
 							sampleQc = sf.getDataAt(dc.qcCol).get(i).intValue();
-						
+
 						log.trace("Sample QC " + sampleQc);
 						switch (sampleQc)
 						{
@@ -177,14 +177,14 @@ public class LoadSAZfile
 
 				}
 			}
-			
+
 			// add the parameters
 			PreparedStatement pc = conn.prepareStatement("INSERT INTO netcdf_attributes (naming_authority, facility, mooring, deployment, instrument_id, parameter, attribute_name, attribute_type, attribute_value) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
 			for (DataCol dc : sf.dataCols)
 			{
 				if (dc.parameter_code == null)
 					continue;
-				
+
 				for (Metadata md : dc.metadata)
 				{
 					if (md.name.startsWith("long_name"))
@@ -195,7 +195,7 @@ public class LoadSAZfile
 						continue;
 					if (md.c.toString().isEmpty())
 						continue;
-					
+
 					pc.setString(1,  "*"); // nameing_authority
 					pc.setString(2,  "ABOS-SOTS"); // facility
 					pc.setString(3,  "*"); // mooring
@@ -209,7 +209,7 @@ public class LoadSAZfile
 						CellValue v = sf.evaluator.evaluate(md.c);
 						if (v != null)
 							value = Double.toString(v.getNumberValue());
-							
+
 					}
 					else if (md.c.getCellType() == Cell.CELL_TYPE_NUMERIC)
 					{
@@ -220,14 +220,14 @@ public class LoadSAZfile
 						pc.setString(8,  "STRING"); // attribute_type
 					}
 					pc.setString(9,  value); // attribute_value
-					
+
 					log.debug("add metadata " + pc);
 					pc.executeUpdate();
 				}
 			}
-			
+
 			sf.close();
-			
+
 			log.info("Loaded " + loaded + " records");
 		}
 		catch (Exception e)

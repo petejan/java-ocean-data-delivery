@@ -53,7 +53,7 @@ public class InterpolatedProcessedDataCreationForm extends MemoryWindow implemen
 {
 
     private static Logger logger = Logger.getLogger(InterpolatedProcessedDataCreationForm.class.getName());
-    protected static SQLWrapper query = new SQLWrapper();        
+    protected static SQLWrapper query = new SQLWrapper();
 
     private Mooring selectedMooring = null;
     final static long outputPeriod = 60 * 60 * 1000; // 1 hour in msec
@@ -194,7 +194,7 @@ public class InterpolatedProcessedDataCreationForm extends MemoryWindow implemen
         if(deleteDataBox.isSelected())
         {
             logger.info("Deleting Data for " + selectedMooring.getMooringID());
-            
+
             ProcessedInstrumentData.deleteDataForMooring(selectedMooring.getMooringID());
         }
 
@@ -202,7 +202,7 @@ public class InterpolatedProcessedDataCreationForm extends MemoryWindow implemen
         runButton.setText("Running...");
         runButton.setBackground(Color.RED);
         runButton.setForeground(Color.WHITE);
-        
+
         // TODO: should only form ones do this, or should all create a record in the table?
         String insProc = "INSERT INTO instrument_data_processors (processors_pk, mooring_id, class_name, parameters, processing_date, display_code) VALUES ("
 		     + "nextval('instrument_data_processor_sequence'),"
@@ -219,14 +219,14 @@ public class InterpolatedProcessedDataCreationForm extends MemoryWindow implemen
         try
         {
            stmt = conn.createStatement();
-           stmt.executeUpdate(insProc);            
+           stmt.executeUpdate(insProc);
         }
         catch (SQLException ex)
         {
             logger.error(ex);
         }
-                            
-        
+
+
         Thread worker = new Thread()
         {
             @Override
@@ -253,7 +253,7 @@ public class InterpolatedProcessedDataCreationForm extends MemoryWindow implemen
     private int interpolate(ParamsToProcess p, ResultSet results) throws SQLException
     {
         int count = 0;
-        
+
         double[] x = null;
         double[] y = null;
         UnivariateInterpolator interpolator = new LinearInterpolator();
@@ -289,7 +289,7 @@ public class InterpolatedProcessedDataCreationForm extends MemoryWindow implemen
             if (i < p.count)
             {
 	            quality[i] = results.getString(7);
-	            
+
 	            x[i] = ts.getTime();
 	            y[i] = value;
 	            i++;
@@ -328,8 +328,8 @@ public class InterpolatedProcessedDataCreationForm extends MemoryWindow implemen
         		boolean ok = pid.insert();
         	}
         }
-                
-        
+
+
         return count;
     }
 
@@ -337,7 +337,7 @@ public class InterpolatedProcessedDataCreationForm extends MemoryWindow implemen
     {
         int count = 0;
         int t;
-        
+
         int s = (int)((p.start.getTime())/(outputPeriod));
         int e = (int)((p.end.getTime())/(outputPeriod));
         count = e - s;
@@ -355,14 +355,14 @@ public class InterpolatedProcessedDataCreationForm extends MemoryWindow implemen
         // Averaging goes here...
         Timestamp cellStart = new Timestamp(0);
         Timestamp cellEnd = new Timestamp(0);
-        
+
         t = s + 1;
-        
+
         cellStart.setTime(t * outputPeriod - outputPeriod/2);
         cellEnd.setTime(t * outputPeriod + outputPeriod/2);
-        
+
         SummaryStatistics valueStats = new SummaryStatistics();
-        
+
         while (results.next())
         {
             ts = results.getTimestamp(1);
@@ -372,7 +372,7 @@ public class InterpolatedProcessedDataCreationForm extends MemoryWindow implemen
             lon = results.getDouble(5);
             value = results.getDouble(6);
             q = results.getString(7);
-            
+
             if (ts.after(cellEnd))
             {
                 pid.setDepth(d);
@@ -386,22 +386,22 @@ public class InterpolatedProcessedDataCreationForm extends MemoryWindow implemen
                 pid.setDataTimestamp(new Timestamp((long)t * outputPeriod));
                 pid.setParameterValue(valueStats.getMean() * p.coeffs[1] + p.coeffs[0]);
                 //logger.debug(pid.getDataTimestamp() + " ," + pid.getParameterValue() + ": " + valueStats.getN() + " " + valueStats.getMean());
-                
-                valueStats.clear();
-                
-                boolean ok = pid.insert();  
 
-                t++;                
+                valueStats.clear();
+
+                boolean ok = pid.insert();
+
+                t++;
 
                 cellStart.setTime(t * outputPeriod - outputPeriod/2);
-                cellEnd.setTime((t + 1) * outputPeriod + outputPeriod/2);       
+                cellEnd.setTime((t + 1) * outputPeriod + outputPeriod/2);
             }
             if (ts.after(cellStart))
             {
                 valueStats.addValue(value);
-            }            
+            }
         }
-        
+
         return count;
     }
 
@@ -416,7 +416,7 @@ public class InterpolatedProcessedDataCreationForm extends MemoryWindow implemen
         Timestamp end;
         int sampleTime;
         int sampleInterval;
-        
+
         ParamsToProcess(Vector row)
         {
             depth = ((Number)(row.get(0))).doubleValue();
@@ -424,19 +424,19 @@ public class InterpolatedProcessedDataCreationForm extends MemoryWindow implemen
             instrument_id = (Integer)(row.get(2));
             count = (Long)(row.get(3));
             start = (Timestamp)(row.get(4));
-            end = (Timestamp)(row.get(5));            
+            end = (Timestamp)(row.get(5));
         }
-        
+
         public String toString()
         {
             return "instrument=" + instrument_id + ", param=" + param + ", depth=" + depth + ", count=" + count;
         }
-        
+
         public void addCalCoef(int i, double d)
         {
             coeffs[i] = d;
         }
-        
+
         public void addSampleInterval(int i)
         {
             sampleInterval = i;
@@ -451,28 +451,28 @@ public class InterpolatedProcessedDataCreationForm extends MemoryWindow implemen
     {
         // get a list of paramters and information to work with
         // TODO: NTRI has issues because we have many samples per hour (40 sec burst), need to make a NTRI averaged product
-        
-        String SQL = "SELECT depth, parameter_code, instrument_id, count(*), min(data_timestamp), max(data_timestamp) " + 
-                        "FROM raw_instrument_data JOIN parameters ON (parameter_code = code) " + 
+
+        String SQL = "SELECT depth, parameter_code, instrument_id, count(*), min(data_timestamp), max(data_timestamp) " +
+                        "FROM raw_instrument_data JOIN parameters ON (parameter_code = code) " +
                         "WHERE mooring_id = " + StringUtilities.quoteString(selectedMooring.getMooringID()) + " " +
 //                        " AND parameter_code in ('TEMP', 'CNDC', 'PSAL', 'DENSITY', 'OXSOL', 'SBE43_OXY_VOLTAGE', 'OPTODE_BPHASE', 'OPTODE_TEMP', 'OPTODE_VOLT', 'DOX2', 'PRES', " +
 //                                                "'TOTAL_GAS_PRESSURE', 'GTD_TEMPERATURE', 'PAR', 'NTU', 'CAPH', 'NTRI', 'CPHL', 'ECO_FLNTUS_CHL', 'ECO_FLNTUS_TURB', 'TURB', 'XPOS', "+
 //                                                "'YPOS', 'SIG_WAVE_HEIGHT', " +
 //                                                "'PCO2', 'PCO2_AIR', 'MLD', 'WSPD', 'AIRT') " +
-//                        " AND parameter_code in ('XPOS', 'YPOS') " +                
+//                        " AND parameter_code in ('XPOS', 'YPOS') " +
                         " AND process = 'Y' " +
                         " AND quality_code != 'BAD'" +
-                        " AND quality_code != 'INTERPOLATED'" +                
+                        " AND quality_code != 'INTERPOLATED'" +
                         " GROUP BY depth, parameter_code, instrument_id " +
                         "ORDER BY depth, parameter_code";
-        
+
         logger.debug(SQL);
-        
+
         query.setConnection(Common.getConnection());
         query.executeQuery(SQL);
         Vector attributeSet = query.getData();
         ArrayList<ParamsToProcess> params = new ArrayList();
-        
+
         if (attributeSet != null && attributeSet.size() > 0)
         {
             for (int i = 0; i < attributeSet.size(); i++)
@@ -481,7 +481,7 @@ public class InterpolatedProcessedDataCreationForm extends MemoryWindow implemen
 
                 ParamsToProcess p = new ParamsToProcess(row);
                 params.add(p);
-                
+
                 logger.debug("Param " + p);
             }
         }
@@ -497,12 +497,12 @@ public class InterpolatedProcessedDataCreationForm extends MemoryWindow implemen
         int count = 0;
         int totalCount = 0;
         for (ParamsToProcess p : params)
-        {        
+        {
             logger.info("----");
             logger.info("Processing " + p);
             ArrayList<InstrumentCalibrationValue> calValues = InstrumentCalibrationValue.selectByInstrumentAndMooring(p.instrument_id, selectedMooring.getMooringID());
             //ArrayList<InstrumentCalibrationValue> calValues = InstrumentCalibrationValue.selectByInstrument(p.instrument_id);
-            
+
             // get any calibration values that should be applied to this paramter
             if(calValues != null && calValues.size() > 0)
             {
@@ -511,7 +511,7 @@ public class InterpolatedProcessedDataCreationForm extends MemoryWindow implemen
                     if (calValues.get(i).getParameterCode().trim().compareTo(p.param.trim()) == 0)
                     {
                         logger.info("Parameter has Calibration " + calValues.get(i).getParameterValue());
-                        
+
                         StringTokenizer st = new StringTokenizer(calValues.get(i).getParameterValue(), ",");
 
                         int j = 0;
@@ -530,21 +530,21 @@ public class InterpolatedProcessedDataCreationForm extends MemoryWindow implemen
                                 logger.error(nex);
                             }
                         }
-                        
+
                     }
                 }
             }
-                        
+
             // get the data sampling time and sample interval
-            
+
             SQL = "SELECT min(timestamp_in) AS in, " +
                     "	max(timestamp_out)AS out, " +
                     "	date_trunc('hour', data_timestamp) AS hour, "+
                     "   count(*), " +
                     "	min(((date_part('epoch', data_timestamp)::integer) + 1800) % 3600) -1800 as sample_time_min, " +
                     "	avg(((date_part('epoch', data_timestamp)::integer) + 1800) % 3600) -1800 as sample_time_avg, " +
-                    "	max(((date_part('epoch', data_timestamp)::integer) + 1800) % 3600) -1800 as sample_time_max " + 
-                            "FROM raw_instrument_data JOIN mooring USING (mooring_id) " + 
+                    "	max(((date_part('epoch', data_timestamp)::integer) + 1800) % 3600) -1800 as sample_time_max " +
+                            "FROM raw_instrument_data JOIN mooring USING (mooring_id) " +
                             "WHERE mooring_id = " + StringUtilities.quoteString(selectedMooring.getMooringID()) + " " +
                             " AND parameter_code = " + StringUtilities.quoteString(p.param) + " " +
                             " AND instrument_id = " + p.instrument_id +
@@ -573,20 +573,20 @@ public class InterpolatedProcessedDataCreationForm extends MemoryWindow implemen
                         sample_1 = (Timestamp) row.get(2);
                     }
                     sample_N = (Timestamp) row.get(2);
-                
+
                     sampleTime = ((Number)(row.get(5))).doubleValue();
                     hourCount += ((Number)(row.get(3))).doubleValue();
                 }
                 long interval = sample_N.getTime()/1000 - sample_1.getTime()/1000;
-                    
+
                 p.addSampleTime((int) sampleTime);
                 p.addSampleInterval((int) (interval/hourCount));
             }
-                        
+
             logger.info("Data Points     : " + p.count);
             logger.info("Start Time      : " + p.start + " end " + p.end);
             logger.info("Sample Time     : " + p.sampleTime);
-            logger.info("Sample Interval : " + p.sampleInterval);            
+            logger.info("Sample Interval : " + p.sampleInterval);
 
             Connection conn = null;
             Statement proc = null;
@@ -636,9 +636,9 @@ public class InterpolatedProcessedDataCreationForm extends MemoryWindow implemen
                     logger.error(sex);
                 }
             }
-        }                    
-        
-        String update = "UPDATE instrument_data_processors SET " 
+        }
+
+        String update = "UPDATE instrument_data_processors SET "
                             + "processing_date = '" + Common.current() + "',"
                             + "count = "+ totalCount
                             + " WHERE "
@@ -647,7 +647,7 @@ public class InterpolatedProcessedDataCreationForm extends MemoryWindow implemen
                             + " AND parameters = '" + paramToString()  + "'";
 
         Connection conn = Common.getConnection();
-        
+
         Statement stmt;
         try
         {
@@ -721,14 +721,14 @@ public class InterpolatedProcessedDataCreationForm extends MemoryWindow implemen
         Common.build("ABOS.properties");
 
         InterpolatedProcessedDataCreationForm form = new InterpolatedProcessedDataCreationForm();
-        
+
         if (args.length > 0)
         {
             form.setupFromString(args[0]);
             form.calculateDataValues();
         }
         else
-        {       
+        {
             form.initialise();
         }
     }
@@ -754,10 +754,10 @@ public class InterpolatedProcessedDataCreationForm extends MemoryWindow implemen
     {
         Matcher mat = Pattern.compile("(?:MOORING= *)(([^,]*))").matcher(s);
         mat.find();
-        
+
         String mooringId = mat.group(2);
         selectedMooring = selectedMooring = Mooring.selectByMooringID(mooringId);
-        
+
         return true;
     }
 

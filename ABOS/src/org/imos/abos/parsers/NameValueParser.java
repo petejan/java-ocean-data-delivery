@@ -67,8 +67,8 @@ public class NameValueParser extends AbstractDataParser
         String sValue;
         double value;
         int paramsSent = 0;
-        HashMap<String, String> hm = new HashMap(); 
-        
+        HashMap<String, String> hm = new HashMap();
+
         hm.put("OBP", "OPTODE_BPHASE");
         hm.put("OT", "OPTODE_TEMP");
         hm.put("OptodeBPhase", "OPTODE_BPHASE");
@@ -105,7 +105,7 @@ public class NameValueParser extends AbstractDataParser
 
         hm.put("CHL", "ECO_FLNTUS_CHL");
         hm.put("NTU", "ECO_FLNTUS_TURB");
-        
+
         hm.put("CHL_UGL", "CPHL");
         hm.put("BB", "BB");
 
@@ -119,7 +119,7 @@ public class NameValueParser extends AbstractDataParser
         hm.put("WATER_SAMPLE", "WATER_SAMPLE");
         hm.put("WEIGHT", "WEIGHT");
         hm.put("PSAL_SAMPLE", "PSAL_SAMPLE");
-        
+
         String[] st = dataLine.split(",");
         try
         {
@@ -149,17 +149,17 @@ public class NameValueParser extends AbstractDataParser
                         try
                         {
                             value = new Double(sValue.trim());
-                            
+
                             //
                             // ok, we have parsed out the values we need, can now construct the raw data class
                             //
-                            
+
                             if (nv.length > 2)
                             {
                             	// TODO: should the QC data go into RawData or ProcessedData?
-                            	
-                            	RawInstrumentData row = new RawInstrumentData(); 
-	
+
+                            	RawInstrumentData row = new RawInstrumentData();
+
 	                            row.setDataTimestamp(dataTimestamp);
 	                            row.setDepth(instrumentDepth);
 	                            row.setInstrumentID(currentInstrument.getInstrumentID());
@@ -186,7 +186,7 @@ public class NameValueParser extends AbstractDataParser
                             else
                             {
 	                            RawInstrumentData row = new RawInstrumentData();
-	                        	
+
 	                            row.setDataTimestamp(dataTimestamp);
 	                            row.setDepth(instrumentDepth);
 	                            row.setInstrumentID(currentInstrument.getInstrumentID());
@@ -200,7 +200,7 @@ public class NameValueParser extends AbstractDataParser
 
                             	paramsSent++;
 
-                                boolean ok = row.insert();                            	
+                                boolean ok = row.insert();
                             }
                             //logger.trace("name " + nv[0] + " = " + value + " quality " + sQ);
 
