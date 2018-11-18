@@ -1,1 +1,6 @@
 /bin/
+*.DS_Store
+data/*
+IMOS*.nc
+/.metadata/
+.recommenders/
