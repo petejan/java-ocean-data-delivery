@@ -120,7 +120,7 @@ public class WriteNortekProfiler
             ndf.setFacility("ABOS-ASFS");
             ndf.setMultiPart(true);
             
-        	filename = ndf.getFileName(inst, dataStartTime, dataEndTime, "raw_instrument_data", "RVT");
+        	filename = ndf.getFileName(inst, dataStartTime, dataEndTime, "raw_instrument_data", "RVT", null);
         	
             // Create new netcdf-4 file with the given filename
             ndf.createFile(filename);

@@ -353,7 +353,7 @@ public class AanderraOptodeCalculationForm extends MemoryWindow implements DataP
         //logger.debug(evt.getPropertyName());
         if(propertyName.equalsIgnoreCase("MOORING_SELECTED")) {
             Mooring selectedItem = (Mooring) evt.getNewValue();
-            sourceInstrumentCombo.setMooringParam(selectedItem, "OPTODE_BPHASE%");
+            sourceInstrumentCombo.setMooringParam(selectedItem, "OPTODE_BPHASE");
             targetInstrumentCombo.setMooring(selectedItem);
             calibrationFileCombo1.setMooring(selectedItem);
         }

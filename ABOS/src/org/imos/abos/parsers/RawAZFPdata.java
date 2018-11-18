@@ -159,8 +159,8 @@ public class RawAZFPdata
     int[] lockout = new int[4];
     public int[] bins = new int[4];
     int[] samples = new int[4];
-    int pings;
     int npings;
+	int pings;
     int seconds;
     int firstPing;
     int lastPing;
@@ -262,7 +262,7 @@ public class RawAZFPdata
         double[] sv = new double[bins[ch]];
         double r;
         
-        double c = el[ch] - 2.5/ds[ch] - tvr[ch] - 20 * Math.log10(vtx[ch]) - 10 * Math.log10(bp[ch] * sos / rate[ch] / 2.0);
+        double c = el[ch] - 2.5/ds[ch] - tvr[ch] - 20 * Math.log10(vtx[ch]) - 10 * Math.log10(bp[ch] * sos * (pulseLen[ch]*1.e-6) / 2.0);
         
         for(int i=0;i<bins[ch];i++)
         {

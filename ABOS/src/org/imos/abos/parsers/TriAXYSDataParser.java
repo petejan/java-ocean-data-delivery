@@ -1046,7 +1046,7 @@ public class TriAXYSDataParser extends AbstractDataParser
         Timestamp dataStartTime = m.getTimestampIn(); // TODO: probably should come from data, esp for part files
         Timestamp dataEndTime = m.getTimestampOut();        
 
-        String filename = ndf.getFileName(inst, dataStartTime, dataEndTime, "raw", "RW");
+        String filename = ndf.getFileName(inst, dataStartTime, dataEndTime, "raw", "RW", null);
         
         try
         {

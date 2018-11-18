@@ -16,10 +16,14 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.StringTokenizer;
 import java.util.TimeZone;
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileReader;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -50,32 +54,114 @@ public class WriteMRU_SOFS
 
     public static class ListFiles
     {
-        ArrayList endAll = new ArrayList();
+        ArrayList<File> endAll = new ArrayList<File>();
         
-        public ArrayList listFilez(File tree, String shapeName) throws IOException
+        public ArrayList<File> listFilez(File tree, String shapeName) throws IOException
         {            
-            File[] files = tree.listFiles();
-            for (int i = 0; i < files.length; i++)
-            {
-                String fileName = files[i].getName();
-                if (files[i].isFile())
-                {
-                    if (fileName.endsWith(shapeName))
-                    {
-                        endAll.add(files[i]);
-                    }
-                }
-                if (files[i].isDirectory())
-                {
-                    listFilez(files[i], shapeName);
-                }
-            }
+        	if (tree.isFile())
+        	{
+        		endAll.add(tree.getCanonicalFile());
+        	}
+        	else
+        	{
+	            File[] files = tree.listFiles();
+	            for (int i = 0; i < files.length; i++)
+	            {
+	                String fileName = files[i].getName().toLowerCase();
+	                if (files[i].isFile())
+	                {
+	                    if (fileName.endsWith(shapeName.toLowerCase()))
+	                    {
+	                        endAll.add(files[i]);
+	                    }
+	                }
+	                if (files[i].isDirectory())
+	                {
+	                    listFilez(files[i], shapeName);
+	                }
+	            }
+        	}
             return endAll;
         }
     }
     
+    // for SOFS-1 only
+    static HashMap<Integer, Date> dataTs;
+
+    public static void readDataFile(String file) throws IOException
+    {
+        String thisLine;
+        String token;
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+
+        int i;
+        int n = -1;
+        Date ts = null;
+        dataTs = new HashMap<Integer, Date>();
+
+        File f = new File(file);
+
+        FileReader is = new FileReader(f);
+
+        BufferedReader br = new BufferedReader(is);
+
+        while ((thisLine = br.readLine()) != null)
+        {
+            //System.out.println(thisLine);
+
+            String[] st = thisLine.split(",");
+            try
+            {
+	            n = Integer.parseInt(st[0]);
+	            ts = sdf.parse(st[1]);            
+            }
+            catch (ParseException pe)
+            {
+                // ignore
+                //pe.printStackTrace();
+            }
+            catch (NumberFormatException ne)
+            {
+                // ignore
+                //ne.printStackTrace();
+            }
+            if (n > 0)
+            {
+                dataTs.put(n, ts);
+
+                log.debug("SOFS-1 n " + n + " ts " + sdf.format(ts));
+            }
+        }
+
+        br.close();
+    }
+    
+    static int[] getDims(Variable v)
+    {
+        List<Dimension> d1 = v.getDimensions();
+        int[] vDim = new int[d1.size()];
+        
+        int id = 0;
+        for (Dimension dn : d1)
+        {
+        	System.out.println("Length " + id + " " + dn.getLength());
+        	vDim[id] = dn.getLength();
+        	id ++;
+        }
+        
+        return vDim;
+    }
+
+    
     public static void main(String args[]) throws Exception
     {
+        final TimeZone tz = TimeZone.getTimeZone("UTC");
+
+        TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
+        SimpleDateFormat netcdfDate = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
+        
+        netcdfDate.setTimeZone(tz);
+        
         String $HOME = System.getProperty("user.home");
         PropertyConfigurator.configure("log4j.properties");
         Common.build("ABOS.properties");
@@ -87,8 +173,6 @@ public class WriteMRU_SOFS
         final int NTIME = args.length;
         final int NSAMPLE = 3072;
         final int NSPEC = 256;
-
-        TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
 
         Mooring m = Mooring.selectByMooringID(args[0]);
 
@@ -108,8 +192,8 @@ public class WriteMRU_SOFS
         		break;
         	}
         }
-		log.info("load cell instrument " + instLoad);
-        
+		log.info("load cell Instrument (" + instLoad.getInstrumentID() + ") " + instLoad);
+
         double slope = Double.NaN;
         double offset = Double.NaN;
 		if (instLoad != null)
@@ -128,9 +212,19 @@ public class WriteMRU_SOFS
         
         sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
         
+        int fileArg = 1;
+        if (m.getMooringID().startsWith("SOFS-1-2010"))
+        {
+        	readDataFile(args[1]);
+        	fileArg++;
+        }
         ListFiles lf = new ListFiles();
         
-        ArrayList listOfFiles = lf.listFilez(new File(args[1]), ".bin");
+        ArrayList<File> listOfFiles = new ArrayList<File>();
+        for(int i=fileArg;i<args.length;i++)
+        {
+        	listOfFiles.addAll(lf.listFilez(new File(args[fileArg]), ".BIN"));
+        }
         
         log.info("Files to process " + listOfFiles.size());
         NetCDFfile ndf = new NetCDFfile();
@@ -138,44 +232,59 @@ public class WriteMRU_SOFS
         ndf.setAuthority("IMOS");
         ndf.setFacility(m.getFacility());
         
-        Instrument inst = Instrument.selectByInstrumentID(1620);
+        Instrument inst = Instrument.selectByInstrumentID(2375); // hack alert, SOFS-1 Data Logger ID, does not have CR1000, so defaults to this :-)
+        for(Instrument ix : insts)
+        {
+    		log.trace("Instrument " + ix);
+    		
+        	if (ix.getModel().contains("CR1000"))
+        	{
+        		inst = ix;        
+        		break;
+        	}
+        }
+		log.info("Instrument (" + inst.getInstrumentID() + ") " + inst);
+		
+        Instrument inst3DM = Instrument.selectByInstrumentID(1620);
         for(Instrument ix : insts)
         {
     		log.trace("Instrument " + ix);
     		
         	if (ix.getModel().contains("3DM"))
         	{
-        		inst = ix;        
+        		inst3DM = ix;        
         		break;
         	}
         }
-		log.info("Instrument " + inst);
+		log.info("Instrument MRU (" + inst3DM.getInstrumentID() + ") " + inst3DM);
 		
         Timestamp dataStartTime = m.getTimestampIn(); // TODO: probably should come from data, esp for part files
         Timestamp dataEndTime = m.getTimestampOut();        
 
-        filename = ndf.getFileName(inst, dataStartTime, dataEndTime, "raw", "RW");
+        filename = ndf.getFileName(inst, dataStartTime, dataEndTime, "raw", "RW", null);
         
         boolean haveLoad = false;
         try
         {
             // Create new netcdf-4 file with the given filename
             ndf.createFile(filename);
+            ndf.depthMax = 1.0;
+            ndf.depthMin = 1.0;
 
             ndf.writeGlobalAttributes();
             ndf.createCoordinateVariables(listOfFiles.size());      
             ndf.addGroupAttribute(null, new Attribute("serial_number", inst.getSerialNumber()));
             ndf.addGroupAttribute(null, new Attribute("featureType", "timeSeries"));
             ndf.addGroupAttribute(null, new Attribute("cdm_data_type", "Station"));
-            ndf.addGroupAttribute(null, new Attribute("geospatial_vertical_min", 0f));
-            ndf.addGroupAttribute(null, new Attribute("geospatial_vertical_max", 0f));
-            ndf.addGroupAttribute(null, new Attribute("geospatial_vertical_positive", "down"));
-            ndf.addGroupAttribute(null, new Attribute("instrument_nominal_depth", 0f));
+            ndf.addGroupAttribute(null, new Attribute("instrument_nominal_height", 0f));
             ndf.addGroupAttribute(null, new Attribute("instrument", (inst.getMake() + " " + inst.getModel())));
             ndf.addGroupAttribute(null, new Attribute("instrument_serial_number", inst.getSerialNumber()));
-            ndf.addGroupAttribute(null, new Attribute("file_version", "Level 0 – Raw data"));
+            ndf.addGroupAttribute(null, new Attribute("file_version", "Level 0 - Raw data"));
             ndf.addGroupAttribute(null, new Attribute("history", ndf.netcdfDate.format(new Date()) + " File Created"));
-                        
+            
+            ndf.addGroupAttribute(null, new Attribute("time_deployment_start", netcdfDate.format(m.getTimestampIn())));
+            ndf.addGroupAttribute(null, new Attribute("time_deployment_end", netcdfDate.format(m.getTimestampOut())));            
+            
 //            Variable vLon = ndf.dataFile.addVariable(null, "XPOS", DataType.DOUBLE, "TIME");
 //            Variable vLat = ndf.dataFile.addVariable(null, "YPOS", DataType.DOUBLE, "TIME");
 //            vLat.addAttribute(new Attribute("standard_name", "latitude"));
@@ -199,43 +308,93 @@ public class WriteMRU_SOFS
 //            ArrayDouble.D1 lat = new ArrayDouble.D1(listOfFiles.size());
 //            ArrayDouble.D1 lon = new ArrayDouble.D1(listOfFiles.size());
             
-            Dimension sampleDim = ndf.dataFile.addDimension(null, "sample", NSAMPLE);
-            Dimension specDim = ndf.dataFile.addDimension(null, "spectrum", NSPEC);
+//            axis: Z
+//            long_name: nominal depth
+//            positive: down
+//            reference_datum: sea surface
+//            standard_name: depth
+//            units: metres
+//            valid_max: 12000.0
+//            valid_min: -5.0
+            
+            ndf.depthMax = 1.0;
+            ndf.depthMin = 1.0;
+
+            Variable vHeight = ndf.dataFile.addVariable(null, "NOMINAL_HEIGHT", DataType.DOUBLE, new ArrayList());
+            
+            vHeight.addAttribute(new Attribute("standard_name", "height"));
+            vHeight.addAttribute(new Attribute("long_name", "nominal height"));
+            vHeight.addAttribute(new Attribute("units", "metres"));
+            vHeight.addAttribute(new Attribute("axis", "Z"));
+            vHeight.addAttribute(new Attribute("positive", "up"));
+            vHeight.addAttribute(new Attribute("valid_min", 0.0));
+            vHeight.addAttribute(new Attribute("valid_max", 10.0));
+            vHeight.addAttribute(new Attribute("reference_datum", "sea surface"));
+
+            ArrayDouble.D0 height = new ArrayDouble.D0();            
+            height.set(1.0);
+            
+            Dimension sampleDim = ndf.dataFile.addDimension(null, "sample_time", NSAMPLE);
+            Dimension specDim = ndf.dataFile.addDimension(null, "frequency", NSPEC);
             Dimension vectorDim = ndf.dataFile.addDimension(null, "vector", 3);
+            Dimension quetDim = ndf.dataFile.addDimension(null, "quaternion", 4);
 
             List<Dimension> vdims = new ArrayList<Dimension>();
-            vdims.add(ndf.timeDim);
             vdims.add(sampleDim);
             vdims.add(vectorDim);
+            vdims.add(ndf.timeDim);
+
+            List<Dimension> qdims = new ArrayList<Dimension>();
+            qdims.add(sampleDim);
+            qdims.add(quetDim);
+            qdims.add(ndf.timeDim);
             
-            Variable vSpecFreq = ndf.dataFile.addVariable(null, "frequency", DataType.FLOAT, "spectrum");
+            Variable vSpecFreq = ndf.dataFile.addVariable(null, "frequency", DataType.FLOAT, "frequency");
             vSpecFreq.addAttribute(new Attribute("long_name", "spectral_frequency"));
             vSpecFreq.addAttribute(new Attribute("units", "Hz"));   
-            vSpecFreq.addAttribute(new Attribute("_FillValue", Float.NaN));
+            //vSpecFreq.addAttribute(new Attribute("_FillValue", Float.NaN));
 
-            Variable vSampleTime = ndf.dataFile.addVariable(null, "sample_time", DataType.FLOAT, "sample");
+            Variable vSampleTime = ndf.dataFile.addVariable(null, "sample_time", DataType.FLOAT, "sample_time");
             vSampleTime.addAttribute(new Attribute("long_name", "time_of_sample"));
             vSampleTime.addAttribute(new Attribute("units", "s"));
-            vSampleTime.addAttribute(new Attribute("_FillValue", Float.NaN));
+            //vSampleTime.addAttribute(new Attribute("_FillValue", Float.NaN));
 
             Variable vAccel = ndf.dataFile.addVariable(null, "acceleration", DataType.FLOAT, vdims);
             vAccel.addAttribute(new Attribute("long_name", "acceleration_vector_XYZ"));
             vAccel.addAttribute(new Attribute("units", "m/s/s"));
+            vAccel.addAttribute(new Attribute("coordinates", "TIME LATITUDE LONGITUDE NOMINAL_HEIGHT"));   
             vAccel.addAttribute(new Attribute("_FillValue", Float.NaN));
             
             Variable vMag = ndf.dataFile.addVariable(null, "magnetic", DataType.FLOAT, vdims);
             vMag.addAttribute(new Attribute("long_name", "magnetic_direction_XYZ"));
             vMag.addAttribute(new Attribute("units", "Guass"));
+            vMag.addAttribute(new Attribute("coordinates", "TIME LATITUDE LONGITUDE NOMINAL_HEIGHT"));   
             vMag.addAttribute(new Attribute("_FillValue", Float.NaN));
             
             Variable vAttitude = ndf.dataFile.addVariable(null, "attitude", DataType.FLOAT, vdims);
             vAttitude.addAttribute(new Attribute("long_name", "float_attitude_vector_HPR"));
             vAttitude.addAttribute(new Attribute("units", "degrees"));
+            vAttitude.addAttribute(new Attribute("coordinates", "TIME LATITUDE LONGITUDE NOMINAL_HEIGHT"));               
             vAttitude.addAttribute(new Attribute("_FillValue", Float.NaN));
 
+            Variable vVelocity = ndf.dataFile.addVariable(null, "rotational_velocity", DataType.FLOAT, vdims);
+            vVelocity.addAttribute(new Attribute("long_name", "float_rotational_velocity"));
+            vVelocity.addAttribute(new Attribute("units", "deg/sec"));
+            vVelocity.addAttribute(new Attribute("coordinates", "TIME LATITUDE LONGITUDE NOMINAL_HEIGHT"));               
+            vVelocity.addAttribute(new Attribute("_FillValue", Float.NaN));
+
+            Variable vQuet = ndf.dataFile.addVariable(null, "orientation", DataType.FLOAT, qdims);
+            vQuet.addAttribute(new Attribute("long_name", "float_orientation_quaternion"));
+            vQuet.addAttribute(new Attribute("units", "1"));
+            vQuet.addAttribute(new Attribute("coordinates", "TIME LATITUDE LONGITUDE NOMINAL_HEIGHT"));               
+            vQuet.addAttribute(new Attribute("instrument", (inst3DM.getMake() + " " + inst3DM.getModel())));
+            vQuet.addAttribute(new Attribute("instrument_serial_number", inst3DM.getSerialNumber()));
+
+            vQuet.addAttribute(new Attribute("_FillValue", Float.NaN));
+
             List<Dimension> dims = new ArrayList<Dimension>();
-            dims.add(ndf.timeDim);
             dims.add(sampleDim);
+            dims.add(ndf.timeDim);
 
             Variable vLoad = null;            		
             if (instLoad != null)
@@ -244,29 +403,53 @@ public class WriteMRU_SOFS
 	            vLoad.addAttribute(new Attribute("long_name", "mooring_wire_load"));
 	            vLoad.addAttribute(new Attribute("units", "kg"));
 	            vLoad.addAttribute(new Attribute("_FillValue", Float.NaN));
+	            vLoad.addAttribute(new Attribute("coordinates", "TIME LATITUDE LONGITUDE NOMINAL_HEIGHT"));               
+	            
+	            vLoad.addAttribute(new Attribute("instrument", (instLoad.getMake() + " " + instLoad.getModel())));
+	            vLoad.addAttribute(new Attribute("instrument_serial_number", instLoad.getSerialNumber()));
+
+	            HashMap <String, String> ldComment = new HashMap<String,String>();
+	            ldComment.put("SOFS-1-2010", "load valid 17-Mar-2010 22:15:00 to 07-Jan-2011 02:15:00");
+	            ldComment.put("SOFS-2-2011", "load valid 22-Nov-2011 06:00:18 to 23-Mar-2012 12:00:18");
+	            ldComment.put("SOFS-3-2012", "load valid 14-Jul-2012 23:00:24 to 22-Sep-2012 13:00:24");
+	            ldComment.put("SOFS-4-2013", "load valid 01-May-2013 18:00:24 to 14-Oct-2013 14:00:24");
+	            ldComment.put("SOFS-5-2015", "load valid 24-Mar-2015 15:00:24 to 31-Dec-2015 17:00:24");
+	            ldComment.put("FluxPulse-1-2016", "load valid 17-Mar-2016 03:00:24 to 16-Jun-2016 19:00:24");
+	            ldComment.put("SOFS-6-2017", "load valid 19-Mar-2017 07:00:00 to 21-Sep-2017 17:00:00");
+	            ldComment.put("SOFS-7-2018", "load valid 06-Mar-2018 10:00:00 to 16-Mar-2018 22:00:00");
+	            
+	            String comment = ldComment.get(m.getMooringID());
+	            if (comment != null)
+	            	vLoad.addAttribute(new Attribute("comment", comment));
+	            log.info("Load comment " + comment);
+	            
             }
 
             List<Dimension> dimSpec = new ArrayList<Dimension>();
-            dimSpec.add(ndf.timeDim);
             dimSpec.add(specDim);
+            dimSpec.add(ndf.timeDim);
 
             Variable vSpec = ndf.dataFile.addVariable(null, "wave_spectra", DataType.FLOAT, dimSpec);
             vSpec.addAttribute(new Attribute("long_name", "wave_spectral_density"));
             vSpec.addAttribute(new Attribute("units", "m^2/Hz"));
+            vSpec.addAttribute(new Attribute("coordinates", "TIME LATITUDE LONGITUDE NOMINAL_HEIGHT"));               
             vSpec.addAttribute(new Attribute("_FillValue", Float.NaN));
 
             Variable vSWH = ndf.dataFile.addVariable(null, "SWH", DataType.FLOAT, "TIME");
             vSWH.addAttribute(new Attribute("units", "metre"));
             vSWH.addAttribute(new Attribute("standard_name", "sea_surface_wave_significant_height"));
+            vSWH.addAttribute(new Attribute("long_name", "sea_surface_wave_significant_height"));
+            vSWH.addAttribute(new Attribute("coordinates", "TIME LATITUDE LONGITUDE NOMINAL_HEIGHT"));               
             vSWH.addAttribute(new Attribute("_FillValue", Float.NaN));
+            
+            int[] vDim = getDims(vAccel);
+            int[] qDim = getDims(vQuet);
 
-            int[] vDim = new int[]
-            {
-                ndf.timeDim.getLength(), sampleDim.getLength(), 3
-            };
             Array dataAccel = Array.factory(DataType.FLOAT, vDim);
             Array dataMag = Array.factory(DataType.FLOAT, vDim);
             Array dataAttitude = Array.factory(DataType.FLOAT, vDim);
+            Array dataVelocity = Array.factory(DataType.FLOAT, vDim);
+            Array dataQuet = Array.factory(DataType.FLOAT, qDim);
             IndexIterator iter = dataAccel.getIndexIterator();
             while (iter.hasNext()) 
             {
@@ -282,11 +465,19 @@ public class WriteMRU_SOFS
             {
             	iter.setFloatNext(Float.NaN);
             }
-
-            int[] iDim = new int[]
+            iter = dataVelocity.getIndexIterator();
+            while (iter.hasNext()) 
             {
-                ndf.timeDim.getLength(), sampleDim.getLength()
-            };
+            	iter.setFloatNext(Float.NaN);
+            }
+            iter = dataQuet.getIndexIterator();
+            while (iter.hasNext()) 
+            {
+            	iter.setFloatNext(Float.NaN);
+            }
+
+            int[] iDim = getDims(vLoad);
+
             Array dataLoad = Array.factory(DataType.FLOAT, iDim);
             iter = dataLoad.getIndexIterator();
             while (iter.hasNext()) 
@@ -294,16 +485,11 @@ public class WriteMRU_SOFS
             	iter.setFloatNext(Float.NaN);
             }
             
-            int[] specDims = new int[]
-            {
-                ndf.timeDim.getLength(), specDim.getLength()
-            };
+            int[] specDims = getDims(vSpec);
+
             Array dataSpec = Array.factory(DataType.FLOAT, specDims);
 
-            Array dataSWH = Array.factory(DataType.FLOAT, new int[]
-            {
-                ndf.timeDim.getLength()
-            });
+            Array dataSWH = Array.factory(DataType.FLOAT, getDims(vSWH));
 
             ArrayList<Timestamp> dataTime = new ArrayList<Timestamp>();
             SummaryStatistics loadStats = new SummaryStatistics();
@@ -316,6 +502,7 @@ public class WriteMRU_SOFS
             	zAccel[k] = -9.81;
             }
 
+            Index3D qidx = new Index3D(qDim);
             Index3D vidx = new Index3D(vDim);
             Index2D idx = new Index2D(iDim);
 
@@ -324,9 +511,15 @@ public class WriteMRU_SOFS
             {
             	pf.readLoad = true;
             }
+            int mode = 3;
             if (m.getMooringID().startsWith("SOFS-1"))
             {
+            	mode = 1;
             	pf.sofs1 = true;
+            }
+            else if (m.getMooringID().startsWith("SOFS-2"))
+            {
+            	mode = 2;
             }
 
             for (int fileNo = 0; fileNo < listOfFiles.size(); fileNo++)
@@ -337,21 +530,32 @@ public class WriteMRU_SOFS
 
                 log.info("Process file : " + f);
                 
-                // SOFS-2 file names
-                SimpleDateFormat fndf = new SimpleDateFormat("yyyy-MM-dd'T'HHmmss");
-                try
+                // SOFS-1 files
+                if (mode == 1)
                 {
-                	ts = fndf.parse(f.getName());
-                	dataTime.add(new Timestamp(ts.getTime()));
-                }
-                catch (ParseException pe)
-                {
-                	
+	                int fNo = Integer.parseInt(f.getName().substring(4, 8));
+	
+	                ts = dataTs.get(fNo);  
+	                dataTime.add(new Timestamp(ts.getTime()));
                 }
                 
-                loadStats.clear();
+                if (mode == 2)
+                {
+	                // SOFS-2 file names
+	                SimpleDateFormat fndf = new SimpleDateFormat("yyyy-MM-dd'T'HHmmss");
+	                try
+	                {
+	                	ts = fndf.parse(f.getName());
+	                	dataTime.add(new Timestamp(ts.getTime()));
+	                }
+	                catch (ParseException pe)
+	                {
+	                	
+	                }
+                }
                 
                 int sample = 0;
+                int firstTick = -1;
 
                 pf.open(f);
                 Object r;
@@ -360,9 +564,9 @@ public class WriteMRU_SOFS
                 	if (r instanceof String)
                 	{
                 		String rs = (String)r;
-                		if (rs.contains("START RAW MRU DATA"))
+                		if (rs.contains("START RAW MRU DATA") && (mode >= 2))
                 		{
-                			ts = sdf.parse((String)r);
+                			ts = sdf.parse(rs);
                 			if (ts.after(sdf.parse("2020-01-01 00:00:00"))) // Extream grudge to fix Pulse-11-2015 MRU timestamps
                 			{
                 				ts = new Timestamp(ts.getTime() - 810989523000l);
@@ -370,9 +574,11 @@ public class WriteMRU_SOFS
                             dataTime.add(new Timestamp(ts.getTime()));
                             
                             log.info("MRU file data " + ts);
+                            
+                            firstTick = -1;
                 		}        
                 	}
-                	else if (r instanceof Date)
+                	else if ((r instanceof Date) && (mode >= 3))
                 	{
                 		ts = (Date)r;
                 		
@@ -383,49 +589,79 @@ public class WriteMRU_SOFS
                 	else if (r instanceof MruStabQ)
                 	{
                 		MruStabQ stab = (MruStabQ) r;
+                		if (firstTick == -1)
+                		{
+                			firstTick = stab.ticks;
+                			sample = 0;
+                            loadStats.clear();
+                		}
+                		else
+                		{
+                			if (mode == 1)
+                				sample++;
+                			else
+                				sample = stab.ticks - firstTick;
+                		}
+                		
+                		log.trace("MRU tick " + stab.ticks + " sample " + sample);
+                		
                         zAccel[sample] = stab.accelWorld.z;
 
-                        vidx.set(fileNo, sample, 0);
-                        idx.set(fileNo, sample);
+                        vidx.set(sample, 0, fileNo);
+                        idx.set(sample, fileNo);
                         
                         log.trace("MRUstabQ sample " + sample + " idx " + idx);
 
-                        dataAccel.setFloat(vidx, (float) stab.accelWorld.x);
+                        dataAccel.setFloat(vidx, (float) stab.accel.x);
                         dataAttitude.setFloat(vidx, (float) stab.pry.x);
+                        dataVelocity.setFloat(vidx, (float) stab.pry.x);
                         dataMag.setFloat(vidx, (float) stab.mag.x);
 
-                        vidx.set(fileNo, sample, 1);
-                        dataAccel.setFloat(vidx, (float) stab.accelWorld.y);
+                        vidx.set(sample, 1, fileNo);
+                        dataAccel.setFloat(vidx, (float) stab.accel.y);
+                        dataVelocity.setFloat(vidx, (float) stab.pry.y);
                         dataAttitude.setFloat(vidx, (float) stab.pry.y);
+                       
                         dataMag.setFloat(vidx, (float) stab.mag.y);
 
-                        vidx.set(fileNo, sample, 2);
-                        dataAccel.setFloat(vidx, (float) stab.accelWorld.z);
+                        vidx.set(sample,2, fileNo);
+                        dataAccel.setFloat(vidx, (float) stab.accel.z);
                         dataAttitude.setFloat(vidx, (float) stab.pry.z);
+                        dataVelocity.setFloat(vidx, (float) stab.pry.z);
                         dataMag.setFloat(vidx, (float) stab.mag.z);
+
+                        qidx.set(sample, 0, fileNo);
+                        dataQuet.setFloat(qidx, (float) stab.stab.Q1);                        
+                        qidx.set(sample, 1, fileNo);
+                        dataQuet.setFloat(qidx, (float) stab.stab.Q2);                        
+                        qidx.set(sample, 2, fileNo);
+                        dataQuet.setFloat(qidx, (float) stab.stab.Q3);                        
+                        qidx.set(sample, 3, fileNo);
+                        dataQuet.setFloat(qidx, (float) stab.stab.Q4);                        
                         
-                        sample++;
-                		
+                        //sample++;             		
                 	}
                 	else if (r instanceof Float)
                 	{
                 		haveLoad = true;
                         double loadVolt = (Float)r; // loadCell recorded in mV
                         double dLoad = ((loadVolt/1000.0 - offset) * slope);
+                        
                         log.trace("Load = " + dLoad);
                         log.trace("load sample " + sample + " idx " + idx + " load " + dLoad);
                         
-                        if (dLoad > 0)
+                        //if (dLoad > 0)
                         {
                             dataLoad.setFloat(idx, (float) dLoad);
                             loadStats.addValue(dLoad);
                         }
-                        else
+                        //else
                         {
-                            dataLoad.setFloat(idx, Float.NaN);
+                            //dataLoad.setFloat(idx, Float.NaN);
                         }                		
                 	}					
 				}
+                log.debug("Last Sample " + sample);
                 
                 pf.close();
                 
@@ -438,7 +674,7 @@ public class WriteMRU_SOFS
                     Index2D idxSpec = new Index2D(specDims);
                     for (i = 0; i < spec.length; i++)
                     {
-                        idxSpec.set(fileNo, i);
+                        idxSpec.set(i, fileNo);
                         dataSpec.setFloat(idxSpec, (float) spec[i]);
                     }
 
@@ -453,9 +689,13 @@ public class WriteMRU_SOFS
                     waveHeight = wd.calculate(WaveCalculator.DF, logSpec);
                     dataSWH.setFloat(fileNo, (float) waveHeight);
                 }
-
                 
-                log.info("FILE " + f + " time " + sdf.format(ts) + " wave height " + waveHeight + " load av " + loadStats.getMean() + " load max " + loadStats.getMax());
+                log.info("FILE " + f);
+                log.info("time " + sdf.format(ts) + " wave height " + String.format("%5.2f", waveHeight) + 
+                		" load av " + String.format("%6.1f", loadStats.getMean()) + 
+                		" load max " + String.format("%4.1f", loadStats.getMax()) + 
+                		" load min " + String.format("%6.1f", loadStats.getMin()) + 
+                		" count " + loadStats.getN());
             }
             
             ndf.addGroupAttribute(null, new Attribute("time_coverage_start", ndf.netcdfDate.format(dataTime.get(0))));
@@ -464,10 +704,33 @@ public class WriteMRU_SOFS
             ndf.writeCoordinateVariables(dataTime);
             ndf.writeCoordinateVariableAttributes();
 
+            int ns = ndf.groupAttributeList.size();
+            for(int i =ns-1;i>= 0; i--)
+            {
+            	Attribute a = ndf.groupAttributeList.get(i);
+            	if (a.getFullName().startsWith("geospatial_vertical_positive"))
+            	{
+            		ndf.groupAttributeList.remove(i);
+            		ndf.addGroupAttribute(null,  new Attribute("geospatial_vertical_positive", "up"));
+            	}
+            	if (a.getFullName().startsWith("geospatial_vertical_min"))
+            	{
+            		ndf.groupAttributeList.remove(i);
+            		ndf.addGroupAttribute(null,  new Attribute("geospatial_vertical_min", 1.0));
+            	}
+            	if (a.getFullName().startsWith("geospatial_vertical_max"))
+            	{
+            		ndf.groupAttributeList.remove(i);
+            		ndf.addGroupAttribute(null,  new Attribute("geospatial_vertical_max", 1.0));
+            	}            	
+            }
+
             // Write the coordinate variable data. 
             ndf.create();
             
-            ndf.writePosition(m.getLatitudeIn(), m.getLongitudeIn());            
+            ndf.writePosition(m.getLatitudeIn(), m.getLongitudeIn());   
+
+            ndf.dataFile.write(vHeight, height);
             
             //lat.set(0, latitudeIn);
             //lon.set(0, longitudeOut);
@@ -503,6 +766,8 @@ public class WriteMRU_SOFS
             ndf.dataFile.write(vAccel, dataAccel);
             ndf.dataFile.write(vMag, dataMag);
             ndf.dataFile.write(vAttitude, dataAttitude);
+            ndf.dataFile.write(vVelocity, dataVelocity);
+            ndf.dataFile.write(vQuet, dataQuet);
 
             if (instLoad != null)            	
             	ndf.dataFile.write(vLoad, dataLoad);

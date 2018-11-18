@@ -158,6 +158,10 @@ public class AsimetDataParser extends AbstractDataParser
             {
                 type = "LSR";
             }
+            else if (fName.matches("SOFS.L\\d\\d.*"))
+            {
+                type = "LSR";
+            }
             else if (fName.contains("BPR"))
             {
                 type = "BPR";

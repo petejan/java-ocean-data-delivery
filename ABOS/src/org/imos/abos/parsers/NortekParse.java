@@ -259,17 +259,17 @@ public class NortekParse
     	public float pressure;
     	public int anaIn2;    	
     	    	
-    	public int velB1;
-    	public int velB2;
-    	public int velB3;
+    	public short velB1;
+    	public short velB2;
+    	public short velB3;
 
-    	public int ampB1;
-    	public int ampB2;
-    	public int ampB3;
+    	public byte ampB1;
+    	public byte ampB2;
+    	public byte ampB3;
 
-    	public int corB1;
-    	public int corB2;
-    	public int corB3;
+    	public byte corB1;
+    	public byte corB2;
+    	public byte corB3;
     	
     	public String toString()
     	{
@@ -296,13 +296,13 @@ public class NortekParse
     	vvd.velB2 = buffer.getShort();
     	vvd.velB3 = buffer.getShort();
 
-    	vvd.ampB1 = buffer.get() & 0xff;
-    	vvd.ampB2 = buffer.get() & 0xff;
-    	vvd.ampB3 = buffer.get() & 0xff;
+    	vvd.ampB1 = buffer.get();
+    	vvd.ampB2 = buffer.get();
+    	vvd.ampB3 = buffer.get();
 
-    	vvd.corB1 = buffer.get() & 0xff;
-    	vvd.corB2 = buffer.get() & 0xff;
-    	vvd.corB3 = buffer.get() & 0xff;
+    	vvd.corB1 = buffer.get();
+    	vvd.corB2 = buffer.get();
+    	vvd.corB3 = buffer.get();
     	
     	vvd.pressure = (vvd.pressureLSW + vvd.pressureMSB * 65536) * 0.001f;
     	vvd.anaIn2 = vvd.anaIn2LSB | (vvd.anaIn2MSB * 256);
@@ -381,11 +381,11 @@ public class NortekParse
     public class IMU
     {
     	int ensCnt;
-    	int AHRSId;
+    	public int AHRSId;
     	
-		public float stabX;
-		public float stabY;
-		public float stabZ;
+//		public float stabX;
+//		public float stabY;
+//		public float stabZ;
 		public float AngRateX;
 		public float AngRateY;
 		public float AngRateZ;
@@ -430,9 +430,9 @@ public class NortekParse
     	
     	if (imu.AHRSId == 0xD2)
     	{
-    		imu.stabX = buffer.getFloat();
-    		imu.stabY = buffer.getFloat();
-    		imu.stabZ = buffer.getFloat();
+    		imu.accelX = buffer.getFloat();
+    		imu.accelY = buffer.getFloat();
+    		imu.accelZ = buffer.getFloat();
     		imu.AngRateX = buffer.getFloat();
     		imu.AngRateY = buffer.getFloat();
     		imu.AngRateZ = buffer.getFloat();
@@ -441,7 +441,7 @@ public class NortekParse
     		imu.StabMagZ = buffer.getFloat();
     		imu.timer = (buffer.getInt() & 0xffffffff)/62.5;
     		
-    		log.trace("IMU gryo stab accel, ang rate, mag " + imu.stabZ + " timer " + imu.timer);
+    		log.trace("IMU gryo stab accel, ang rate, mag " + imu.accelX + " timer " + imu.timer);
     	}
     	else if (imu.AHRSId == 0xc3)
     	{
@@ -480,7 +480,6 @@ public class NortekParse
     		imu.timer = (buffer.getInt() & 0xffffffff)/62.5;
 
     		log.trace("IMU accel, ang rate, mag, MAT " + imu.accelX + " " + imu.accelY + " " + imu.accelZ + " timer " + imu.timer);
-    	
     	}
     	else
     	{

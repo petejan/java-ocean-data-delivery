@@ -1,18 +1,23 @@
 
 %file = 'Pulse-11-2015/IMOS_ABOS-SOTS_RTSCP_20150213T070000Z_Pulse_FV01_Pulse-11-2015-SubSurface_END-20160319T220000Z_C-20160528T101902Z.nc';
-file = 'IMOS_ABOS-ASFS_RTSCP_20150211T010000Z_SOFS_FV01_SOFS-5-2015-SubSurface_END-20160413T210000Z_C-20160524T232323Z.nc';
+file = '../data/IMOS_ABOS-SOTS_FREMVBTCSOP_20161220_SOFS_FV02_SOFS-6-2017-Gridded-Data_END-20171231_C-20180407.nc';
 
 deployment_code = ncreadatt(file, '/', 'deployment_code');
 
 ts = ncread(file, 'TIME') + datenum('1950-01-01 00:00:00');
 
-temp = ncread(file, 'TEMP');
-vinfo = ncinfo(file, 'TEMP');
-depth_temp = ncread(file, vinfo.Dimensions(1).Name);
+temp = ncread(file, 'TEMP')';
+%vinfo = ncinfo(file, 'TEMP');
+%depth_temp = ncread(file, vinfo.Dimensions(1).Name);
+depth_temp = ncread(file, 'DEPTH_TEMP');
 
-pres = ncread(file, 'PRES');
-vinfo = ncinfo(file, 'PRES');
-depth_p = ncread(file, vinfo.Dimensions(1).Name);
+pres = ncread(file, 'PRES')';
+%vinfo = ncinfo(file, 'PRES');
+%depth_p = ncread(file, vinfo.Dimensions(1).Name);
+depth_p = ncread(file, 'DEPTH_PRES');
+
+depth_p = [0 depth_p']';
+pres = [zeros(size(ts,1),1) pres']';
 
 % generate interpolated depths
 

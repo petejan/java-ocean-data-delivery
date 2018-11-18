@@ -33,6 +33,8 @@ public class StarOddiParser extends AbstractDataParser
         /*
          * #33	Limit Temp. Corr. OTCR:	0
          * 1	04.08.11 00:00:00	11,022	-4,37	0,9	-10,7
+         * 
+         * 10	17.03.2017 00:45:00	21,33
          */
         char c = dataLine.charAt(0);
         if(! Character.isDigit(c) )
@@ -59,13 +61,6 @@ public class StarOddiParser extends AbstractDataParser
     {
         SimpleDateFormat dateParser = new SimpleDateFormat("dd.MM.yy HH:mm:ss");
 
-        String temperatureString;
-        String pressureString;
-        String pitchString;
-        String rollString;
-
-        String dateString;
-
         Timestamp dataTimestamp = null;
         Double waterTemp = null;
         Double pressure = null;
@@ -74,36 +69,25 @@ public class StarOddiParser extends AbstractDataParser
 
         NumberFormat nf = NumberFormat.getInstance(Locale.FRANCE); // Who would do that !
         
-        StringTokenizer st = new StringTokenizer(dataLine, "\t");
-        int tokenCount = st.countTokens();
+        String[] dataValues = dataLine.split("\t");
         try
         {
-            st.nextToken(); // ignore record number
-            dateString = st.nextToken();
             try
             {
-                java.util.Date d = dateParser.parse(dateString);
+                java.util.Date d = dateParser.parse(dataValues[1]);
                 dataTimestamp = new Timestamp(d.getTime());
             }
             catch(ParseException pex)
             {
-                throw new ParseException("Timestamp parse failed for text '" + dateString + "'",0);
+                throw new ParseException("Timestamp parse failed for text '" + dataValues[1] + "'",0);
             }
-            
-            temperatureString = st.nextToken();
-            pressureString  = st.nextToken();
-            pitchString = st.nextToken();
-            rollString = st.nextToken();
-            
-            waterTemp = new Double(nf.parse(temperatureString.trim()).doubleValue());
-            pressure = new Double(nf.parse(pressureString.trim()).doubleValue());
-            pitch = new Double(nf.parse(pitchString.trim()).doubleValue());
-            roll = new Double(nf.parse(rollString.trim()).doubleValue());
-            
+
             //
             // ok, we have parsed out the values we need, can now construct the raw data class
             //
             RawInstrumentData row = new RawInstrumentData();
+
+            waterTemp = new Double(nf.parse(dataValues[2].trim()).doubleValue());
 
             row.setDataTimestamp(dataTimestamp);
             row.setDepth(instrumentDepth);
@@ -118,26 +102,40 @@ public class StarOddiParser extends AbstractDataParser
 
             boolean ok = row.insert();
 
-            row.setParameterCode("PRES");
-            row.setParameterValue(pressure);
-            row.setSourceFileID(currentFile.getDataFilePrimaryKey());
-            row.setQualityCode("RAW");
-
-            ok = row.insert();
-
-            row.setParameterCode("PITCH");
-            row.setParameterValue(pitch);
-            row.setSourceFileID(currentFile.getDataFilePrimaryKey());
-            row.setQualityCode("RAW");
-
-            ok = row.insert();
-
-            row.setParameterCode("ROLL");
-            row.setParameterValue(roll);
-            row.setSourceFileID(currentFile.getDataFilePrimaryKey());
-            row.setQualityCode("RAW");
-
-            ok = row.insert();
+            if (dataValues.length > 3)
+            {
+	            pressure = new Double(nf.parse(dataValues[3].trim()).doubleValue());
+	
+	            row.setParameterCode("PRES");
+	            row.setParameterValue(pressure);
+	            row.setSourceFileID(currentFile.getDataFilePrimaryKey());
+	            row.setQualityCode("RAW");
+	
+	            ok = row.insert();
+            }
+            if (dataValues.length > 4)
+            {
+	            pitch = new Double(nf.parse(dataValues[4].trim()).doubleValue());
+	            
+	
+	            row.setParameterCode("PITCH");
+	            row.setParameterValue(pitch);
+	            row.setSourceFileID(currentFile.getDataFilePrimaryKey());
+	            row.setQualityCode("RAW");
+	
+	            ok = row.insert();
+            }
+            if (dataValues.length > 5)
+            {
+	            roll = new Double(nf.parse(dataValues[5].trim()).doubleValue());
+	
+	            row.setParameterCode("ROLL");
+	            row.setParameterValue(roll);
+	            row.setSourceFileID(currentFile.getDataFilePrimaryKey());
+	            row.setQualityCode("RAW");
+	
+	            ok = row.insert();
+            }
         }
         catch (NoSuchElementException nse)
         {

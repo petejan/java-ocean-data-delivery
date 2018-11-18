@@ -215,7 +215,7 @@ public class SeaWaterCalculationForm extends MemoryWindow implements DataProcess
         if (propertyName.equalsIgnoreCase("MOORING_SELECTED"))
         {
             Mooring selectedItem = (Mooring) evt.getNewValue();
-            sourceInstrumentCombo.setMooringParam(selectedItem, "CNDC%");
+            sourceInstrumentCombo.setMooringParam(selectedItem, "CNDC");
             targetInstrumentCombo.setMooring(selectedItem);
         }
     }//GEN-LAST:event_mooringCombo1PropertyChange

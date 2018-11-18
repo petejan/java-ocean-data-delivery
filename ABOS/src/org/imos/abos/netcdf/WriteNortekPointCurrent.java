@@ -29,8 +29,10 @@ import org.imos.abos.parsers.RawAZFPdata;
 import org.wiley.core.Common;
 
 import ucar.ma2.Array;
+import ucar.ma2.ArrayByte;
 import ucar.ma2.ArrayDouble;
 import ucar.ma2.ArrayFloat;
+import ucar.ma2.ArrayInt;
 import ucar.ma2.ArrayShort;
 import ucar.ma2.DataType;
 import ucar.ma2.Index;
@@ -55,7 +57,7 @@ public class WriteNortekPointCurrent
         
         TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
                 
-        String mooring_id = "SOFS-5-2015";
+        String mooring_id = args[0];
 
         // run with something like
         //
@@ -63,7 +65,7 @@ public class WriteNortekPointCurrent
         
         Date tsStart = null;
         Date tsEnd = null;
-        String srcFilename = args[0];
+        String srcFilename = args[1];
         
         NortekParse nortek = new NortekParse();
         nortek.open(new File(srcFilename));
@@ -98,12 +100,13 @@ public class WriteNortekPointCurrent
         
         Mooring m = Mooring.selectByMooringID(mooring_id);
         ArrayList<Instrument> insts = Instrument.selectInstrumentsForMooring(mooring_id); // Nortek Vector
-        Instrument inst = Instrument.selectByInstrumentID(2410);
+        log.debug("insts " + m + " " + insts + " looking for " + nortek.serialNo.substring(4, 8));
+        Instrument inst = Instrument.selectByInstrumentID(2413);
         for(Instrument ix : insts)
         {
     		log.debug("Instrument " + ix);
     		
-        	if (ix.getSerialNumber().contains("8224"))
+        	if (ix.getSerialNumber().contains(nortek.serialNo.substring(4, 8)) & ix.getMake().startsWith("Nortek"))
         	{
         		inst = ix;        
         		break;
@@ -121,10 +124,10 @@ public class WriteNortekPointCurrent
         {
             ndf.setMooring(m);
             ndf.setAuthority("IMOS");
-            ndf.setFacility("ABOS-ASFS");
+            ndf.setFacility("ABOS-SOFS");
             ndf.setMultiPart(true);
             
-        	filename = ndf.getFileName(inst, dataStartTime, dataEndTime, "raw_instrument_data", "RVT");
+        	filename = ndf.getFileName(inst, dataStartTime, dataEndTime, "raw_instrument_data", "RVT", null);
         	
             // Create new netcdf-4 file with the given filename
             ndf.createFile(filename);
@@ -260,21 +263,21 @@ public class WriteNortekPointCurrent
             vAna2.addAttribute(new Attribute("valid_min", -32768f));
             vAna2.addAttribute(new Attribute("valid_max", 32768f));
 
-            Variable vVel = ndf.dataFile.addVariable(null, "VELOCITY", DataType.FLOAT, vectorDims);
+            Variable vVel = ndf.dataFile.addVariable(null, "VELOCITY", DataType.SHORT, vectorDims);
             vVel.addAttribute(new Attribute("units", "mm/s"));
             vVel.addAttribute(new Attribute("long_name", "water_velocity_vector"));
             vVel.addAttribute(new Attribute("name", "water velocity vector (B1,B2,B3)"));
-            vVel.addAttribute(new Attribute("_FillValue", Float.NaN));            
-            vVel.addAttribute(new Attribute("valid_min", -32768f));
-            vVel.addAttribute(new Attribute("valid_max", 32767f));
+            vVel.addAttribute(new Attribute("_FillValue", Short.MIN_VALUE));            
+            vVel.addAttribute(new Attribute("valid_min", Short.MIN_VALUE));
+            vVel.addAttribute(new Attribute("valid_max", Short.MAX_VALUE));
 
-            Variable vAmp = ndf.dataFile.addVariable(null, "ABSI", DataType.SHORT, vectorDims);
+            Variable vAmp = ndf.dataFile.addVariable(null, "ABSI", DataType.BYTE, vectorDims);
             vAmp.addAttribute(new Attribute("units", "counts"));
             vAmp.addAttribute(new Attribute("long_name", "amplitude"));
             vAmp.addAttribute(new Attribute("name", "amplitude (B1,B2,B3)"));
-            vAmp.addAttribute(new Attribute("_FillValue", (short)-1));            
-            vAmp.addAttribute(new Attribute("valid_min", (short)0));
-            vAmp.addAttribute(new Attribute("valid_max", (short)255));
+            vAmp.addAttribute(new Attribute("_FillValue", (byte)0));            
+            vAmp.addAttribute(new Attribute("valid_min", (byte)0));
+            vAmp.addAttribute(new Attribute("valid_max", (byte)255));
             
             Variable vCor = ndf.dataFile.addVariable(null, "CORR_MAG", DataType.SHORT, vectorDims);
             vCor.addAttribute(new Attribute("units", "%"));
@@ -301,12 +304,12 @@ public class WriteNortekPointCurrent
             vAngRate.addAttribute(new Attribute("valid_max", 100f));
 
             Variable vMag = ndf.dataFile.addVariable(null, "IMU_MAGNETIC", DataType.FLOAT, vectorDims);
-            vAngRate.addAttribute(new Attribute("units", "Gauss"));
-            vAngRate.addAttribute(new Attribute("long_name", "magnetic_field_strength"));
-            vAngRate.addAttribute(new Attribute("name", "magnetic field vector (X,Y,Z)"));
-            vAngRate.addAttribute(new Attribute("_FillValue", Float.NaN));            
-            vAngRate.addAttribute(new Attribute("valid_min", -100000f));
-            vAngRate.addAttribute(new Attribute("valid_max", 100000f));
+            vMag.addAttribute(new Attribute("units", "Gauss"));
+            vMag.addAttribute(new Attribute("long_name", "magnetic_field_strength"));
+            vMag.addAttribute(new Attribute("name", "magnetic field vector (X,Y,Z)"));
+            vMag.addAttribute(new Attribute("_FillValue", Float.NaN));            
+            vMag.addAttribute(new Attribute("valid_min", -100000f));
+            vMag.addAttribute(new Attribute("valid_max", 100000f));
 
             // Write the coordinate variable data. 
             ndf.create();
@@ -324,11 +327,17 @@ public class WriteNortekPointCurrent
             ArrayFloat.D1 aRoll = new ArrayFloat.D1(1);
             ArrayFloat.D1 aanaIn = new ArrayFloat.D1(1);
 
+            // velocity data
             ArrayFloat.D2 aPressure = new ArrayFloat.D2(1, nortek.NRecords);
             ArrayFloat.D2 aAna1 = new ArrayFloat.D2(1, nortek.NRecords);
             ArrayFloat.D2 aAna2 = new ArrayFloat.D2(1, nortek.NRecords);
+            ArrayShort.D3 aVel = new ArrayShort.D3(1, nortek.NRecords, 3);
+            ArrayByte.D3 aAmp = new ArrayByte.D3(1, nortek.NRecords, 3);
 
+            // IMU vars
             ArrayFloat.D3 aAccel = new ArrayFloat.D3(1, nortek.NRecords, 3);
+            ArrayFloat.D3 aGyro = new ArrayFloat.D3(1, nortek.NRecords, 3);
+            ArrayFloat.D3 aMag = new ArrayFloat.D3(1, nortek.NRecords, 3);
 
             Timestamp ts = vHeader.ts;
             long offsetTime = (ts.getTime() - ndf.anchorTime) / 1000;
@@ -380,10 +389,20 @@ public class WriteNortekPointCurrent
             				aPressure.set(0, i, vvd.pressure);
             				aAna1.set(0, i, vvd.anaIn1);
             				aAna2.set(0, i, vvd.anaIn2);
+            				
+            				aVel.set(0,  i, 0, vvd.velB1);
+            				aVel.set(0,  i, 1, vvd.velB2);
+            				aVel.set(0,  i, 2, vvd.velB3);
+            				
+            				aAmp.set(0,  i, 0, vvd.ampB1);
+            				aAmp.set(0,  i, 1, vvd.ampB2);
+            				aAmp.set(0,  i, 2, vvd.ampB3);
             			}
                 		ndf.dataFile.write(vPressure, data_origin, aPressure);
                 		ndf.dataFile.write(vAna1, data_origin, aAna1);
                 		ndf.dataFile.write(vAna2, data_origin, aAna2);
+                		ndf.dataFile.write(vVel, vector_origin, aVel);
+                		ndf.dataFile.write(vAmp, vector_origin, aAmp);
 
                 		data_origin[0]++; // Should be the same as time index above
                 		
@@ -394,15 +413,24 @@ public class WriteNortekPointCurrent
             		}
             		else if (al1 instanceof IMU)
             		{
-            			log.info("IMUxD2: " + al.size());
+            			log.info("IMU: count " + al.size());
             			for(int i = 0;i<al.size();i++)
             			{
             				IMU imu = (IMU)al.get(i);
-            				aAccel.set(0, i, 0, imu.stabX);
-            				aAccel.set(0, i, 1, imu.stabY);
-            				aAccel.set(0, i, 2, imu.stabZ);
+            				//log.debug("IMU " + imu.AHRSId);
+            				aAccel.set(0, i, 0, imu.accelX);
+            				aAccel.set(0, i, 1, imu.accelY);
+            				aAccel.set(0, i, 2, imu.accelZ);
+            				aGyro.set(0, i, 0, imu.AngRateX);
+            				aGyro.set(0, i, 1, imu.AngRateY);
+            				aGyro.set(0, i, 2, imu.AngRateZ);
+            				aMag.set(0, i, 0, imu.StabMagX);
+            				aMag.set(0, i, 1, imu.StabMagY);
+            				aMag.set(0, i, 2, imu.StabMagZ);
             			}
                 		ndf.dataFile.write(vAccel, vector_origin, aAccel);
+                		ndf.dataFile.write(vAngRate, vector_origin, aGyro);
+                		ndf.dataFile.write(vMag, vector_origin, aMag);
 
                 		vector_origin[0]++; // Should be the same as time index above
                 		

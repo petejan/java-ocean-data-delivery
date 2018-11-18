@@ -639,7 +639,7 @@ public class Instrument  implements Cloneable
                         + " where instrument_id in "
                         + "("
                         + " select distinct instrument_id from raw_instrument_data "
-                        + " where parameter_code LIKE "
+                        + " where parameter_code = "
                         + StringUtilities.quoteString(param)
                         + " AND mooring_id = "
                         + StringUtilities.quoteString(mooringID)
@@ -784,8 +784,8 @@ public class Instrument  implements Cloneable
                         + " where instrument_id in "
                         + "("
                         + "select distinct instrument_id from mooring_attached_instruments"
-                        + " where mooring_id = "
-                        + StringUtilities.quoteString(mooring)
+                        + " where mooring_id like "
+                        + StringUtilities.quoteString(mooring + "%")
                         + ")"
                         + getDefaultSortOrder());
     }

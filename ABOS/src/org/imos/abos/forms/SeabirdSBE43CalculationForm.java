@@ -537,7 +537,7 @@ public class SeabirdSBE43CalculationForm extends MemoryWindow implements DataPro
         if(propertyName.equalsIgnoreCase("MOORING_SELECTED"))
         {
             Mooring selectedItem = (Mooring) evt.getNewValue();
-            sourceInstrumentCombo.setMooringParam(selectedItem, "SBE43_OXY_VOLTAGE%");
+            sourceInstrumentCombo.setMooringParam(selectedItem, "SBE43_OXY_VOLTAGE");
             targetInstrumentCombo.setMooring(selectedItem);
             calibrationFileCombo1.setMooring(selectedItem);
         }

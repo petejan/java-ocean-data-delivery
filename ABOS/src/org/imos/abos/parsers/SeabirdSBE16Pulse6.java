@@ -127,7 +127,7 @@ public class SeabirdSBE16Pulse6 extends AbstractDataParser
             volt4 = getDouble(volt4String);
             volt5 = getDouble(volt5String);
             volt6 = getDouble(volt6String);
-            GTDPressureVal = getDouble(GTDPressureString);
+            GTDPressureVal = getDouble(GTDPressureString)/100000.0;
             GTDTemperatureVal = getDouble(GTDTemperatureString);
 
             //

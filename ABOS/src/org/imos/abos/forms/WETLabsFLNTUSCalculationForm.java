@@ -240,7 +240,7 @@ public class WETLabsFLNTUSCalculationForm extends MemoryWindow implements DataPr
         //logger.debug(evt.getPropertyName());
         if(propertyName.equalsIgnoreCase("MOORING_SELECTED")) {
             Mooring selectedItem = (Mooring) evt.getNewValue();
-            sourceInstrumentCombo.setMooringParam(selectedItem, "ECO_FLNTUS_CHL%");
+            sourceInstrumentCombo.setMooringParam(selectedItem, "ECO_FLNTUS_CHL");
             targetInstrumentCombo.setMooring(selectedItem);
             calibrationFileCombo1.setMooring(selectedItem);
         }

@@ -1,4 +1,4 @@
--- truncate instrument_datafile_headers, raw_instrument_data, array_instrument_data, processed_instrument_data;
+truncate instrument_datafile_headers, raw_instrument_data, array_instrument_data, processed_instrument_data;
 truncate instrument_data_files CASCADE;
 truncate instrument_data_processors;
 select setval('datafile_sequence', 200001);

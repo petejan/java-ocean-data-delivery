@@ -54,8 +54,9 @@ public class AlecPARParser extends AbstractDataParser
     @Override
     protected void parseData(String dataLine) throws ParseException, NoSuchElementException
     {
-//        SimpleDateFormat dateParser = new SimpleDateFormat("MM/dd/yyyy hh:mm:ss aa"); // Alec data files are dependant on conversion machine settings
-        SimpleDateFormat dateParser = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss"); // Alec data files are dependant on conversion machine settings
+        SimpleDateFormat dateParser = null;
+        SimpleDateFormat mmddyyyy = new SimpleDateFormat("MM/dd/yyyy hh:mm:ss aa"); // Alec data files are dependant on conversion machine settings
+        SimpleDateFormat yyyymmdd = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss"); // Alec data files are dependant on conversion machine settings
 
         ///   Sample YYYY/MM/DD hh:mm:ss     Day Light[Micromol]      Light 
         //         1 2013/04/28 00:00:00      28       0.00          1 
@@ -73,6 +74,15 @@ public class AlecPARParser extends AbstractDataParser
 //        		2015/03/22 00:02:00,1.2,1.5,
 //        		2015/03/22 00:03:00,1.1,1.5,
                 
+//        [Item],
+//        /   Sample,YYYY/MM/DD,hh:mm:ss,Day,Light[Micromol],Light,
+//        1,2015/03/22,00:00:00,22,1.53,2,
+//        2,2015/03/22,00:01:00,22,1.53,2,
+//        3,2015/03/22,00:02:00,22,1.53,2,
+//        4,2015/03/22,00:03:00,22,3.06,3,
+//        5,2015/03/22,00:04:00,22,0.00,1,
+//        6,2015/03/22,00:05:00,22,1.53,2,
+//        7,2015/03/22,00:06:00,22,1.53,2,
         
         String sampleCount;
         String dateString;
@@ -86,38 +96,51 @@ public class AlecPARParser extends AbstractDataParser
         Timestamp dataTimestamp = null;
         Double PARVal = null;
 
-        StringTokenizer st = new StringTokenizer(dataLine,", ");
-        int tCount = st.countTokens();
+        String dataSplit[] = dataLine.split("[, ]");
+        int tCount = dataSplit.length;
+        int lightn = 2;
         try
         {
-            if (tCount > 4)
-                sampleCount = st.nextToken();
+        		if (tCount > 4)
+                sampleCount = dataSplit[0];
             
             if (tCount > 4)
             {
-                dateString = st.nextToken();
-                timeString = st.nextToken();
-                String AMPMString = st.nextToken();
-                constructTimestamp = dateString.trim() + " " + timeString.trim() + " " + AMPMString;
+                dateString = dataSplit[1];
+                timeString = dataSplit[2];
+                if (dataSplit[3].matches("AM|PM"))
+                {
+	                String AMPMString = dataSplit[3];
+	                //String AMPMString = "";
+	                constructTimestamp = dateString.trim() + " " + timeString.trim() + " " + AMPMString;
+	                dateParser = mmddyyyy;
+                }
+                else
+                {
+	                constructTimestamp = dateString.trim() + " " + timeString.trim();
+	                dateParser = yyyymmdd;                	
+                }
+                lightn = 5;
             }
             else if (tCount == 4)
             {
-                dateString = st.nextToken();
-                timeString = st.nextToken();
+                dateString = dataSplit[1];
+                timeString = dataSplit[2];
                 constructTimestamp = dateString.trim() + " " + timeString.trim();
+                dateParser = yyyymmdd;
+                lightn = 3;
             }
             else
             {
-                constructTimestamp = st.nextToken();
+                constructTimestamp = dataSplit[1];
+                dateParser = yyyymmdd;
+                lightn = 2;
             }
             if (tCount > 4)
-                dayNum = st.nextToken();
+                dayNum = dataSplit[3];
             
-            lightString  = st.nextToken();
+            lightString  = dataSplit[lightn];
             
-            if (tCount > 4)
-                lightVal  = st.nextToken();
-
             try
             {
                 java.util.Date d = dateParser.parse(constructTimestamp);

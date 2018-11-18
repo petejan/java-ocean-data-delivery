@@ -1,6 +1,8 @@
 package org.imos.abos.parsers.saz;
 
 import java.io.File;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -9,11 +11,16 @@ import java.util.TimeZone;
 
 import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.CellValue;
+import org.apache.poi.ss.usermodel.FormulaEvaluator;
 import org.imos.abos.dbms.Instrument;
 import org.imos.abos.dbms.InstrumentDataFile;
 import org.imos.abos.dbms.Mooring;
 import org.imos.abos.dbms.ProcessedInstrumentData;
 import org.imos.abos.dbms.RawInstrumentData;
+import org.imos.abos.parsers.saz.ReadDiSAZfile.DataCol;
+import org.imos.abos.parsers.saz.ReadDiSAZfile.Metadata;
 import org.wiley.core.Common;
 
 public class LoadSAZfile
@@ -49,7 +56,8 @@ public class LoadSAZfile
 		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         InstrumentDataFile idf = new InstrumentDataFile();
         
-
+        Connection conn = Common.getConnection();
+    		
 		try
 		{
 			sf.readFile(fileName);
@@ -58,26 +66,7 @@ public class LoadSAZfile
 			System.out.println("deployment " + sf.deployment);;
 
 			ArrayList <Date> time = sf.getTime();
-			ArrayList <Double> sample = sf.getSample();
 			ArrayList <Double> actualDepth = sf.getDepthActual();
-			ArrayList <Double> sampleQc = sf.getSampleQc();
-			ArrayList <Double> duration = sf.getDuration();
-
-			ArrayList <Double> massFlux = sf.getMassFlux();
-			ArrayList <Double> PC = sf.getPCflux();
-			ArrayList <Double> PN = sf.getPNflux();
-			ArrayList <Double> POC = sf.getPOCflux();
-			ArrayList <Double> PIC = sf.getPICflux();
-			ArrayList <Double> BSIflux = sf.getBSiFlux();
-			
-			ArrayList <Double> C = sf.getC();
-			ArrayList <Double> N = sf.getN();
-			ArrayList <Double> CaCO3 = sf.getCaCO3();
-			ArrayList <Double> BSi = sf.getBSi();
-			ArrayList <Double> BSiO2 = sf.getBSiO2();
-			ArrayList <Double> pH = sf.getpH();
-			ArrayList <Double> sal = sf.getSal();
-			ArrayList <Double> sedMass = sf.getSedMass();
 
 			String mooringStr = sf.deployment; 
 			Mooring m = Mooring.selectByMooringID(mooringStr);
@@ -99,13 +88,6 @@ public class LoadSAZfile
             raw.setMooringID(m.getMooringID());
             raw.setQualityCode("RAW");
 
-            ProcessedInstrumentData row = new ProcessedInstrumentData();
-            
-            row.setLatitude(m.getLatitudeIn());
-            row.setLongitude(m.getLongitudeIn());
-            row.setMooringID(m.getMooringID());
-            row.setQualityCode("RAW");
-
             int inst_id = -1;
             int loaded = 0;
             
@@ -114,13 +96,22 @@ public class LoadSAZfile
 				double depth = sf.getDataAt(sf.depthCol).get(i);
 
 				log.debug("looking for instrument on mooring " + m.getMooringID() + " at depth " + depth);
-				ArrayList<Instrument> inst = Instrument.selectInstrumentsAttachedToMooringAtDepth(m.getMooringID(), depth);
-				
-				if (inst != null)
+				ArrayList<Instrument> insts = Instrument.selectInstrumentsAttachedToMooringAtDepth(m.getMooringID(), depth);
+				Instrument in = null;
+				for (Instrument inn : insts)
 				{
-					int new_inst_id = inst.get(0).getInstrumentID();
+					if (inn.getMake().startsWith("McLane"))
+						in = inn;
+					if (inn.getMake().startsWith("University of Washington"))
+						in = inn;
 					
-					log.debug(sdf.format(time.get(i)) + " mooring " + mooringStr + " depth " + depth + " instrument " + inst.get(0) + " Sample " + sample.get(i) + " cup mass " + massFlux.get(i) + " Q " + sampleQc.get(i));
+				}
+				
+				if (in != null)
+				{
+					int new_inst_id = in.getInstrumentID();
+					
+					log.debug(sdf.format(time.get(i)) + " mooring " + mooringStr + " depth " + depth + " instrument " + in);
 	
 					if (inst_id != new_inst_id)
 					{
@@ -133,160 +124,105 @@ public class LoadSAZfile
 			                idf.setInstrumentDepth(depth);
 			                idf.insert();
 	
-			                row.setSourceFileID(idf.getDataFilePrimaryKey());	            
 			                raw.setSourceFileID(idf.getDataFilePrimaryKey());	            
 			            }							
 					}
 					inst_id = new_inst_id;
-					if (sampleQc.size() != 0)
+					
+		            raw.setDataTimestamp(new Timestamp(time.get(i).getTime()));
+		            raw.setDepth(depth);
+		            raw.setInstrumentID(in.getInstrumentID());
+		            
+					for (DataCol dc : sf.dataCols)
 					{
-						log.debug("Sample QC " + sampleQc.get(i));
-						switch (sampleQc.get(i).intValue())
+						if (dc.parameter_code == null)
+							continue;
+						
+						int sampleQc = 0;
+						if (sf.getDataAt(dc.qcCol) != null)
+							sampleQc = sf.getDataAt(dc.qcCol).get(i).intValue();
+						
+						log.trace("Sample QC " + sampleQc);
+						switch (sampleQc)
 						{
 							case 1:
-								row.setQualityCode("GOOD");
+								raw.setQualityCode("GOOD");
 								break;
 							case 2:
-								row.setQualityCode("PGOOD");
+								raw.setQualityCode("PGOOD");
 								break;
 							case 3:
-								row.setQualityCode("PBAD");
+								raw.setQualityCode("PBAD");
 								break;
 							case 4:
-								row.setQualityCode("BAD");
+								raw.setQualityCode("BAD");
+								break;
+							case 9:
+								raw.setQualityCode("MISSING");
 								break;
 							default:
-								row.setQualityCode("RAW");
+								raw.setQualityCode("RAW");
 								break;
 						}
+
+						log.debug("ROW " + raw.getDataTimestamp() + " Q " + raw.getQualityCode() + " value " + sampleQc);
+
+			            //log.debug("data Col " + dc + " " + sf.getDataAt(dc.column));
+						raw.setParameterCode(dc.parameter_code);
+						raw.setParameterValue(sf.getDataAt(dc.column).get(i));
+
+			            boolean ok = raw.insert();
+			            loaded++;
+					}
+
+				}
+			}
+			
+			// add the parameters
+			PreparedStatement pc = conn.prepareStatement("INSERT INTO netcdf_attributes (naming_authority, facility, mooring, deployment, instrument_id, parameter, attribute_name, attribute_type, attribute_value) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
+			for (DataCol dc : sf.dataCols)
+			{
+				if (dc.parameter_code == null)
+					continue;
+				
+				for (Metadata md : dc.metadata)
+				{
+					if (md.name.startsWith("long_name"))
+						continue;
+					if (md.name.startsWith("standard_name"))
+						continue;
+					if (md.name.startsWith("units"))
+						continue;
+					if (md.c.toString().isEmpty())
+						continue;
+					
+					pc.setString(1,  "*"); // nameing_authority
+					pc.setString(2,  "ABOS-SOTS"); // facility
+					pc.setString(3,  "*"); // mooring
+					pc.setString(4,  sf.deployment); // deployment
+					pc.setNull(5,  java.sql.Types.INTEGER); // instrument_id
+					pc.setString(6,  dc.parameter_code.trim()); // parameter
+					pc.setString(7,  md.name.trim()); // attribute_name
+					String value = md.c.toString();
+					if (md.c.getCellType() == Cell.CELL_TYPE_FORMULA)
+					{
+						CellValue v = sf.evaluator.evaluate(md.c);
+						if (v != null)
+							value = Double.toString(v.getNumberValue());
+							
+					}
+					else if (md.c.getCellType() == Cell.CELL_TYPE_NUMERIC)
+					{
+						pc.setString(8,  "NUMBER"); // attribute_type
 					}
 					else
 					{
-						row.setQualityCode("RAW");						
+						pc.setString(8,  "STRING"); // attribute_type
 					}
+					pc.setString(9,  value); // attribute_value
 					
-		            row.setDataTimestamp(new Timestamp(time.get(i).getTime()));
-		            row.setDepth(depth);
-		            row.setInstrumentID(inst.get(0).getInstrumentID());
-		            
-		            raw.setDataTimestamp(new Timestamp(time.get(i).getTime()));
-		            raw.setDepth(depth);
-		            raw.setInstrumentID(inst.get(0).getInstrumentID());
-		            
-		            row.setDepth(actualDepth.get(i));		            
-		            row.setParameterCode("SAMPLE");
-		            row.setParameterValue(sample.get(i));
-		            
-		            log.debug("ROW " + row.getDataTimestamp() + " Q " + row.getQualityCode());
-	
-		            boolean ok = row.insert();
-		            loaded++;
-		            				
-		            row.setParameterCode("DURATION");
-		            row.setParameterValue(duration.get(i));
-	
-		            ok = row.insert();
-		            loaded++;
-	
-		            row.setParameterCode("MASS_FLUX");
-		            row.setParameterValue(massFlux.get(i));
-	
-		            ok = row.insert();
-		            loaded++;
-	
-		            row.setParameterCode("PC_FLUX");
-		            row.setParameterValue(PC.get(i));
-	
-		            ok = row.insert();
-		            loaded++;
-	
-		            row.setParameterCode("PN_FLUX");
-		            row.setParameterValue(PN.get(i));
-	
-		            ok = row.insert();
-		            loaded++;
-	
-		            row.setParameterCode("PIC_FLUX");
-		            row.setParameterValue(PIC.get(i));
-	
-		            ok = row.insert();
-		            loaded++;
-	
-		            row.setParameterCode("POC_FLUX");
-		            row.setParameterValue(POC.get(i));
-	
-		            ok = row.insert();
-		            loaded++;
-	
-		            row.setParameterCode("BSi_FLUX");
-		            row.setParameterValue(BSIflux.get(i));
-	
-		            ok = row.insert();
-		            loaded++;
-
-		            raw.setParameterCode("SAMPLE");
-		            raw.setParameterValue(sample.get(i));
-		            ok = raw.insert();
-		            loaded++;
-
-		            raw.setParameterCode("DURATION");
-		            raw.setParameterValue(duration.get(i));
-	
-		            ok = raw.insert();
-		            loaded++;		            
-		            
-		            raw.setParameterCode("C");
-		            raw.setParameterValue(C.get(i));
-	
-		            ok = raw.insert();
-		            loaded++;
-		            
-		            raw.setParameterCode("N");
-		            raw.setParameterValue(N.get(i));
-	
-		            ok = raw.insert();
-		            loaded++;
-		            
-		            raw.setParameterCode("CaCO3");
-		            raw.setParameterValue(CaCO3.get(i));
-	
-		            ok = raw.insert();
-		            loaded++;
-
-		            raw.setParameterCode("BSi");
-		            raw.setParameterValue(BSi.get(i));
-	
-		            ok = raw.insert();
-		            loaded++;
-
-		            raw.setParameterCode("BSiO2");
-		            raw.setParameterValue(BSiO2.get(i));
-	
-		            ok = raw.insert();
-		            loaded++;
-		            
-		            raw.setParameterCode("PIC");
-		            raw.setParameterValue(PIC.get(i));
-	
-		            ok = raw.insert();
-		            loaded++;
-		            
-		            raw.setParameterCode("PH");
-		            raw.setParameterValue(pH.get(i));
-	
-		            ok = raw.insert();
-		            loaded++;
-		            raw.setParameterCode("PSAL_REF");
-		            raw.setParameterValue(sal.get(i));
-	
-		            ok = raw.insert();
-		            loaded++;
-		            raw.setParameterCode("SED_MASS");
-		            raw.setParameterValue(sedMass.get(i));
-	
-		            ok = raw.insert();
-		            loaded++;
-				
+					log.debug("add metadata " + pc);
+					pc.executeUpdate();
 				}
 			}
 			

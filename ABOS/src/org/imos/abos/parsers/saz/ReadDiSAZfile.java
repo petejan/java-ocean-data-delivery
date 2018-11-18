@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.TimeZone;
+import java.util.Vector;
 
 import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
@@ -24,7 +25,11 @@ import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.usermodel.WorkbookFactory;
 import org.imos.abos.dbms.Instrument;
 import org.imos.abos.dbms.Mooring;
+import org.imos.abos.forms.NetCDFcreateForm;
 import org.wiley.core.Common;
+import org.wiley.util.SQLWrapper;
+
+import ucar.nc2.Attribute;
 
 /**
  *
@@ -34,37 +39,57 @@ import org.wiley.core.Common;
 public final class ReadDiSAZfile
 {
 	Workbook wb;
+	protected static SQLWrapper query = new SQLWrapper();
 
 	int deploymentCol = -1;
-	int sampleCol = -1;
 	int depthCol = -1;
 	int depthActualCol = -1;
 	int sampleTimeCol = -1;
-	int durationCol = -1;
-	int totalMassFluxCol = -1;
-	int sampleQcCol = -1;
-	int totalMassFluxQCCol = -1;
-	int PC_mol_fluxCol = -1;
-	int PN_mol_fluxCol = -1;
-	int POC_mol_fluxCol = -1;
-	int PIC_mol_fluxCol = -1;
-	int BSi_mol_fluxCol = -1;
-	
-	int sedMassCol = -1;
-	int cupCol = -1;
-	int pHCol = -1;
-	int salCol = -1;
-	int PICCol = -1;
-	int POCCol = -1;
-	int BSiCol = -1;
-	int BSiO2Col = -1;
-	int CaCO3Col = -1;
-	int CCol = -1;
-	int NCol = -1;
-	
-	// FIXME: this is really ugly, should be separate classes for the parsers of the main sheet and the netcdf sheet
-	
-	ArrayList <Integer> dataRows_main = new ArrayList<Integer>();
+	int metadataCol = -1;
+
+	class Metadata
+	{
+		public Metadata(String name2, Cell mdCell)
+		{
+			name = name2;
+			c = mdCell;
+		}
+		String name;
+		public String toString()
+		{
+			return "Metadata [name=" + name + ", cell=" + c + "]";
+		}
+		Cell c;
+		Attribute a;
+	}
+	class DataCol
+	{
+		@Override
+		public String toString()
+		{
+			return "DataCol [column=" + column + ", name=" + name + ", long_name=" + long_name + ", standard_name=" + standard_name + ", qcCol=" + qcCol + "]";
+		}
+		int column = -1;
+		String name = null;
+		String long_name = null;
+		String standard_name = null;
+		int qcCol = -1;
+		String parameter_code;
+		ArrayList <Metadata> metadata = new ArrayList<Metadata>();
+	}
+	ArrayList <DataCol> dataCols = new ArrayList<DataCol>();
+	class MetadataName
+	{
+		int row;
+		String name;
+		public MetadataName(int i, String n)
+		{
+			row = i;
+			name = n;
+		}
+	}
+	ArrayList <MetadataName> metadataList = new ArrayList<MetadataName>();
+		
 	ArrayList <Integer> dataRows_netcdf = new ArrayList<Integer>();
 
 	FormulaEvaluator evaluator;
@@ -105,7 +130,6 @@ public final class ReadDiSAZfile
 	}
 	public void parse(String filter)
 	{
-		parseSheet(main_sheet, null);
 		parseSheet(netcdf_format_sheet, null);
 	}
 
@@ -120,12 +144,14 @@ public final class ReadDiSAZfile
 
 		int cells = row0.getLastCellNum();
 		
-		Cell deploymentCell = row2.getCell(0);
+		Cell deploymentCell = row3.getCell(0);
 		if (deploymentCell != null)
 		{
 			deployment = deploymentCell.getStringCellValue();
 		}
+		dataRows_netcdf = getRowList(sheet);
 
+		// loop over all columns
 		for (int c = 0; c < cells; c++)
 		{
 			Cell cell0 = row0.getCell(c);
@@ -140,152 +166,129 @@ public final class ReadDiSAZfile
 						log.debug("parse::deployment col " + c);
 						deploymentCol = c;						
 					}
-					if (cell0.getStringCellValue().matches("depth_nominal"))
+					else if (cell0.getStringCellValue().matches("depth_nominal"))
 					{
 						log.debug("parse::depth col " + c);
 						depthCol = c;						
 					}
-					if (cell0.getStringCellValue().matches("depth_actual"))
+					else if (cell0.getStringCellValue().matches("start time") || cell0.getStringCellValue().matches("sample open"))
+					{
+						log.debug("parse::start time col " + c);
+						sampleTimeCol = c;						
+					}
+					else if (cell0.getStringCellValue().matches("depth_actual"))
 					{
 						log.debug("parse::depth actual col " + c);
 						depthActualCol = c;						
 					}
-					if (cell0.getStringCellValue().matches("sample"))
+					else if (cell0.getStringCellValue().matches("metadata"))
 					{
-						log.debug("parse::sample col " + c);
-						sampleCol = c;						
-					}
-					if (cell0.getStringCellValue().matches("sample_qc"))
-					{
-						log.debug("parse::sample_qc col " + c);
-						sampleQcCol = c;						
-					}
-					if (cell0.getStringCellValue().matches("mass_flux_qc"))
-					{
-						log.debug("parse::sample_qc col " + c);
-						sampleQcCol = c;						
-					}
-					if (cell0.getStringCellValue().matches("sample mid-point"))
-					{
-						log.debug("parse::time open col " + c);
-						sampleTimeCol = c;						
-					}
-					if (cell0.getStringCellValue().matches("sample_duration"))
-					{
-						log.debug("parse::duration open col " + c);
-						durationCol = c;						
-					}
-					if (cell0.getStringCellValue().matches("mass_flux"))
-					{
-						log.debug("parse::total_mass_flux col " + c);
-						totalMassFluxCol = c;						
-					}
-					if (cell0.getStringCellValue().matches("mass_flux_qc"))
-					{
-						log.debug("parse::mass_flux_qc_qc col " + c);
-						totalMassFluxQCCol = c;						
-					}
-					if (cell0.getStringCellValue().matches("PC_mol_flux"))
-					{
-						log.debug("parse::PC_mol_flux proportion col " + c);
-						PC_mol_fluxCol = c;						
-					}
-					if (cell0.getStringCellValue().matches("PN_mol_flux"))
-					{
-						log.debug("parse::PN_mol_flux proportion col " + c);
-						PN_mol_fluxCol = c;						
-					}
-					if (cell0.getStringCellValue().matches("POC_mol_flux"))
-					{
-						log.debug("parse::POC_mol_flux proportion col " + c);
-						POC_mol_fluxCol = c;						
-					}
-					if (cell0.getStringCellValue().matches("BSi_mol_flux"))
-					{
-						log.debug("parse::BSi_mol_flux proportion col " + c);
-						PIC_mol_fluxCol = c;						
-					}
-					if (cell0.getStringCellValue().matches("BSi_mol_flux"))
-					{
-						log.debug("parse::BSi_mol_flux col " + c);
-						BSi_mol_fluxCol = c;						
-					}
+						log.debug("parse::metadata col " + c);
+						metadataCol = c;				
+						// read down this until we find a blank
+						for(int r=1;r<20;r++)
+						{
+							//log.debug("metedata row " + r);
+							
+							Row row = sheet.getRow(r);
+							Cell cell = row.getCell(c);
 
-					if (cell0.getStringCellValue().matches("sed mass"))
-					{
-						log.debug("parse::sed mass col " + c);
-						sedMassCol = c + 1000;						
-					}
-					if (cell0.getStringCellValue().matches("Cup"))
-					{
-						log.debug("parse::Cup col " + c);
-						cupCol = c + 1000;						
-					}
-					if (cell0.getStringCellValue().matches("pH"))
-					{
-						log.debug("parse::pH col " + c);
-						pHCol = c + 1000;						
-					}
-					if (cell0.getStringCellValue().matches("Sal"))
-					{
-						log.debug("parse::Sal col " + c);
-						salCol = c + 1000;						
-					}
-					if (cell0.getStringCellValue().matches("C%"))
-					{
-						log.debug("parse::C col " + c);
-						CCol = c + 1000;						
-					}
-					if (cell0.getStringCellValue().matches("N%"))
-					{
-						log.debug("parse::N col " + c);
-						NCol = c + 1000;						
-					}
-					if (cell0.getStringCellValue().matches("PIC"))
-					{
-						log.debug("parse::PIC col " + c);
-						PICCol = c + 1000;						
-					}
-					if (cell0.getStringCellValue().matches("CaCO3"))
-					{
-						log.debug("parse::CaCO3 col " + c);
-						CaCO3Col = c + 1000;						
-					}
-					if (cell1 != null)
-					{
-						if (cell1.getStringCellValue().matches("BSi"))
-						{
-							log.debug("parse::BSi col " + c);
-							BSiCol = c + 1000;						
+							if (cell != null)
+							{
+								String md = cell.toString();
+								if (md.length() > 0)
+								{
+									int i = md.indexOf(' ');
+									if (i > 0)
+										md = md.substring(0, md.indexOf(' '));
+									log.debug("parse::metadata row " + r + " " + md);
+									MetadataName mdN = new MetadataName(r, md);
+									metadataList.add(mdN);
+								}
+							}
 						}
-						if (cell1.getStringCellValue().matches("BSiO2"))
+					}
+					else if (cell0.getStringCellValue().matches("site"))
+					{
+					}
+					else if (cell0.getStringCellValue().matches("Remote Access Sampler"))
+					{
+					}
+					else if (cell0.getStringCellValue().endsWith("_qc"))
+					{
+					}
+					else
+					{
+						Row row = sheet.getRow(0);
+						Cell cell = row.getCell(c);
+						log.debug("parse::other col " + c + " " + cell.toString());
+						DataCol dc = new DataCol();
+						dc.column = c;
+						dc.name = cell.toString();
+						if (sheet.getRow(2).getCell(c) != null)
+							dc.long_name = sheet.getRow(2).getCell(c).getStringCellValue();
+
+						if (dc.long_name == null)
+							continue;
+						
+						if (!dc.long_name.isEmpty())
 						{
-							log.debug("parse::BSiO2 col " + c);
-							BSiO2Col = c + 1000;						
+							Cell stdCell = sheet.getRow(1).getCell(c);
+							if (stdCell != null)
+							{
+								if (!stdCell.toString().startsWith("none"))
+									dc.standard_name = stdCell.toString();
+							}
+							
+							// check if next column end in QC, use it as the QC column
+							Cell cell_qc = row.getCell(c + 1);
+							if (cell_qc.toString().endsWith("_qc"))
+								dc.qcCol = c + 1;
+							
+							// metadata
+							for (MetadataName mdn : metadataList)
+							{
+								Cell mdCell = sheet.getRow(mdn.row).getCell(c);
+								log.trace("meta data row " + mdn.row + " name " + mdn.name + " cell " + mdCell);
+								if (mdCell != null)
+								{
+									Metadata md = new Metadata(mdn.name, mdCell);
+									dc.metadata.add(md);
+								}
+							}
+	
+							dataCols.add(dc);
+							
+							log.debug("data col " + dc.toString());
 						}
+						
 					}
 				
 				}
 			}
 		}
-		
-		if (sheet == netcdf_format_sheet)
+		// get parameter codes for each long_name
+		for(DataCol dc : dataCols)
 		{
-			dataRows_netcdf = getRowList(sheet);
-		}
-		else
-		{
-			dataRows_main = getRowList(sheet);			
-		}
-	}
+			log.debug("Looking up " + dc.long_name);
+			
+			String SQL = "SELECT code FROM parameters WHERE netcdf_long_name LIKE '" + dc.long_name + "'";
+			query.setConnection(Common.getConnection());
+			query.executeQuery(SQL);
+			Vector dataSet = query.getData();
+			if (dataSet != null && dataSet.size() > 0)
+			{
+				for (int i = 0; i < dataSet.size(); i++)
+				{
+					String p = (String) ((Vector<String>)(dataSet.get(i))).get(0);
+					log.debug("Found param " + p);
+					dc.parameter_code = p;				
+				}
+			}
 
-	public ArrayList<Double> getSample()
-	{
-		return getDataAt(sampleCol);
-	}
-	public ArrayList<Double> getSampleQc()
-	{
-		return getDataAt(sampleQcCol);
+			
+		}
+
 	}
 
 	public ArrayList<Double> getDepths()
@@ -298,67 +301,6 @@ public final class ReadDiSAZfile
 	public ArrayList<Double> getDepthActual()
 	{
 		return getDataAt(depthActualCol);
-	}
-	public ArrayList<Double> getDuration()
-	{
-		return getDataAt(durationCol);
-	}
-	public ArrayList<Double> getMassFlux()
-	{
-		return getDataAt(totalMassFluxCol);
-	}
-	public ArrayList<Double> getPCflux()
-	{
-		return getDataAt(PC_mol_fluxCol);
-	}
-	public ArrayList<Double> getPNflux()
-	{
-		return getDataAt(PN_mol_fluxCol);
-	}
-	public ArrayList<Double> getPOCflux()
-	{
-		return getDataAt(POC_mol_fluxCol);
-	}
-	public ArrayList<Double> getPICflux()
-	{
-		return getDataAt(PIC_mol_fluxCol);
-	}
-	public ArrayList<Double> getBSiFlux()
-	{
-		return getDataAt(BSi_mol_fluxCol);
-	}
-	
-	public ArrayList<Double> getSedMass()
-	{
-		return getDataAt(sedMassCol);
-	}
-	public ArrayList<Double> getC()
-	{
-		return getDataAt(CCol);
-	}
-	public ArrayList<Double> getN()
-	{
-		return getDataAt(NCol);
-	}
-	public ArrayList<Double> getCaCO3()
-	{
-		return getDataAt(CaCO3Col);
-	}
-	public ArrayList<Double> getBSi()
-	{
-		return getDataAt(BSiCol);
-	}
-	public ArrayList<Double> getBSiO2()
-	{
-		return getDataAt(BSiO2Col);
-	}
-	public ArrayList<Double> getpH()
-	{
-		return getDataAt(pHCol);
-	}
-	public ArrayList<Double> getSal()
-	{
-		return getDataAt(salCol);
 	}
 	
 	public ArrayList<Date> getTime()
@@ -383,14 +325,7 @@ public final class ReadDiSAZfile
 			}
 			boolean ok = true;
 			Cell c = null;
-			if (sheet == netcdf_format_sheet)
-			{
-				c = row.getCell(sampleCol);
-			}
-			else
-			{
-				c = row.getCell(cupCol-1000);
-			}
+			c = row.getCell(0);
 			if (c != null)
 			{
 				Double cellValue = null;
@@ -412,13 +347,13 @@ public final class ReadDiSAZfile
 				}
 				else
 				{
-					double sampleN = cellValue;
+					double year = cellValue;
 					
-					if (sampleN > 21)
+					if (year < 1990)
 					{
 						ok = false;
 					}
-					else if (sampleN < 1)
+					else if (year > 2100)
 					{
 						ok = false;
 					}
@@ -501,10 +436,7 @@ public final class ReadDiSAZfile
 		ArrayList <Double >v = new ArrayList<Double>();
 
 		ArrayList<Integer> dataRows;
-		if (sheet == netcdf_format_sheet)
-			dataRows = dataRows_netcdf;
-		else
-			dataRows = dataRows_main;
+		dataRows = dataRows_netcdf;
 					
 		for(Integer r : dataRows)
 		{
@@ -549,10 +481,7 @@ public final class ReadDiSAZfile
 	{
 		ArrayList <Date >v = new ArrayList<Date>();
 		ArrayList<Integer> dataRows;
-		if (sheet == netcdf_format_sheet)
-			dataRows = dataRows_netcdf;
-		else
-			dataRows = dataRows_main;
+		dataRows = dataRows_netcdf;
 
 		for(Integer r : dataRows)
 		{
@@ -638,7 +567,7 @@ public final class ReadDiSAZfile
 					log.debug("CELL col=" + c + " VALUE=" + value);
 				}
 			}
-		}		
+		}
 	}
 
 	public void close()
@@ -675,7 +604,6 @@ public final class ReadDiSAZfile
 
 		String fileName = args[0];
 
-        String $HOME = System.getProperty("user.home");
         PropertyConfigurator.configure("log4j.properties");
         Common.build("ABOS.properties");
         
@@ -691,25 +619,35 @@ public final class ReadDiSAZfile
 			log.debug("deployment " + sf.deployment);;
 
 			ArrayList <Date> time = sf.getTime();
-			ArrayList <Double> sample = sf.getSample();
-			ArrayList <Double> depths = sf.getDepths();
-			ArrayList <Double> mf = sf.getMassFlux();
-			ArrayList <Double> sedMass = sf.getSedMass();
 			
-			Double depth = depths.get(0);
+			Double depth = sf.getDepths().get(0);
 			
 			String mooringStr = sf.deployment; 
 			Mooring m = Mooring.selectByMooringID(mooringStr);
 			
 			log.debug("Mooring " + m.getMooringID());
+
+			for (DataCol dc : sf.dataCols)
+			{
+				log.debug("Metadata " + dc.metadata);
+				//log.debug("data Col " + dc + " " + sf.getDataAt(dc.column));
+			}
 			
 			for(int i=0;i<time.size();i++)
 			{
 				depth = sf.getDataAt(sf.depthCol).get(i);
-				ArrayList<Instrument> inst = Instrument.selectInstrumentsAttachedToMooringAtDepth(m.getMooringID(), depth);
+				ArrayList<Instrument> insts = Instrument.selectInstrumentsAttachedToMooringAtDepth(m.getMooringID(), depth);
+				Instrument in = null;
+				for (Instrument inn : insts)
+				{
+					if (inn.getMake().startsWith("McLane"))
+						in = inn;
+				}
 				
-				if (inst != null)
-					log.debug(sdf.format(time.get(i)) + " mooring " + mooringStr + " depth " + depth + " instrument " + inst.get(0) + " Sample " + sample.get(i) + " mass flux " + mf.get(i) + " sed mass " + sedMass.get(i));
+				if (in != null)
+				{
+					log.debug(sdf.format(time.get(i)) + " mooring " + mooringStr + " depth " + depth + " instrument " + in);
+				}
 			}
 			//sf.dump();
 			

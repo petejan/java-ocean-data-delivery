@@ -39,6 +39,8 @@ public class Parse3DMGX1File
 	byte ch = 0;
 	ByteBuffer readOnlyBuffer = null;
 	File openFile;
+	
+	int readState = 0;
 
 	public void open(File f) throws IOException
 	{
@@ -58,15 +60,14 @@ public class Parse3DMGX1File
 
 		ch = 0;    
 		
-		if (sofs1)
-			readSOFS1dataFile("data/SOFS-1-2010/SOFS1_SD.csv");
-		
 		sentTs = false;
+		
+		readState = 1;
 	}
 
 	public class MruStabQ
 	{
-		double ticks;
+		public int ticks;
 		double ttime;
 		int command;
 
@@ -139,91 +140,88 @@ public class Parse3DMGX1File
 		return r;
 	}
 	
-	static HashMap<Integer, Date> sofs1ts = new HashMap<Integer, Date>();
-	
-    public void readSOFS1dataFile(String file) throws IOException
-    {
-        String thisLine;
-        String[] st;
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-
-        Date ts = null;
-
-        File f = new File(file);
-        log.debug("SOFS1 ts file " + f);;
-
-        FileReader is = new FileReader(f);
-
-        BufferedReader br = new BufferedReader(is);
-
-        while ((thisLine = br.readLine()) != null)
-        {
-            log.trace(thisLine);
-
-            if (thisLine.startsWith("StopNr"))
-            	continue;
-            
-            st = thisLine.split(",");
-            //log.debug("Split length = " + st.length);
-            
-            int n = -1;
-            try
-            {
-            	//log.debug("file number " + st[0] + " ts " + st[1]);
-            	
-            	n = Integer.parseInt(st[0]);
-            	ts = sdf.parse(st[1]);
-            	
-            	sofs1ts.put(n,  ts);
-                log.trace("n " + n + " " + sdf.format(ts));
-            }
-            catch (ParseException pe)
-            {
-                // ignore
-                //pe.printStackTrace();
-            }
-            catch (NumberFormatException ne)
-            {
-                // ignore
-                //ne.printStackTrace();
-            }
-        }
-
-        log.debug("Read " + sofs1ts.size() + " records");
-        
-        br.close();
-    }
-	
 	boolean sentTs = false;
 	
 	public Object read() throws IOException
 	{
-		if (sofs1 & !sentTs)
-		{
-			int n = Integer.parseInt(openFile.getName().substring(4, 8));
-			Date ts = sofs1ts.get(n);
-			log.debug("SOFS1 file number " + n + " ts " + ts);
-						
-			sentTs = true;
-			
-			return ts;			
-		}
 		if (readOnlyBuffer.hasRemaining())
 		{
 			try
 			{
-				if (validPacket)
+				switch (readState)
 				{
-					validPacket = false;
-					if (readLoad)
-					{	
-						// read valid MRU packet last time, try and read load and that a MRU packet or CR follows
-
-						log.trace("load pos " + readOnlyBuffer.position());
+					case 1: // open
+					{
+						ch = readOnlyBuffer.get();
+						log.trace(String.format("open char %d, pos %d", ch, readOnlyBuffer.position()));
 						
-						int loadStart = readOnlyBuffer.position();
+						if (ch == 0x0c)
+						{
+							readState = 2;
+						}
+						else 
+						{
+							readState = 4;
+						}
+						break;
+					}
+					case 2: // MRU packet
+					{
+						int packetStart = readOnlyBuffer.position();
 
+						log.trace(String.format("0x0C command Pos %d 0x%02x", packetStart, ch));
+
+						int sum = 0x0c;
+						int ints[] = new int[15];
+						int v;
+						ints[0] = 0x0c;
+						for (int i = 1; i < 15;i++)
+						{
+							ints[i] = readOnlyBuffer.getShort();
+							v = ints[i] & 0xffff;
+							sum = (v + sum) & 0xffff;
+
+							log.trace(String.format("%2d INT 0x%04x SUM 0x%04x", i, v, sum));
+						}
+						int b;
+						if (sofs1)
+						{
+							b = (readOnlyBuffer.get() & 0xff) << 8;
+							sum = sum & 0xff00;
+						}
+						else
+							b = readOnlyBuffer.getShort() & 0xffff;
+							
+						readState = 1;
+
+						if (b != sum) 
+						{
+							log.error(String.format("Check Sum error 0x%04x 0x%04x", b, sum));
+							readOnlyBuffer.position(packetStart+1);
+						}      
+						else
+						{
+							sumOk++;
+							log.trace("Sum Ok " + sumOk);
+							validPacket = true;
+
+							if (readLoad)
+								readState = 3;
+
+							return readStabQ(0x0c, ints);
+						}
+
+						
+						return sumOk;
+					}
+					case 3: 
+					{
+						int loadStart = readOnlyBuffer.position();
+						log.trace("load pos " + loadStart);
+						
 						float load ;
+
+						readState = 1;
 						
 						if (sofs1)
 						{
@@ -232,8 +230,10 @@ public class Parse3DMGX1File
                             // double dLoad = ((load * 1.47267) - 190);
                             double dload = load * 3300/4096; // in mVolts
 
-                            if (readOnlyBuffer.hasRemaining())
-                            	readOnlyBuffer.get(); // extra character?
+//                            if (readOnlyBuffer.hasRemaining())
+//                            	readOnlyBuffer.get(); // extra character?
+
+                            log.trace("Load " + dload);
                             
                             return new Float(dload);
 						}
@@ -241,99 +241,39 @@ public class Parse3DMGX1File
 						{
 							load = readOnlyBuffer.getFloat();
 	
-							ch = readOnlyBuffer.get();
-							if ((ch != 0x0c) && (ch != 0x0d)) // is the next packet a MRU packet of starts with a CR
-							{
-								readOnlyBuffer.position(loadStart);
-								ch = readOnlyBuffer.get();
-	
-								return Float.NaN;
-							}
-							else
-							{
-								log.trace("Load " + load);
-	
-								return new Float(load);
-							}
+							log.trace("Load " + load);
+
+							return new Float(load);
 						}
 					}
-					else
+					case 4:
 					{
-						ch = readOnlyBuffer.get();
-						return (int)-1;
-					}
-				}
-				else if (ch == 0x0c)
-				{
-					int packetStart = readOnlyBuffer.position();
+						String s = "";
 
-					log.trace(String.format("0x0C command Pos %d 0x%02x", packetStart, ch));
+						while ((ch >= ' ') && (ch <= 'z'))
+						{
+							s = s + (char)ch;            		
+							ch = readOnlyBuffer.get();
+						}        		
+						log.debug("String " + s);
 
-					int sum = 0x0c;
-					int ints[] = new int[15];
-					int v;
-					ints[0] = 0x0c;
-					for (int i = 1; i < 15;i++)
-					{
-						ints[i] = readOnlyBuffer.getShort();
-						v = ints[i] & 0xffff;
-						sum = (v + sum) & 0xffff;
+						log.trace(String.format("string read char 0x%02x", ch));
 
-						log.trace(String.format("%2d INT 0x%04x SUM 0x%04x", i, v, sum));
-					}
-					int b;
-					if (sofs1)
-					{
-						b = (readOnlyBuffer.get() & 0xff) << 8;
-						sum = sum & 0xff00;
-					}
-					else
-						b = readOnlyBuffer.getShort() & 0xffff;
+						if (ch == 0x0c)
+							readState = 2;
+						else
+							readState = 1;
 						
-					if (b != sum) 
-					{
-						log.error(String.format("Check Sum error 0x%04x 0x%04x", b, sum));
-						readOnlyBuffer.position(packetStart+1);
-					}      
-					else
-					{
-						sumOk++;
-						log.trace("Sum Ok " + sumOk);
-						validPacket = true;
-						
-						return readStabQ(0x0c, ints);
+						if (s.length() > 2)
+							return s;
+						else
+							return (int)-1;
 					}
-
-					return sumOk;
-				}    
-				else if ((ch == 0x0d) || (ch == '2'))
-				{
-					String s = "";
-					if (ch == 0x0d)
-						ch = readOnlyBuffer.get();
-					if (ch == 0x0a)
-						ch = readOnlyBuffer.get();
-
-					while (ch != 0x0a)
-					{
-						s = s + (char)ch;            		
-						ch = readOnlyBuffer.get();
-					}        		
-					log.info("String " + s);
-					ch = readOnlyBuffer.get();
-
-					log.info(String.format("string read char 0x%02x", ch));
-
-					return s;
+					default:
+						readState = 1;
 				}
-				else
-				{
-					ch = readOnlyBuffer.get();
-
-					log.debug(String.format("read char 0x%02x", ch));
-
-					return ch;
-				}
+				
+				return (int)-1;
 			}
 			catch (BufferUnderflowException bufx)
 			{

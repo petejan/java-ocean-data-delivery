@@ -75,7 +75,7 @@ public class AnchorDistCalculationForm extends MemoryWindow implements DataProce
         runButton = new javax.swing.JButton();
         quitButton = new javax.swing.JButton();
 
-        setTitle("Sea Water Data Processor Form");
+        setTitle("Anchor Distance Data Processor Form");
         addWindowListener(new java.awt.event.WindowAdapter()
         {
             public void windowClosing(java.awt.event.WindowEvent evt)
@@ -372,7 +372,7 @@ public class AnchorDistCalculationForm extends MemoryWindow implements DataProce
             conn.setAutoCommit(false);
             proc = conn.createStatement();
             
-            tab = "SELECT data_timestamp, source_file_id, instrument_id, depth, parameter_value AS xpos, depth AS pres INTO TEMP pos FROM raw_instrument_data WHERE parameter_code = 'XPOS' AND mooring_id = "+StringUtilities.quoteString(selectedMooring.getMooringID()) +" ORDER BY data_timestamp";
+            tab = "SELECT data_timestamp, source_file_id, instrument_id, depth, parameter_value AS xpos, depth AS pres INTO TEMP pos FROM raw_instrument_data WHERE parameter_code = 'XPOS' AND quality_code != 'BAD' AND mooring_id = "+StringUtilities.quoteString(selectedMooring.getMooringID()) +" ORDER BY data_timestamp";
             proc.execute(tab);
             
             tab = "ALTER TABLE pos ADD ypos  numeric";
@@ -468,6 +468,13 @@ public class AnchorDistCalculationForm extends MemoryWindow implements DataProce
                             row.setQualityCode("DERIVED");
 
                             ok = row.insert();
+                            
+                            row.setParameterCode("ADIR");
+                            row.setParameterValue(pos.calculatedDirection);
+                            row.setQualityCode("DERIVED");
+
+                            ok = row.insert();
+                            
                             count++;
                         }
 
@@ -549,6 +556,7 @@ public class AnchorDistCalculationForm extends MemoryWindow implements DataProce
         public Double ypos;
 
         public Double calculatedDistance;
+        public Double calculatedDirection;
 
         public void setData(Vector row)
         {
@@ -568,6 +576,7 @@ public class AnchorDistCalculationForm extends MemoryWindow implements DataProce
             gc.setDestinationGeographicPoint(selectedMooring.getLongitudeIn(), selectedMooring.getLatitudeIn());
             
             calculatedDistance = gc.getOrthodromicDistance()/1000;
+            calculatedDirection = gc.getAzimuth();
 
         }
     }

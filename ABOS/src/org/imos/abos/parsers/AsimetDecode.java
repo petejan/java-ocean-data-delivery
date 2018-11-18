@@ -726,6 +726,9 @@ public class AsimetDecode
 
 			// Decode format from
 			// proc_logr_avr.c
+      //
+      // http://uop.whoi.edu/UOPinstruments/frodo/logr53/logr_sbd_msg_spurs2.html
+
 			ByteBuffer buf = ByteBuffer.allocate(length);
 			buf.order(ByteOrder.LITTLE_ENDIAN);
 

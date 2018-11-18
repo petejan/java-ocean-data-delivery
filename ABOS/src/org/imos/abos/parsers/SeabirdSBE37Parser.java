@@ -57,8 +57,8 @@ public class SeabirdSBE37Parser extends AbstractDataParser
     @Override
     protected void parseData(String dataLine) throws ParseException, NoSuchElementException
     {
-        //SimpleDateFormat dateParser = new SimpleDateFormat("dd MMM yyyy HH:mm:ss");
-        SimpleDateFormat dateParser = new SimpleDateFormat("MM-dd-yyyy HH:mm:ss");
+        SimpleDateFormat dateParser = new SimpleDateFormat("dd MMM yyyy HH:mm:ss");
+        //SimpleDateFormat dateParser = new SimpleDateFormat("MM-dd-yyyy HH:mm:ss");
         DecimalFormat deciFormat = new DecimalFormat("-######.0#");
 
         String temperatureString;

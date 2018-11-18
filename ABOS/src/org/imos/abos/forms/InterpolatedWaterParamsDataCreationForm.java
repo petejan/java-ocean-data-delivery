@@ -436,7 +436,7 @@ public class InterpolatedWaterParamsDataCreationForm extends MemoryWindow implem
                     rid.setParameterValue(calculatedOxygenSolubilityValue);
                     ok = rid.insert();   
                     
-//                    conn.commit();
+                    conn.commit();
                     count++;
                 }
             }
@@ -480,7 +480,7 @@ public class InterpolatedWaterParamsDataCreationForm extends MemoryWindow implem
         if(propertyName.equalsIgnoreCase("MOORING_SELECTED"))
         {
             Mooring selectedItem = (Mooring) evt.getNewValue();
-            sourceInstrumentCombo.setMooringParam(selectedItem, "CNDC%");
+            sourceInstrumentCombo.setMooringParam(selectedItem, "CNDC");
             targetInstrumentCombo.setMooring(selectedItem);
         }
 }//GEN-LAST:event_mooringCombo1PropertyChange

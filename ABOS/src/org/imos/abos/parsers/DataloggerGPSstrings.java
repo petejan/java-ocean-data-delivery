@@ -57,83 +57,84 @@ public class DataloggerGPSstrings extends AbstractDataParser
 	            {
 	                java.util.Date d = dateParser.parse(constructTimestamp);
 	                dataTimestamp = new Timestamp(d.getTime());
+	
+		        	latitudeString = splitLine[3];
+		            try
+		            {
+		                latitude = new Double(latitudeString.trim());
+		            }
+		            catch(NumberFormatException pex)
+		            {
+		                try
+		                {
+		                    Number n = deciFormat.parse(latitudeString.trim());
+		                    latitude = n.doubleValue();
+		                }
+		                catch(ParseException pexx)
+		                {
+		                    throw new ParseException("parse failed for text '" + latitudeString.trim() + "'",0);
+		                }
+		            }
+		            latitude = ddmmToDecimal(latitude);
+		
+		        	longitudeString = splitLine[5]; 	            
+		            try
+		            {
+		                longitude = new Double(longitudeString.trim());
+		            }	
+		            catch(NumberFormatException pex)
+		            {
+		                try
+		                {
+		                    Number n = deciFormat.parse(longitudeString.trim());
+		                    longitude = n.doubleValue();
+		                }
+		                catch(ParseException pexx)
+		                {
+		                    throw new ParseException("parse failed for text '" + longitudeString.trim() + "'",0);
+		                }
+		            }
+		            longitude = ddmmToDecimal(longitude);
+	
+		            if (splitLine[4].contains("S"))
+		        	{
+		            	latitude = -latitude;
+		        	}
+		        	if (splitLine[6].contains("W"))
+		        	{
+		        		longitude = -longitude;
+		        	}
+			
+		            //
+		            // ok, we have parsed out the values we need, can now construct the raw data class
+		            //
+		            RawInstrumentData row = new RawInstrumentData();
+		
+		            row.setDataTimestamp(dataTimestamp);
+		            row.setDepth(instrumentDepth);
+		            row.setInstrumentID(currentInstrument.getInstrumentID());
+		            row.setLatitude(currentMooring.getLatitudeIn());
+		            row.setLongitude(currentMooring.getLongitudeIn());
+		            row.setMooringID(currentMooring.getMooringID());
+		            row.setParameterCode("YPOS");
+		            row.setParameterValue(latitude);
+		            row.setSourceFileID(currentFile.getDataFilePrimaryKey());
+		            row.setQualityCode("RAW");
+		
+		            boolean ok = row.insert();
+		
+		            row.setParameterCode("XPOS");
+		            row.setParameterValue(longitude);
+		            row.setSourceFileID(currentFile.getDataFilePrimaryKey());
+		            row.setQualityCode("RAW");
+		
+		            ok = row.insert();
 	            }
 	            catch(ParseException pex)
 	            {
-	                throw new ParseException("Timestamp parse failed for text '" + constructTimestamp + "'",0);
+//	                throw new ParseException("Timestamp parse failed for text '" + constructTimestamp + "'",0);
 	            }
-	
-	        	latitudeString = splitLine[3];
-	            try
-	            {
-	                latitude = new Double(latitudeString.trim());
-	            }
-	            catch(NumberFormatException pex)
-	            {
-	                try
-	                {
-	                    Number n = deciFormat.parse(latitudeString.trim());
-	                    latitude = n.doubleValue();
-	                }
-	                catch(ParseException pexx)
-	                {
-	                    throw new ParseException("parse failed for text '" + latitudeString.trim() + "'",0);
-	                }
-	            }
-	            latitude = ddmmToDecimal(latitude);
-	
-	        	longitudeString = splitLine[5]; 	            
-	            try
-	            {
-	                longitude = new Double(longitudeString.trim());
-	            }	
-	            catch(NumberFormatException pex)
-	            {
-	                try
-	                {
-	                    Number n = deciFormat.parse(longitudeString.trim());
-	                    longitude = n.doubleValue();
-	                }
-	                catch(ParseException pexx)
-	                {
-	                    throw new ParseException("parse failed for text '" + longitudeString.trim() + "'",0);
-	                }
-	            }
-	            longitude = ddmmToDecimal(longitude);
 
-	            if (splitLine[4].contains("S"))
-	        	{
-	        		latitudeString = "-" + latitudeString;
-	        	}
-	        	if (splitLine[6].contains("W"))
-	        	{
-	        		longitudeString = "-" + longitudeString;
-	        	}
-		
-	            //
-	            // ok, we have parsed out the values we need, can now construct the raw data class
-	            //
-	            RawInstrumentData row = new RawInstrumentData();
-	
-	            row.setDataTimestamp(dataTimestamp);
-	            row.setDepth(instrumentDepth);
-	            row.setInstrumentID(currentInstrument.getInstrumentID());
-	            row.setLatitude(currentMooring.getLatitudeIn());
-	            row.setLongitude(currentMooring.getLongitudeIn());
-	            row.setMooringID(currentMooring.getMooringID());
-	            row.setParameterCode("YPOS");
-	            row.setParameterValue(latitude);
-	            row.setSourceFileID(currentFile.getDataFilePrimaryKey());
-	            row.setQualityCode("RAW");
-	
-	            boolean ok = row.insert();
-	
-	            row.setParameterCode("XPOS");
-	            row.setParameterValue(longitude);
-	            row.setSourceFileID(currentFile.getDataFilePrimaryKey());
-	            row.setQualityCode("RAW");
-	
-	            ok = row.insert();
 	        }
         }
 
