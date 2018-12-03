@@ -33,6 +33,7 @@ import org.imos.abos.parsers.RawAZFPdata;
 import org.wiley.core.Common;
 
 import ucar.ma2.Array;
+import ucar.ma2.ArrayByte;
 import ucar.ma2.ArrayDouble;
 import ucar.ma2.ArrayFloat;
 import ucar.ma2.ArrayShort;
@@ -59,7 +60,7 @@ public class WriteNortekProfiler
         
         TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
                 
-        String mooring_id = "SOFS-5-2015";
+        String mooring_id = args[0];
 
         // run with something like
         //
@@ -67,7 +68,7 @@ public class WriteNortekProfiler
         
         Date tsStart = null;
         Date tsEnd = null;
-        String srcFilename = args[0];
+        String srcFilename = args[1];
         
         NortekParse nortek = new NortekParse();
         nortek.open(new File(srcFilename));
@@ -105,6 +106,7 @@ public class WriteNortekProfiler
         	}
         }
 		log.info("Instrument " + inst);
+		Double depth = inst.getDepth(mooring_id);
         
         Timestamp dataStartTime = m.getTimestampIn(); // TODO: probably should come from data, esp for part files
         Timestamp dataEndTime = m.getTimestampOut();
@@ -117,7 +119,7 @@ public class WriteNortekProfiler
         {
             ndf.setMooring(m);
             ndf.setAuthority("IMOS");
-            ndf.setFacility("ABOS-ASFS");
+            ndf.setFacility("ABOS-SOFS");
             ndf.setMultiPart(true);
             
         	filename = ndf.getFileName(inst, dataStartTime, dataEndTime, "raw_instrument_data", "RVT", null);
@@ -131,12 +133,12 @@ public class WriteNortekProfiler
             ndf.addGroupAttribute(null, new Attribute("serial_number", nortek.serialNo));
             ndf.addGroupAttribute(null, new Attribute("featureType", "timeSeriesProfile"));
             ndf.addGroupAttribute(null, new Attribute("cdm_data_type", "Profile"));
-            ndf.addGroupAttribute(null, new Attribute("geospatial_vertical_min", 30f));
-            ndf.addGroupAttribute(null, new Attribute("geospatial_vertical_max", 30f));
+            ndf.addGroupAttribute(null, new Attribute("geospatial_vertical_min", (float)depth.floatValue()));
+            ndf.addGroupAttribute(null, new Attribute("geospatial_vertical_max", (float)depth.floatValue()));
             ndf.addGroupAttribute(null, new Attribute("geospatial_vertical_positive", "down"));
             ndf.addGroupAttribute(null, new Attribute("time_coverage_start", ndf.netcdfDate.format(tsStart)));
             ndf.addGroupAttribute(null, new Attribute("time_coverage_end", ndf.netcdfDate.format(tsEnd)));
-            ndf.addGroupAttribute(null, new Attribute("instrument_nominal_depth", 30f));
+            ndf.addGroupAttribute(null, new Attribute("instrument_nominal_depth", (float)depth.floatValue()));
             ndf.addGroupAttribute(null, new Attribute("instrument", "Nortek Profiler"));
             ndf.addGroupAttribute(null, new Attribute("instrument_serial_numbe", nortek.serialNo));
             ndf.addGroupAttribute(null, new Attribute("file_version", "Level 0 – Raw data"));
@@ -187,6 +189,20 @@ public class WriteNortekProfiler
             	wavePDims.add(waveDim);
             }
 
+            // cell distance
+            Variable vCell = ndf.dataFile.addVariable(null, "CELL", DataType.FLOAT, "CELL");
+            vCell.addAttribute(new Attribute("units", "m"));
+            vCell.addAttribute(new Attribute("long_name", "cell distance from instrument"));
+            vCell.addAttribute(new Attribute("name", "cell distance"));
+            vCell.addAttribute(new Attribute("_FillValue", Float.NaN));            
+            vCell.addAttribute(new Attribute("valid_min", 0f));
+            vCell.addAttribute(new Attribute("valid_max", 1000f));   
+            ArrayFloat.D1 aCell = new ArrayFloat.D1(nortek.NBins);
+            for (int i=0;i<nortek.NBins;i++)
+            {
+            	aCell.set(i,  (float) (nortek.blankDist + i * nortek.cellSize));
+            }
+            
             // Battery voltage
             Variable vBattery = ndf.dataFile.addVariable(null, "BAT", DataType.FLOAT, dataDims);
             vBattery.addAttribute(new Attribute("units", "volt"));
@@ -287,6 +303,7 @@ public class WriteNortekProfiler
             vCor.addAttribute(new Attribute("valid_max", (short)100));
             
             Variable vWaveVel = null;
+            Variable vWaveAmp = null;
             Variable vWavePres = null;
             Variable vWtime = null;
        		if (waveData)
@@ -309,6 +326,14 @@ public class WriteNortekProfiler
        			vWaveVel.addAttribute(new Attribute("valid_min", -32768f));
        			vWaveVel.addAttribute(new Attribute("valid_max", 32767f));
 
+       			vWaveAmp = ndf.dataFile.addVariable(null, "WAVE_AMP", DataType.SHORT, waveDims);
+       			vWaveAmp.addAttribute(new Attribute("units", "1"));
+       			vWaveAmp.addAttribute(new Attribute("long_name", "wave_sample_amplitude"));
+       			vWaveAmp.addAttribute(new Attribute("name", "wave sample amplitude (B1,B2,B3,B4)"));
+       			vWaveAmp.addAttribute(new Attribute("_FillValue", (short)-1));            
+       			vWaveAmp.addAttribute(new Attribute("valid_min", (short)0));
+       			vWaveAmp.addAttribute(new Attribute("valid_max", (short)255));
+
        			vWavePres = ndf.dataFile.addVariable(null, "WAVE_PRES", DataType.FLOAT, wavePDims);
        			vWavePres.addAttribute(new Attribute("units", "dbar"));
        			vWavePres.addAttribute(new Attribute("long_name", "wave_pressure_samples"));
@@ -321,6 +346,8 @@ public class WriteNortekProfiler
             // Write the coordinate variable data. 
             ndf.create();
             ndf.writePosition(m.getLatitudeIn(), m.getLongitudeIn());            
+            
+            ndf.dataFile.write(vCell, aCell);
             
             Object o = null;
             ArrayDouble.D1 times = new ArrayDouble.D1(1);
@@ -339,7 +366,10 @@ public class WriteNortekProfiler
             ArrayFloat.D1 aAna2 = new ArrayFloat.D1(1);
 
             ArrayFloat.D3 aVelocity = new ArrayFloat.D3(1, nortek.NBins, 3);
+            ArrayShort.D3 aAmp = new ArrayShort.D3(1, nortek.NBins, 3);
+            
             ArrayFloat.D3 aWaveVel = new ArrayFloat.D3(1, nortek.NSamp, 4);
+            ArrayShort.D3 aWaveAmp = new ArrayShort.D3(1, nortek.NSamp, 4);
             ArrayFloat.D2 aWavePres = new ArrayFloat.D2(1, nortek.NSamp);
 
             int[] time_origin = new int[] { 0 };
@@ -453,9 +483,14 @@ public class WriteNortekProfiler
         			{
         				aVelocity.set(0, i, 0, vsd.velocityA[i]);
         				aVelocity.set(0, i, 1, vsd.velocityB[i]);        				
-        				aVelocity.set(0, i, 2, vsd.velocityC[i]);        				
+        				aVelocity.set(0, i, 2, vsd.velocityC[i]);
+        				
+        				aAmp.set(0, i, 0, vsd.ampA[i]);
+        				aAmp.set(0, i, 1, vsd.ampB[i]);        				
+        				aAmp.set(0, i, 2, vsd.ampC[i]);        				
         			}
             		ndf.dataFile.write(vVel, vector_origin, aVelocity);
+            		ndf.dataFile.write(vAmp, vector_origin, aAmp);
 
             		vector_origin[0]++; // Should be the same as time index above
 
@@ -486,6 +521,11 @@ public class WriteNortekProfiler
 		            		aWaveVel.set(0, waveSample, 1, vsd.vel2);
 		            		aWaveVel.set(0, waveSample, 2, vsd.vel3);
 		            		aWaveVel.set(0, waveSample, 3, vsd.vel4);
+
+		            		aWaveAmp.set(0, waveSample, 0, (short) vsd.amp1);
+		            		aWaveAmp.set(0, waveSample, 1, (short) vsd.amp2);
+		            		aWaveAmp.set(0, waveSample, 2, (short) vsd.amp3);
+		            		aWaveAmp.set(0, waveSample, 3, (short) vsd.amp4);
 	        				
 	        				aWavePres.set(0, waveSample, vsd.pressure);
 		            		
@@ -496,6 +536,7 @@ public class WriteNortekProfiler
 		            			log.debug("write wave sample " + waveSample);
 		            			
 			            		ndf.dataFile.write(vWaveVel, wave_origin, aWaveVel);
+			            		ndf.dataFile.write(vWaveAmp, wave_origin, aWaveAmp);
 			            		ndf.dataFile.write(vWavePres, wave_origin, aWavePres);
 	
 			            		wave_origin[0]++; // Should be the same as time index above

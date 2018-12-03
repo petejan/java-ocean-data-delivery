@@ -9,17 +9,23 @@
 
 package org.imos.abos.dbms;
 
+import java.sql.Connection;
 /**
  *
  * @author peter
  */
 import java.sql.Date;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Vector;
+import java.util.logging.Level;
+
 import org.apache.log4j.Logger;
+import org.imos.abos.parsers.AbstractDataParser;
 import org.wiley.LabMaster.Common;
 import org.wiley.util.SQLWrapper;
 import org.wiley.util.StringUtilities;
@@ -1155,5 +1161,36 @@ public class Instrument  implements Cloneable
         }
 
         return false;
+    }
+    
+    public Double getDepth(String mooring_id)
+    {
+    	Double depth = Double.NaN;
+    	
+        // get the target instrument parameter to select the time stamps on
+        String SQL = "SELECT depth FROM mooring_attached_instruments WHERE mooring_id = "
+                        + StringUtilities.quoteString(mooring_id)
+                        + " AND instrument_id = " + getInstrumentID();
+        
+        Connection conn = Common.getConnection();
+        Statement proc;
+        try
+        {
+            proc = conn.createStatement();
+            proc.execute(SQL);  
+            ResultSet results = (ResultSet) proc.getResultSet();
+            results.next();
+            depth = results.getBigDecimal(1).doubleValue();
+            logger.info("Depth from database " + depth);
+            
+            proc.close();
+        }
+        catch (SQLException ex)
+        {
+            java.util.logging.Logger.getLogger(AbstractDataParser.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        
+        return depth;
+
     }
 }

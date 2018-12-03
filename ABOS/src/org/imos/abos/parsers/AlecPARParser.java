@@ -31,7 +31,7 @@ public class AlecPARParser extends AbstractDataParser
     @Override
     protected void parseHeader(String dataLine) throws ParseException, NoSuchElementException
     {
-        if (dataLine.contains("Inst_No") || dataLine.contains("InstNo"))
+        if (dataLine.contains("Inst_No") || dataLine.contains("InstNo") || dataLine.contains("SondeNo"))
         {
             int end = dataLine.indexOf(",");
             if (end < 0)
@@ -124,11 +124,11 @@ public class AlecPARParser extends AbstractDataParser
             }
             else if (tCount == 4)
             {
-                dateString = dataSplit[1];
-                timeString = dataSplit[2];
+                dateString = dataSplit[0];
+                timeString = dataSplit[1];
                 constructTimestamp = dateString.trim() + " " + timeString.trim();
                 dateParser = yyyymmdd;
-                lightn = 3;
+                lightn = 2;
             }
             else
             {

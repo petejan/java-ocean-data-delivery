@@ -263,9 +263,9 @@ public class NortekParse
     	public short velB2;
     	public short velB3;
 
-    	public byte ampB1;
-    	public byte ampB2;
-    	public byte ampB3;
+    	public short ampB1;
+    	public short ampB2;
+    	public short ampB3;
 
     	public byte corB1;
     	public byte corB2;
@@ -296,9 +296,9 @@ public class NortekParse
     	vvd.velB2 = buffer.getShort();
     	vvd.velB3 = buffer.getShort();
 
-    	vvd.ampB1 = buffer.get();
-    	vvd.ampB2 = buffer.get();
-    	vvd.ampB3 = buffer.get();
+    	vvd.ampB1 = (short) (buffer.get() & 0xff);
+    	vvd.ampB2 = (short) (buffer.get() & 0xff);
+    	vvd.ampB3 = (short) (buffer.get() & 0xff);
 
     	vvd.corB1 = buffer.get();
     	vvd.corB2 = buffer.get();
@@ -365,7 +365,7 @@ public class NortekParse
     	
     	waveData.add(awd);
     	
-    	log.debug(awd);
+    	log.trace(awd);
     	
     	if (waveData.size() == NRecords)
     	{
@@ -505,6 +505,37 @@ public class NortekParse
     public int wMode = 0;
     public int NSamp = 0;
     
+//    %
+//    % calculate distance values from metadata. See continentalParse.m 
+//    % inline comments for a brief discussion of this process
+//    %
+//    % http://www.nortek-as.com/en/knowledge-center/forum/hr-profilers/736804717
+//    %
+//    freq       = head.Frequency; % this is in KHz
+//    blankDist  = user.T2;        % counts
+//    cellSize   = user.BinLength; % counts
+//    ncells     = user.NBins;
+//    factor     = 0;              % used for conversion
+//
+//    switch freq
+//      case 400,  factor = 0.1195;
+//      case 600,  factor = 0.0797;
+//      case 1000, factor = 0.0478;
+//      case 2000, factor = 0.0239;
+//    end
+//
+//    cellSize   = (cellSize / 256) * factor * cos(25 * pi / 180);
+//    blankDist  = blankDist        * 0.0229 * cos(25 * pi / 180) - cellSize;
+//
+//    % generate distance values
+//    distance = (blankDist:  ...
+//               cellSize: ...
+//               blankDist + (ncells-1) * cellSize)';
+//
+
+    public double cellSize = Double.NaN;
+    public double blankDist = Double.NaN;
+    
     private ArrayList<Attribute> readUserConfig()
     {
     	// This is the last config packet at the start of the datafile
@@ -516,7 +547,7 @@ public class NortekParse
     	int T3 = buffer.getShort() & 0xffff; // receive length (counts)
     	int T4 = buffer.getShort() & 0xffff; // time between pings (counts)
     	int T5 = buffer.getShort() & 0xffff; // time between burst sequences (counts)
-    	
+    	    	
     	attributes.add(new Attribute("nortek_userconfig_T1", T1));
     	attributes.add(new Attribute("nortek_userconfig_T2", T2));
     	attributes.add(new Attribute("nortek_userconfig_T3", T3));
@@ -526,6 +557,7 @@ public class NortekParse
     	int NPings = buffer.getShort() & 0xffff;
     	int AvgInterval = buffer.getShort() & 0xffff;
     	int NBeams = buffer.getShort() & 0xffff;
+		attributes.add(new Attribute("nortek_userconfig_beams", NBeams));
     	int TimCtrlReg = buffer.getShort() & 0xffff;
     	int PwrCtrlReg = buffer.getShort() & 0xffff;
     	int A1 = buffer.getShort() & 0xffff;
@@ -537,14 +569,29 @@ public class NortekParse
     	{
     		case 0:
     			attributes.add(new Attribute("nortek_userconfig_coordsystem", "ENU"));
+    			break;
     		case 1:
     			attributes.add(new Attribute("nortek_userconfig_coordsystem", "XYZ"));
+    			break;
     		case 2:
     			attributes.add(new Attribute("nortek_userconfig_coordsystem", "BEAM"));    		    	
+    			break;
     	}
     	NBins = buffer.getShort() & 0xffff;
     	int BinLength = buffer.getShort() & 0xffff;
 		attributes.add(new Attribute("nortek_userconfig_binlength", BinLength));
+
+		HashMap<Integer, Double> freqFactorMap = new HashMap<Integer, Double>();
+		freqFactorMap.put(400, 0.1195);
+		freqFactorMap.put(600, 0.0797);
+		freqFactorMap.put(1000, 0.0478);
+		freqFactorMap.put(2000, 0.0239);
+		double f = freqFactorMap.get(Frequency);
+		
+		cellSize = (double)BinLength / 256 * f * Math.cos(25 * Math.PI / 180);
+		blankDist = (double)T2 * 0.0229 * Math.cos(25 * Math.PI / 180) - cellSize;
+		attributes.add(new Attribute("nortek_userconfig_cellSize", cellSize));
+		attributes.add(new Attribute("nortek_userconfig_blankDist", blankDist));
 		
     	int MeasInterval = buffer.getShort() & 0xffff;
 		attributes.add(new Attribute("nortek_userconfig_measinterval", MeasInterval));
@@ -605,10 +652,12 @@ public class NortekParse
         return attributes;
     }
     
+    int Frequency = 0;
+    
     private void readHeadConfig()
     {
         int Config = buffer.getShort() & 0xffff;
-        int Frequency = buffer.getShort() & 0xffff;
+        Frequency = buffer.getShort() & 0xffff;
         int Type = buffer.getShort() & 0xffff;
         byte[] SerialNo = new byte[12];
         buffer.get(SerialNo);
@@ -811,9 +860,9 @@ public class NortekParse
     	public float velocityA[];
     	public float velocityB[];
     	public float velocityC[];
-    	byte ampA[];
-    	byte ampB[];
-    	byte ampC[];
+    	public short ampA[];
+    	public short ampB[];
+    	public short ampC[];
     }
     
     private ProfileVelocityData readAquadoppProfileVelocityData()
@@ -844,9 +893,9 @@ public class NortekParse
     	vd.velocityA = new float[NBins]; 
     	vd.velocityB = new float[NBins]; 
     	vd.velocityC = new float[NBins]; 
-    	vd.ampA = new byte[NBins]; 
-    	vd.ampB = new byte[NBins]; 
-    	vd.ampC = new byte[NBins]; 
+    	vd.ampA = new short[NBins]; 
+    	vd.ampB = new short[NBins]; 
+    	vd.ampC = new short[NBins]; 
     
     	for (int i=0;i<NBins;i++)
     	{
@@ -862,18 +911,18 @@ public class NortekParse
     	}
     	for (int i=0;i<NBins;i++)
     	{
-    		vd.ampA[i] = buffer.get();
+    		vd.ampA[i] = (short) (buffer.get() & 0xff);
     	}
     	for (int i=0;i<NBins;i++)
     	{
-    		vd.ampB[i] = buffer.get();
+    		vd.ampB[i] = (short) (buffer.get() & 0xff);
     	}
     	for (int i=0;i<NBins;i++)
     	{
-    		vd.ampC[i] = buffer.get();
+    		vd.ampC[i] = (short) (buffer.get() & 0xff);
     	}
 
-    	log.debug("ProfileVelocityData:" + sdf.format(vd.ts) + " pressure " + vd.pressure + " temp " + vd.temp + " head " + vd.heading);
+    	log.trace("ProfileVelocityData:" + sdf.format(vd.ts) + " pressure " + vd.pressure + " temp " + vd.temp + " head " + vd.heading);
     	
     	return vd;
 	}

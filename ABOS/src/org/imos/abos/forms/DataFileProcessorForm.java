@@ -60,30 +60,7 @@ public class DataFileProcessorForm extends MemoryWindow
     {
         parseFailureLimitField.setValue(AbstractDataParser.PARSE_FAILURE_LIMIT);
         super.initialise();
-        // get the target instrument parameter to select the time stamps on
-        String SQL = "SELECT depth FROM mooring_attached_instruments WHERE mooring_id = "
-                        + StringUtilities.quoteString(currentMooring.getMooringID())
-                        + " AND instrument_id = " + currentInstrument.getInstrumentID();
-        
-        Connection conn = Common.getConnection();
-        Statement proc;
-        try
-        {
-            proc = conn.createStatement();
-            proc.execute(SQL);  
-            ResultSet results = (ResultSet) proc.getResultSet();
-            results.next();
-            Double depth = results.getBigDecimal(1).doubleValue();
-            logger.info("Depth from database " + depth);
-            
-            overrideDepthField.setValue(depth);
-    
-            proc.close();
-        }
-        catch (SQLException ex)
-        {
-            java.util.logging.Logger.getLogger(AbstractDataParser.class.getName()).log(Level.SEVERE, null, ex);
-        }
+        overrideDepthField.setValue(currentInstrument.getDepth(currentMooring.getMooringID()));
         
         DefaultCaret caret = (DefaultCaret) messageArea.getCaret();
         caret.setUpdatePolicy(DefaultCaret.ALWAYS_UPDATE);

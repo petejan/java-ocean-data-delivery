@@ -271,11 +271,11 @@ public class WriteNortekPointCurrent
             vVel.addAttribute(new Attribute("valid_min", Short.MIN_VALUE));
             vVel.addAttribute(new Attribute("valid_max", Short.MAX_VALUE));
 
-            Variable vAmp = ndf.dataFile.addVariable(null, "ABSI", DataType.BYTE, vectorDims);
+            Variable vAmp = ndf.dataFile.addVariable(null, "ABSI", DataType.SHORT, vectorDims);
             vAmp.addAttribute(new Attribute("units", "counts"));
             vAmp.addAttribute(new Attribute("long_name", "amplitude"));
             vAmp.addAttribute(new Attribute("name", "amplitude (B1,B2,B3)"));
-            vAmp.addAttribute(new Attribute("_FillValue", (byte)0));            
+            vAmp.addAttribute(new Attribute("_FillValue", (byte)-1));            
             vAmp.addAttribute(new Attribute("valid_min", (byte)0));
             vAmp.addAttribute(new Attribute("valid_max", (byte)255));
             
@@ -332,7 +332,7 @@ public class WriteNortekPointCurrent
             ArrayFloat.D2 aAna1 = new ArrayFloat.D2(1, nortek.NRecords);
             ArrayFloat.D2 aAna2 = new ArrayFloat.D2(1, nortek.NRecords);
             ArrayShort.D3 aVel = new ArrayShort.D3(1, nortek.NRecords, 3);
-            ArrayByte.D3 aAmp = new ArrayByte.D3(1, nortek.NRecords, 3);
+            ArrayShort.D3 aAmp = new ArrayShort.D3(1, nortek.NRecords, 3);
 
             // IMU vars
             ArrayFloat.D3 aAccel = new ArrayFloat.D3(1, nortek.NRecords, 3);
