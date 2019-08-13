@@ -49,10 +49,10 @@ public final class ReadDiSAZfile
 
 	class Metadata
 	{
-		public Metadata(String name2, Cell mdCell)
+		public Metadata(String name2, Cell v)
 		{
 			name = name2;
-			c = mdCell;
+			c = v;
 		}
 		String name;
 		public String toString()
@@ -61,6 +61,28 @@ public final class ReadDiSAZfile
 		}
 		Cell c;
 		Attribute a;
+		public String getStringValue()
+		{
+			String value = null;
+			
+			if (c.getCellType() == Cell.CELL_TYPE_FORMULA)
+			{
+				CellValue v = evaluator.evaluate(c);
+				if (v != null)
+					value = Double.toString(v.getNumberValue());
+
+			}
+			else if (c.getCellType() == Cell.CELL_TYPE_NUMERIC)
+			{
+				value = Double.toString(c.getNumericCellValue());
+			}
+			else
+			{
+				value = c.getStringCellValue();
+			}
+			
+			return value;
+		}
 	}
 	class DataCol
 	{
@@ -94,7 +116,7 @@ public final class ReadDiSAZfile
 
 	FormulaEvaluator evaluator;
 	Sheet netcdf_format_sheet;
-	Sheet main_sheet;
+	//Sheet main_sheet;
 	String filter = null;
 	
 	String deployment = "unknown";
@@ -118,12 +140,15 @@ public final class ReadDiSAZfile
 		wb = WorkbookFactory.create(inputStream);
 		evaluator = wb.getCreationHelper().createFormulaEvaluator();
 		
-		main_sheet = wb.getSheet("main");		
-		log.debug("Sheet " + main_sheet);
+//		main_sheet = wb.getSheet("main");		
+//		log.debug("Sheet " + main_sheet);
 		
 		netcdf_format_sheet = wb.getSheet("netcdf_format");		
-		log.debug("Sheet " + netcdf_format_sheet);
+		if (netcdf_format_sheet == null)
+			netcdf_format_sheet = wb.getSheet("netcdf");		
 
+		log.debug("Sheet " + netcdf_format_sheet);
+			
 		TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
 
 		return wb;		
@@ -171,7 +196,7 @@ public final class ReadDiSAZfile
 						log.debug("parse::depth col " + c);
 						depthCol = c;						
 					}
-					else if (cell0.getStringCellValue().matches("start time") || cell0.getStringCellValue().matches("sample open"))
+					else if (cell0.getStringCellValue().matches("time") || cell0.getStringCellValue().matches("sample time") || cell0.getStringCellValue().matches("start time") || cell0.getStringCellValue().matches("sample open"))
 					{
 						log.debug("parse::start time col " + c);
 						sampleTimeCol = c;						
@@ -249,10 +274,12 @@ public final class ReadDiSAZfile
 							for (MetadataName mdn : metadataList)
 							{
 								Cell mdCell = sheet.getRow(mdn.row).getCell(c);
-								log.trace("meta data row " + mdn.row + " name " + mdn.name + " cell " + mdCell);
+								log.debug("meta data row " + mdn.row + " name " + mdn.name + " cell " + mdCell);
 								if (mdCell != null)
 								{
+									
 									Metadata md = new Metadata(mdn.name, mdCell);
+									
 									dc.metadata.add(md);
 								}
 							}
@@ -272,7 +299,7 @@ public final class ReadDiSAZfile
 		{
 			log.debug("Looking up " + dc.long_name);
 			
-			String SQL = "SELECT code FROM parameters WHERE netcdf_long_name LIKE '" + dc.long_name + "'";
+			String SQL = "SELECT code FROM parameters WHERE trim(from netcdf_long_name) LIKE '" + dc.long_name.trim() + "'";
 			query.setConnection(Common.getConnection());
 			query.executeQuery(SQL);
 			Vector dataSet = query.getData();
@@ -422,9 +449,9 @@ public final class ReadDiSAZfile
 	{
 		if (c > 0)
 		{
-			if (c > 1000)
-				return getDataAt(main_sheet, c - 1000);
-			else			
+//			if (c > 1000)
+//				return getDataAt(main_sheet, c - 1000);
+//			else			
 				return getDataAt(netcdf_format_sheet, c);
 		}
 		else

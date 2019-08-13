@@ -236,7 +236,7 @@ public class MarkBadDataForMooringDeploymentForm extends MemoryWindow implements
         {
             proc = conn.createStatement();
             
-            SQL = "UPDATE processed_instrument_data AS p SET quality_code = 'BAD' FROM mooring WHERE p.mooring_id = " + StringUtilities.quoteString(selectedMooring.getMooringID()) +
+            SQL = "UPDATE processed_instrument_data AS p SET quality_code = 'OUT' FROM mooring WHERE p.mooring_id = " + StringUtilities.quoteString(selectedMooring.getMooringID()) +
                     " AND p.mooring_id = mooring.mooring_id " +
                     " AND (data_timestamp < timestamp_in OR data_timestamp > timestamp_out)";
             

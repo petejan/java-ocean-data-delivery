@@ -702,7 +702,7 @@ public class Instrument  implements Cloneable
                         + " select distinct instrument_id from mooring_attached_instruments "
                         + " where mooring_id = "
                         + StringUtilities.quoteString(mooringID)
-                        + " AND depth = " + depth
+                        + " AND depth - " + depth + " < 10"
                         + ")"
                         + getDefaultSortOrder());
     }

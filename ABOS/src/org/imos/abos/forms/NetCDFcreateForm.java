@@ -99,10 +99,13 @@ public class NetCDFcreateForm extends MemoryWindow
 
 		limitList.put("", "");
 		limitList.put("ASIMET", " AND d.instrument_id IN (SELECT instrument_id FROM instrument WHERE make = 'WHOI')");
+		limitList.put("INST", " AND quality_code not 'INTERPOLATED'");
 
 		instList.add(null);
 		instList.add("Gridded Data");
 		instList.add("subsurface");
+		
+		//sourceFile = InstrumentDataFile.selectByInstrumentDataFileID(200485);
 	}
 
 	@Override
@@ -616,19 +619,21 @@ public class NetCDFcreateForm extends MemoryWindow
 		for (InstanceCoord ic : instanceCoords)
 		{
 			//InstanceCoord ic = dc.get(0);
+			logger.debug("writeInstanceCoordinateVariableAttributes:: depthVariable : " + ic.depthVariable);
+			
 			ic.depthVariable.addAttribute(new Attribute("units", "meters"));
 			String comment = null;
 			if (ic.useHeight)
 			{
 				ic.depthVariable.addAttribute(new Attribute("standard_name", "height"));
-				ic.depthVariable.addAttribute(new Attribute("long_name", "nominal height of each sensor"));
+				ic.depthVariable.addAttribute(new Attribute("long_name", "nominal height of each variable"));
 				ic.depthVariable.addAttribute(new Attribute("positive", "up"));                
 				comment = "height for parameter ";
 			}
 			else
 			{
 				ic.depthVariable.addAttribute(new Attribute("standard_name", "depth"));
-				ic.depthVariable.addAttribute(new Attribute("long_name", "nominal depth of each sensor"));
+				ic.depthVariable.addAttribute(new Attribute("long_name", "nominal depth of each variable"));
 				ic.depthVariable.addAttribute(new Attribute("positive", "down"));
 				//ic.dimVar.addAttribute(new Attribute("comment", "These are nominal values. Use PRES to derive time-varying depths of instruments, as the mooring may tilt in ambient currents."));
 				comment = "depths for parameter ";
@@ -638,8 +643,8 @@ public class NetCDFcreateForm extends MemoryWindow
 			ic.depthVariable.addAttribute(new Attribute("valid_min", 0.0f));
 			ic.depthVariable.addAttribute(new Attribute("valid_max", 5000.0f));
 
-			comment += ic.params.trim();
-			ic.depthVariable.addAttribute(new Attribute("params", comment));
+			//comment += ic.params.trim();
+			//ic.depthVariable.addAttribute(new Attribute("params", comment));
 		}
 	}
 
@@ -653,13 +658,13 @@ public class NetCDFcreateForm extends MemoryWindow
 		qualityFlag.put("DERIVED", 1);
 		qualityFlag.put("EXTRACTED", 1);
 		qualityFlag.put("AVG", 1);
-		qualityFlag.put("INTERPOLATED", 1);
+		qualityFlag.put("INTERPOLATED", 8);
 		qualityFlag.put("GOOD", 1);
 		qualityFlag.put("PGOOD", 2);
 		qualityFlag.put("PBAD", 3);
 		qualityFlag.put("BAD", 4);
 		qualityFlag.put("OOR", 4);
-		qualityFlag.put("OUT", 5);
+		qualityFlag.put("OUT", 6);
 		qualityFlag.put("MISSING", 9);
 
 		selectedMooring.getFacility();
@@ -677,8 +682,16 @@ public class NetCDFcreateForm extends MemoryWindow
 				dataCodes += dc.dataCode;
 			}
 		}
+		Instrument instData = dataForInstrument;
+		if (instData == null)
+		{
+			if (sourceFile != null)
+			{
+				instData = Instrument.selectByInstrumentID(sourceFile.getInstrumentID());
+			}
+		}
 
-		filename = f.getFileName(dataForInstrument, dataStartTime, dataEndTime, table, dataCodes, appendInstrument);
+		filename = f.getFileName(instData, dataStartTime, dataEndTime, table, dataCodes, appendInstrument);
 
 		int RECORD_COUNT = timeArray.size();
 		try
@@ -718,23 +731,46 @@ public class NetCDFcreateForm extends MemoryWindow
 			Dimension dim = null;
 			Variable depthVar = null;
 			ArrayFloat.D1 depthData = null;
+			String depthVariableName = null;
 
 			for (InstanceCoord ic : instanceCoords)
 			{                
-				String depthVariableName = "DEPTH";
+				depthVariableName = "DEPTH";
 				if (ic.useHeight)
 				{
 					depthVariableName = "HEIGHT";
 				}
-				depthVariableName += "_" + ic.params;
-
-				// relabel any duplicates to _<n>
-				String origName = depthVariableName;
-				int dimNo = 1;
-				while (dimNames.contains(depthVariableName))
+				// check if we need to create any more DEPTH variables/INSTANCE dimensions
+				float firstDepth = ic.depths[0].floatValue();
+				
+				boolean moreThanOneDepth = false;
+				boolean moreThanOneInstance = false;
+				
+				for (int i=1;i<ic.depths.length;i++)
 				{
-					depthVariableName = origName + "_" + dimNo;
-					dimNo++;
+					float currentDepth = ic.depths[i].floatValue();
+					if (currentDepth != firstDepth)
+						moreThanOneDepth = true;
+				}
+				for(InstanceCoord otherIc: instanceCoords)
+				{
+					if (otherIc.depths.length > 1)
+						moreThanOneInstance = true;
+				}
+				logger.debug("depths " + ic.depths.length + " more than one depth : " + moreThanOneDepth + " more than one instance : " + moreThanOneInstance);
+				
+				if (moreThanOneInstance)
+				{
+					depthVariableName += "_" + ic.params;
+
+					// relabel any duplicates to _<n>
+					String origName = depthVariableName;
+					int dimNo = 1;
+					while (dimNames.contains(depthVariableName))
+					{
+						depthVariableName = origName + "_" + dimNo;
+						dimNo++;
+					}
 				}
 				dimNames.add(depthVariableName);
 				logger.debug("Create depth/height variable " + depthVariableName);
@@ -743,42 +779,52 @@ public class NetCDFcreateForm extends MemoryWindow
 				dims = new ArrayList<Dimension>();
 				dim = null;
 
-				// create the dimension in the file
-				dim = f.dataFile.addDimension(null, "INSTANCE_" + ic.params, ic.depths.length);
-				dimListDepth.add(dim);
-
-				logger.debug("Create Dimension " + dim.getShortName() + " " + f.timeDim.getLength() + " x " + dim.getLength());
+				// create the dimension in the file, using an INSTANCE dimension instead of DEPTH means the don't need to be in order or distinct.
 				
-				// create a dimension list for this variable
-				if (f.fileOrderTimeDepth)
+				if (moreThanOneInstance)
 				{
-					dims.add(f.timeDim);
-					if (ic.depths.length > 1)		                	
+					dim = f.dataFile.addDimension(null, "INSTANCE_" + ic.params, ic.depths.length);
+					dimListDepth.add(dim);
+	
+					logger.debug("Create Dimension " + dim.getShortName() + " " + f.timeDim.getLength() + " x " + dim.getLength());
+					
+					// create a dimension list for this variable
+					if (f.fileOrderTimeDepth)
+					{
+						dims.add(f.timeDim);
 						dims.add(dim);
+					}
+					else
+					{
+						dims.add(dim);
+						dims.add(f.timeDim);
+					}
 				}
 				else
-				{
-					if (ic.depths.length > 1)
-						dims.add(dim);
 					dims.add(f.timeDim);
-				}
 				
-				// create the depth/height variable and fill it with the depths
-				depthVar = f.dataFile.addVariable(null, depthVariableName, DataType.FLOAT, dimListDepth);
-				depthData = new ArrayFloat.D1(ic.depths.length);
-
-				for (int i=0;i<ic.depths.length;i++)
+				if (moreThanOneInstance || depthVar == null)
 				{
-					float currentDepth = ic.depths[i].floatValue();                        
-					if (ic.useHeight)
-					{
-						currentDepth = currentDepth * -1;
-						if (Math.abs(currentDepth) < 0.01)
-							currentDepth = 0.00f;
-					}
-					depthData.set(i, currentDepth);
-				}
+					logger.debug("Create depth variable " + depthVariableName);
+					
+					// create the depth/height variable and fill it with the depths
+					depthVar = f.dataFile.addVariable(null, depthVariableName, DataType.FLOAT, dimListDepth);
+					depthData = new ArrayFloat.D1(ic.depths.length);
 
+					logger.debug("Create depth variable " + depthVariableName + " " + depthVar);
+	
+					for (int i=0;i<ic.depths.length;i++)
+					{
+						float currentDepth = ic.depths[i].floatValue();                        
+						if (ic.useHeight)
+						{
+							currentDepth = currentDepth * -1;
+							if (Math.abs(currentDepth) < 0.01)
+								currentDepth = 0.00f;
+						}
+						depthData.set(i, currentDepth);
+					}
+				}
 
 				ic.instanceDim = dim;
 				ic.depthVariable = depthVar;

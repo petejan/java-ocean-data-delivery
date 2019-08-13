@@ -112,7 +112,7 @@ public class SeabirdSBE16Parser extends AbstractDataParser
             }
             //if (tokenCount > 12)
             {
-                st.nextToken();
+                //st.nextToken();
             }
 
             dateString = st.nextToken();

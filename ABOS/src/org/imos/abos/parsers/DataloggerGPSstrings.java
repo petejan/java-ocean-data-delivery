@@ -34,6 +34,9 @@ public class DataloggerGPSstrings extends AbstractDataParser
 		 * string GPRMC,011132.00,A,4253.16575,S,14720.23275,E,0.175,0.00,190215,,,A
          */
 	
+	// create with
+	// grep -h "string GPRMC,[0-9]*.\d\d,A" /Volumes/DWM-2019/SOFS-7.5-2018/data/Datalogger/*.TXT > SOFS-7.5-GPSfixes.txt
+	
         SimpleDateFormat dateParser = new SimpleDateFormat("ddMMyy HHmmss");
         DecimalFormat deciFormat = new DecimalFormat("-######.0#");
 

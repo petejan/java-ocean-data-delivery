@@ -144,8 +144,8 @@ public class NetCDFfile
 		}
 		if (sourceInstrument != null)
 		{
-			String sn = sourceInstrument.getSerialNumber().replaceAll("[()_]", "").trim();
-			deployment += "-" + sourceInstrument.getModel().trim() + "-" + sn;
+			String sn = sourceInstrument.getSerialNumber().replaceAll("[()_,]", "").trim();
+			deployment += "-" + sourceInstrument.getModel().replaceAll("[()_,]", "").trim() + "-" + sn;
 
 			String SQL = "SELECT depth FROM mooring_attached_instruments WHERE mooring_id = "
 					+ StringUtilities.quoteString(mooring.getMooringID())
@@ -207,6 +207,7 @@ public class NetCDFfile
 					+ "_C-";
 
 			filename = filename.replaceAll("\\s+", "-"); // replace any spaces with a - character
+			filename = filename.replaceAll(",", ""); // replace any , with a - character
 
 			filename        += nameFormatter.format(new Date(System.currentTimeMillis()));
 			Log.debug("try file name " + filename);
@@ -557,9 +558,9 @@ public class NetCDFfile
 			{
 				Timestamp ts = timeArray.get(i);
 				long offsetTime = (ts.getTime() - anchorTime) / 1000;
-				double elapsedHours = ((double) offsetTime) / (3600 * 24);
+				double elapsedDays = ((double) offsetTime) / (3600 * 24);
 				
-				times.setDouble(i, elapsedHours);
+				times.setDouble(i, elapsedDays);
 			}
 		}
 		else
@@ -599,7 +600,7 @@ public class NetCDFfile
 
 
 	double depthMax = 0;
-	double depthMin = 10000;
+	double depthMin = 0;
 
 	public class InstanceCoord
 	{
@@ -1076,14 +1077,14 @@ public class NetCDFfile
 
 			if (authority.equals("IMOS"))
 			{
-				varQC.addAttribute(new Attribute("quality_control_conventions", "IMOS standard flags"));
+				varQC.addAttribute(new Attribute("quality_control_conventions", "ARGO quality control procedure"));
 			}
 			else
 			{
 				varQC.addAttribute(new Attribute("conventions", "OceanSITES reference table 2"));
 			}
 
-			varQC.addAttribute(new Attribute("quality_control_set", (double) 1.0));
+			varQC.addAttribute(new Attribute("quality_control_set", (double) 2.0));
 
 			b = -128;
 			varQC.addAttribute(new Attribute("_FillValue", b));
@@ -1092,7 +1093,7 @@ public class NetCDFfile
 			b = 9;
 			varQC.addAttribute(new Attribute("valid_max", b));
 
-			ArrayByte.D1 qcValues = new ArrayByte.D1(7);
+			ArrayByte.D1 qcValues = new ArrayByte.D1(8);
 			b = 0;
 			qcValues.set(0, b);
 			b = 1;
@@ -1103,12 +1104,14 @@ public class NetCDFfile
 			qcValues.set(3, b);
 			b = 4;
 			qcValues.set(4, b);
-			b = 5;
+			b = 6;
 			qcValues.set(5, b);
-			b = 9;
+			b = 7;
 			qcValues.set(6, b);
+			b = 9;
+			qcValues.set(7, b);
 			varQC.addAttribute(new Attribute("flag_values", qcValues));
-			varQC.addAttribute(new Attribute("flag_meanings", "unknown good_data probably_good_data probably_bad_data bad_data not_deployed missing_value"));
+			varQC.addAttribute(new Attribute("flag_meanings", "unknown good_data probably_good_data probably_bad_data bad_data not_deployed interpolated missing_value"));
 
 			return pt;
 		}

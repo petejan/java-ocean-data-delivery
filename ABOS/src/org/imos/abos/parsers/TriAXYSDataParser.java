@@ -50,7 +50,7 @@ import org.apache.log4j.Logger;
 public class TriAXYSDataParser extends AbstractDataParser
 {
 	private static Logger log = Logger.getLogger(TriAXYSDataParser.class);
-	private static long tOffset = 24 * 3600 * 1000;
+	private static long tOffset = 0; //24 * 3600 * 1000;
 
     String mooring = "SOFS-2-2011";
     boolean raw = true;
@@ -1026,7 +1026,7 @@ public class TriAXYSDataParser extends AbstractDataParser
         NetCDFfile ndf = new NetCDFfile();
         ndf.setMooring(m);
         ndf.setAuthority("IMOS");
-        ndf.setFacility("ABOS-ASFS");
+        ndf.setFacility("ABOS-SOFS");
         ndf.setMultiPart(true);
         
         ArrayList<Instrument> insts = Instrument.selectInstrumentsForMooring(m.getMooringID()); 
@@ -1065,7 +1065,7 @@ public class TriAXYSDataParser extends AbstractDataParser
             ndf.addGroupAttribute(null, new Attribute("site_code", "SOTS"));
             ndf.addGroupAttribute(null, new Attribute("deployment_code", m.getMooringID()));
             //ndf.dataFile.addGroupAttribute(null, new Attribute("abstract", "SOFS is an observing platform in the Sub-Antarctic Zone, approximately 350 nautical miles southwest of Tasmania.\nIt obtains frequent measurements of the surface and deep ocean properties that control the transfer of heat, moisture, energy and CO2 between the atmosphere and the upper ocean\nto improve understanding of climate and carbon processes.\nThe mooring was deployed in May 2013 at (-46.7S, 142E) and recovered in October 2013\nThis wave data was collected using a AXYS technologies TriAXYS OEM wave sensor deployed on a 3m WHOI surface float"));
-            ndf.addGroupAttribute(null, new Attribute("abstract", "SOFS is an observing platform in the Sub-Antarctic Zone, approximately 350 nautical miles southwest of Tasmania.\nIt obtains frequent measurements of the surface and deep ocean properties that control the transfer of heat, moisture, energy and CO2 between the atmosphere and the upper ocean\nto improve understanding of climate and carbon processes.\nThe mooring was deployed in November 2011 at (-46.7S, 142E) and recovered in July 2012\nThis wave data was collected using a AXYS technologies TriAXYS OEM wave sensor deployed on a 3m WHOI surface float"));
+            ndf.addGroupAttribute(null, new Attribute("abstract", "SOFS is an observing platform in the Sub-Antarctic Zone, approximately 350 nautical miles southwest of Tasmania.\nIt obtains frequent measurements of the surface and deep ocean properties that control the transfer of heat, moisture, energy and CO2 between the atmosphere and the upper ocean\nto improve understanding of climate and carbon processes.\nThe mooring was deployed in August 2018 at (-46.7S, 142E) and recovered in April 2019 \nThis wave data was collected using a AXYS technologies TriAXYS OEM wave sensor deployed on a 3m WHOI surface float"));
             ndf.addGroupAttribute(null, new Attribute("keywords", "OCEANS > OCEAN WAVES > SIGNIFICANT WAVE HEIGHT\nOCEANS > OCEAN WAVES > WAVE HEIGHT\nOCEANS > OCEAN WAVES > WAVE SPECTRA\nOCEANS > OCEAN WAVES > WAVE FREQUENCY\nOCEANS > OCEAN WAVES > WAVE PERIOD"));
             ndf.addGroupAttribute(null, new Attribute("geospatial_vertical_max", new Double(0)));
             ndf.addGroupAttribute(null, new Attribute("geospatial_vertical_min", new Double(0)));

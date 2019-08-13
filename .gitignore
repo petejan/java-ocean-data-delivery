@@ -5,3 +5,4 @@ IMOS*.nc
 /.metadata/
 .recommenders/
 ABOS/ABOShistory.log
+*~

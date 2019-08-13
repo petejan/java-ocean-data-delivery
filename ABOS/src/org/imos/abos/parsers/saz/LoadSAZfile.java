@@ -100,9 +100,11 @@ public class LoadSAZfile
 				Instrument in = null;
 				for (Instrument inn : insts)
 				{
-					if (inn.getMake().startsWith("McLane"))
+					if ((in == null) && inn.getMake().startsWith("McLane"))
 						in = inn;
 					if (inn.getMake().startsWith("University of Washington"))
+						in = inn;
+					if (inn.getMake().startsWith("McLane") && inn.getModel().contains("Frame")) // preference for Frame SN
 						in = inn;
 
 				}
@@ -117,7 +119,7 @@ public class LoadSAZfile
 					{
 			            if (insert)
 			            {
-			            	log.info("new Instrument id " + new_inst_id);
+			            	log.info("data for Instrument id " + new_inst_id);
 
 			                idf.setDataFilePrimaryKey(InstrumentDataFile.getNextSequenceNumber());
 			                idf.setInstrumentID(new_inst_id);
@@ -157,6 +159,9 @@ public class LoadSAZfile
 							case 4:
 								raw.setQualityCode("BAD");
 								break;
+							case 8:
+								raw.setQualityCode("INTERPOLATED");
+								break;
 							case 9:
 								raw.setQualityCode("MISSING");
 								break;
@@ -173,6 +178,9 @@ public class LoadSAZfile
 
 			            boolean ok = raw.insert();
 			            loaded++;
+			            
+			            // TODO: add the metadata to the netcdf parameters table
+			            
 					}
 
 				}
@@ -208,18 +216,31 @@ public class LoadSAZfile
 					{
 						CellValue v = sf.evaluator.evaluate(md.c);
 						if (v != null)
-							value = Double.toString(v.getNumberValue());
-
+						{
+							if (v.getCellType() == Cell.CELL_TYPE_NUMERIC)
+							{
+								value = Double.toString(v.getNumberValue());
+								pc.setString(8,  "NUMBER"); // attribute_type
+							}
+							else
+							{
+								value = v.getStringValue();
+								pc.setString(8,  "STRING"); // attribute_type
+							}
+						}
+						
 					}
 					else if (md.c.getCellType() == Cell.CELL_TYPE_NUMERIC)
 					{
+						value = md.getStringValue();
 						pc.setString(8,  "NUMBER"); // attribute_type
 					}
 					else
 					{
+						value = md.getStringValue();
 						pc.setString(8,  "STRING"); // attribute_type
 					}
-					pc.setString(9,  value); // attribute_value
+					pc.setString(9, value); // attribute_value
 
 					log.debug("add metadata " + pc);
 					pc.executeUpdate();

@@ -171,8 +171,8 @@ public class WriteAZFP
             ndf.addGroupAttribute(null, new Attribute("serial_number", String.format("%d", an.serialNo)));
             ndf.addGroupAttribute(null, new Attribute("featureType", "timeSeriesProfile"));
             ndf.addGroupAttribute(null, new Attribute("cdm_data_type", "Profile"));
-            ndf.addGroupAttribute(null, new Attribute("geospatial_vertical_min", 30f));
-            ndf.addGroupAttribute(null, new Attribute("geospatial_vertical_max", 220f));
+            ndf.addGroupAttribute(null, new Attribute("geospatial_vertical_min", 30.01875f));
+            ndf.addGroupAttribute(null, new Attribute("geospatial_vertical_max", 217.5f));
             ndf.addGroupAttribute(null, new Attribute("geospatial_vertical_positive", "down"));
             ndf.addGroupAttribute(null, new Attribute("time_coverage_start", ndf.netcdfDate.format(tsStart)));
             ndf.addGroupAttribute(null, new Attribute("time_coverage_end", ndf.netcdfDate.format(tsEnd)));
@@ -197,6 +197,8 @@ public class WriteAZFP
             vTemperature.addAttribute(new Attribute("_FillValue", Float.NaN));
             vTemperature.addAttribute(new Attribute("valid_min", -10f));
             vTemperature.addAttribute(new Attribute("valid_max", 30f));
+            vTemperature.addAttribute(new Attribute("coordinates", "TIME NOMINAL_DEPTH LATITUDE LONGITUDE"));
+
 //            vTemperature.addAttribute(new Attribute("sensor_depth", 30f));
 //            vTemperature.addAttribute(new Attribute("sensor_name", "ASL AZFP"));
 //            vTemperature.addAttribute(new Attribute("sensor_serial_number", String.format("%d", an.serialNo)));
@@ -208,6 +210,8 @@ public class WriteAZFP
             vBattery.addAttribute(new Attribute("_FillValue", Float.NaN));            
             vBattery.addAttribute(new Attribute("valid_min", 0f));
             vBattery.addAttribute(new Attribute("valid_max", 20f));
+            vBattery.addAttribute(new Attribute("coordinates", "TIME NOMINAL_DEPTH LATITUDE LONGITUDE"));
+
 //            vBattery.addAttribute(new Attribute("sensor_depth", 30f));
 //            vBattery.addAttribute(new Attribute("sensor_name", "ASL AZFP"));
 //            vBattery.addAttribute(new Attribute("sensor_serial_number", String.format("%d", an.serialNo)));
@@ -218,6 +222,8 @@ public class WriteAZFP
             vTiltX.addAttribute(new Attribute("_FillValue", Float.NaN));            
             vTiltX.addAttribute(new Attribute("valid_min", -180f));
             vTiltX.addAttribute(new Attribute("valid_max", 180f));
+            vTiltX.addAttribute(new Attribute("coordinates", "TIME NOMINAL_DEPTH LATITUDE LONGITUDE"));
+
 //            vTiltX.addAttribute(new Attribute("sensor_depth", 30f));
 //            vTiltX.addAttribute(new Attribute("sensor_name", "ASL AZFP"));
 //            vTiltX.addAttribute(new Attribute("sensor_serial_number", String.format("%d", an.serialNo)));
@@ -228,6 +234,7 @@ public class WriteAZFP
             vTiltY.addAttribute(new Attribute("_FillValue", Float.NaN));            
             vTiltY.addAttribute(new Attribute("valid_min", -180f));
             vTiltY.addAttribute(new Attribute("valid_max", 180f));
+            vTiltY.addAttribute(new Attribute("coordinates", "TIME NOMINAL_DEPTH LATITUDE LONGITUDE"));
 //            vTiltY.addAttribute(new Attribute("sensor_depth", 30f));
 //            vTiltY.addAttribute(new Attribute("sensor_name", "ASL AZFP"));
 //            vTiltY.addAttribute(new Attribute("sensor_serial_number", String.format("%d", an.serialNo)));
@@ -262,14 +269,16 @@ public class WriteAZFP
                 distance[i] = ndf.dataFile.addVariable(null, "depth_"+an.freq[i], DataType.FLOAT, dimsd);
                 distance[i].addAttribute(new Attribute("sample_rate_sps", (float)an.rate[i]));            
                 distance[i].addAttribute(new Attribute("frequency_kHz", (float)an.freq[i]));            
-                distance[i].addAttribute(new Attribute("pulse_length_us", (float)an.pulseLen[i]));      
+                distance[i].addAttribute(new Attribute("pulse_length_us", (float)an.pulseLen[i]));
+                distance[i].addAttribute(new Attribute("reference_datum", "Mean Sea Level (MSL)")) ;
                 
                 distance[i].addAttribute(new Attribute("units", "m"));
-                distance[i].addAttribute(new Attribute("standard_name", "depth"));
+                //distance[i].addAttribute(new Attribute("standard_name", "depth"));
+                distance[i].addAttribute(new Attribute("long_name", "depth"));
                 distance[i].addAttribute(new Attribute("comment", "distance from instrument plus instrument depth"));
                 distance[i].addAttribute(new Attribute("axis", "Z"));
                 distance[i].addAttribute(new Attribute("positive", "down"));
-                distance[i].addAttribute(new Attribute("_FillValue", Float.NaN));                
+                //distance[i].addAttribute(new Attribute("_FillValue", Float.NaN));                
                 distance[i].addAttribute(new Attribute("valid_min", 0f));
                 distance[i].addAttribute(new Attribute("valid_max", 300f));
 //                distance[i].addAttribute(new Attribute("sensor_depth", 30f));
@@ -305,18 +314,18 @@ public class WriteAZFP
                 vABSI[i].addAttribute(new Attribute("units", "counts"));
                 vABSI[i].addAttribute(new Attribute("long_name", "acoustic_return_counts"));
                 vABSI[i].addAttribute(new Attribute("name", "acoustic return signal counts"));
-                vABSI[i].addAttribute(new Attribute("coordinates", "TIME LATITUDE LONGITUDE depth_"+an.freq[i]));
+                vABSI[i].addAttribute(new Attribute("coordinates", "TIME depth_" + an.freq[i] + " LATITUDE LONGITUDE"));
                 vABSI[i].addAttribute(new Attribute("_FillValue", Float.NaN));                                
                 vABSI[i].addAttribute(new Attribute("valid_min", 0f));
                 vABSI[i].addAttribute(new Attribute("valid_max", 65536f));
 
-                vSv[i] = ndf.dataFile.addVariable(null, "Sv"+an.freq[i], DataType.FLOAT, dims1);
+                vSv[i] = ndf.dataFile.addVariable(null, "SV_"+an.freq[i], DataType.FLOAT, dims1);
                 vSv[i].addAttribute(new Attribute("sample_rate_sps", (float)an.rate[i]));            
                 vSv[i].addAttribute(new Attribute("frequency_kHz", (float)an.freq[i]));            
                 vSv[i].addAttribute(new Attribute("units", "dB"));
                 vSv[i].addAttribute(new Attribute("long_name", "acoustic_return_volume_scattering"));
                 vSv[i].addAttribute(new Attribute("name", "acoustic return signal volume scattering"));
-                vSv[i].addAttribute(new Attribute("coordinates", "TIME LATITUDE LONGITUDE depth_"+an.freq[i]));
+                vSv[i].addAttribute(new Attribute("coordinates", "TIME depth_" + an.freq[i] + " LATITUDE LONGITUDE"));
                 vSv[i].addAttribute(new Attribute("_FillValue", Float.NaN));                                
                 vSv[i].addAttribute(new Attribute("valid_min", -200f));
                 vSv[i].addAttribute(new Attribute("valid_max", 200f));

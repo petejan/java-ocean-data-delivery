@@ -727,6 +727,15 @@ public class InstrumentDataFile  implements Cloneable
                         + getDefaultSortOrder());
     }
     
+    public static ArrayList<InstrumentDataFile> selectDataFilesForMooringInstrument(String ID, Integer inst)
+    {
+        return doSelect( selectSQL
+                        + " where mooring_id = "
+                        + StringUtilities.quoteString(ID)
+                        + " and instrument_id = " + inst
+                        + getDefaultSortOrder());
+    }
+    
 
     public static ArrayList<InstrumentDataFile> selectAllActiveCodes()
     {

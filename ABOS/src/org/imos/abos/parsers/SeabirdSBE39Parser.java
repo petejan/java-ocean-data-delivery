@@ -18,6 +18,8 @@ import java.util.StringTokenizer;
 import org.imos.abos.dbms.RawInstrumentData;
 import org.wiley.util.StringUtilities;
 
+import java.util.Locale;
+
 /**
  *
  * @author peter
@@ -58,13 +60,14 @@ public class SeabirdSBE39Parser extends AbstractDataParser
     @Override
     protected void parseData(String dataLine) throws ParseException, NoSuchElementException
     {
-        SimpleDateFormat dateParser = new SimpleDateFormat("dd MMM yyyy HH:mm:ss");
+        SimpleDateFormat dateParser = new SimpleDateFormat("dd MMM yyyy HH:mm:ss", Locale.US);
         dateParser.setTimeZone(tz);
         DecimalFormat deciFormat = new DecimalFormat("-######.0#");
 
         String[] split = dataLine.split(",");
+        int nSplit = split.length;
         
-        Timestamp dataTimestamp = new Timestamp(dateParser.parse(split[1] + " " + split[2]).getTime());
+        Timestamp dataTimestamp = new Timestamp(dateParser.parse(split[nSplit-2].trim() + " " + split[nSplit-1].trim()).getTime());
         Double waterTemp = getDouble(split[0]);
         
         //
@@ -81,10 +84,27 @@ public class SeabirdSBE39Parser extends AbstractDataParser
         row.setSourceFileID(currentFile.getDataFilePrimaryKey());
         row.setQualityCode("RAW");
 
-        row.setParameterCode("TEMP");
+        if (instrumentDepth < 0)
+        {
+        	row.setParameterCode("AIRT");
+        }
+        else
+        {
+        	row.setParameterCode("TEMP");        	
+        }
         row.setParameterValue(waterTemp);
 
         boolean ok = row.insert();           
+
+        if (nSplit > 3)
+        {
+            Double pres = getDouble(split[1]);
+            row.setParameterCode("PRES");        	
+	        row.setParameterValue(pres);
+	
+	        ok = row.insert();
+        }
+
     }
 
 }

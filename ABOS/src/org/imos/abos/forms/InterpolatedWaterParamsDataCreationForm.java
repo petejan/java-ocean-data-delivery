@@ -312,6 +312,13 @@ public class InterpolatedWaterParamsDataCreationForm extends MemoryWindow implem
                                                     selectedMooring.getMooringID(),
                                                     "PRES"
                                                     );
+        ArrayList<RawInstrumentData> dox2 = RawInstrumentData.selectInstrumentAndMooringAndParameter
+									                (
+									                sourceInstrument.getInstrumentID(),
+									                selectedMooring.getMooringID(),
+									                "DOX2"
+									                );
+        
         long startTs = 0, endTs = 0;
 
         RawInstrumentData srcInst = waterTemp.get(0);
@@ -344,19 +351,37 @@ public class InterpolatedWaterParamsDataCreationForm extends MemoryWindow implem
             xPres[i] = t.getDataTimestamp().getTime();
             yPres[i] = t.getParameterValue();
         }          
+
+        double xDOX2[] = new double[dox2.size()];
+        double yDOX2[] = new double[dox2.size()];
+
+        for(int i = 0; i < dox2.size(); i++)
+        {
+            t = dox2.get(i);
+            xDOX2[i] = t.getDataTimestamp().getTime();
+            yDOX2[i] = t.getParameterValue();
+        }          
+
         startTs = waterCond.get(0).getDataTimestamp().getTime();
         endTs = waterCond.get(waterCond.size()-1).getDataTimestamp().getTime();
 
         UnivariateInterpolator iTemp = new SplineInterpolator();
         UnivariateInterpolator iPres = new SplineInterpolator();
         UnivariateInterpolator iCond = new SplineInterpolator();
+        UnivariateInterpolator iDOX2 = new SplineInterpolator();
+
         UnivariateFunction fTemp = iTemp.interpolate(xTemp, yTemp);
+        UnivariateFunction fCond = iCond.interpolate(xCond, yCond);
         UnivariateFunction fPres = null;
         if (!waterPressure.isEmpty())
         {
                fPres = iPres.interpolate(xPres, yPres);
         }
-        UnivariateFunction fCond = iCond.interpolate(xCond, yCond);
+        UnivariateFunction fDOX2 = null;
+        if (!dox2.isEmpty())
+        {
+        	fDOX2 = iDOX2.interpolate(xDOX2, yDOX2);
+        }
         
         // get the target instrument parameter to select the time stamps on
         String SQL = "SELECT DISTINCT(data_timestamp) FROM raw_instrument_data WHERE mooring_id = "
@@ -405,7 +430,6 @@ public class InterpolatedWaterParamsDataCreationForm extends MemoryWindow implem
                     {
                         dWaterPres = fPres.value((double)ts);
                     }
-
                     rid.setParameterCode("TEMP");
                     rid.setParameterValue(dWaterTemp);
                     boolean ok = rid.insert();                                
@@ -413,6 +437,13 @@ public class InterpolatedWaterParamsDataCreationForm extends MemoryWindow implem
                     rid.setParameterCode("PRES");
                     rid.setParameterValue(dWaterPres);
                     ok = rid.insert();                                
+
+                    if (!dox2.isEmpty())
+                    {
+                        rid.setParameterCode("DOX2");
+                        rid.setParameterValue(fDOX2.value((double)ts));
+                        ok = rid.insert();                                                    	
+                    }
 
                     double calculatedSalinityValue = SalinityCalculator.calculateSalinityForITS90Temperature(dWaterTemp, dWaterCond * 10, dWaterPres );
                     rid.setParameterCode("PSAL");

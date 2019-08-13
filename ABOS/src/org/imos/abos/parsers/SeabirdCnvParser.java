@@ -81,7 +81,7 @@ public class SeabirdCnvParser extends AbstractDataParser
         TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
         try
         {
-            tOffset = new SimpleDateFormat("dd MMM yyyy HH:mm:ss").parse("01 Jan 2000 00:00:00").getTime();
+            tOffset = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss").parse("01/01/2000 00:00:00").getTime();
         }
         catch (ParseException ex)
         {

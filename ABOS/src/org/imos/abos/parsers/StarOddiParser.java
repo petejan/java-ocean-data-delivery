@@ -59,7 +59,8 @@ public class StarOddiParser extends AbstractDataParser
     @Override
     protected void parseData(String dataLine) throws ParseException, NoSuchElementException
     {
-        SimpleDateFormat dateParser = new SimpleDateFormat("dd.MM.yy HH:mm:ss");
+        //SimpleDateFormat dateParser = new SimpleDateFormat("dd.MM.yy HH:mm:ss");
+        SimpleDateFormat dateParser = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
 
         Timestamp dataTimestamp = null;
         Double waterTemp = null;
@@ -67,7 +68,8 @@ public class StarOddiParser extends AbstractDataParser
         Double pitch = null;
         Double roll = null;
 
-        NumberFormat nf = NumberFormat.getInstance(Locale.FRANCE); // Who would do that !
+        //NumberFormat nf = NumberFormat.getInstance(Locale.FRANCE); // Who would do that !
+        NumberFormat nf = NumberFormat.getInstance();
         
         String[] dataValues = dataLine.split("\t");
         try

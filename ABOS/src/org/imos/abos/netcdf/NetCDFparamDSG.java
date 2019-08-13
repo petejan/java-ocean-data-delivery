@@ -95,6 +95,8 @@ public class NetCDFparamDSG
 	Variable vTime = null;
 	Variable vLat = null;
 	Variable vLon = null;
+	Variable vTimeDeploy = null;
+	Variable vTimeRecovery = null;
 	ArrayList<Dimension> obsDims = null;
 	ArrayList<Dimension> stationDims = null;
 	Variable vStationIndex = null;
@@ -153,11 +155,12 @@ public class NetCDFparamDSG
 	        		String stationId = String.format("%s-%d", mooring, inst);
 	
 		    		StationInstance id = new StationInstance(stnN, mooring.trim(), depth, inst, lat, lon, make.trim(), model.trim(), serial.trim());
-	            log.debug(" instrument " + id);  
-	            id.setTimestampStart(ts_in);
-	            id.setTimestampEnd(ts_out);
-
-	            stationMap.put(stationId, id);
+		    		
+		            log.debug(" instrument " + id);  
+		            id.setTimestampStart(ts_in);
+		            id.setTimestampEnd(ts_out);
+	
+		            stationMap.put(stationId, id);
 	    		
 		    		stnN ++;
 	        }
@@ -318,6 +321,25 @@ public class NetCDFparamDSG
     			vInstName.addAttribute(new Attribute("long_name","deployment : instrument"));
     			
     	        ArrayChar.D2 dInstName = new ArrayChar.D2(stnN, 80); 
+    	        
+    	        vTimeDeploy = ndf.dataFile.addVariable(null, "TIME_DEPLOY", DataType.DOUBLE, stationDims);
+    			vTimeDeploy.addAttribute(new Attribute("name", "time_deployment"));
+    			vTimeDeploy.addAttribute(new Attribute("long_name", "time of instrument deployment"));
+   				vTimeDeploy.addAttribute(new Attribute("units", "days since 1950-01-01T00:00:00 UTC"));
+    			vTimeDeploy.addAttribute(new Attribute("valid_min", 10957.0));
+    			vTimeDeploy.addAttribute(new Attribute("valid_max", 54787.0));
+    			vTimeDeploy.addAttribute(new Attribute("calendar", "gregorian"));
+
+    			vTimeRecovery = ndf.dataFile.addVariable(null, "TIME_RECOVERY", DataType.DOUBLE, stationDims);
+    			vTimeRecovery.addAttribute(new Attribute("name", "time_recovery"));
+    			vTimeRecovery.addAttribute(new Attribute("long_name", "time of instrument recovery"));
+    			vTimeRecovery.addAttribute(new Attribute("units", "days since 1950-01-01T00:00:00 UTC"));
+    			vTimeRecovery.addAttribute(new Attribute("valid_min", 10957.0));
+    			vTimeRecovery.addAttribute(new Attribute("valid_max", 54787.0));
+    			vTimeRecovery.addAttribute(new Attribute("calendar", "gregorian"));
+
+    	        ArrayDouble.D1 dDeploymentTime = new ArrayDouble.D1(stnN); 
+    	        ArrayDouble.D1 dRecoveryTime = new ArrayDouble.D1(stnN); 
 
     			vDepth = ndf.dataFile.addVariable(null, "NOMINAL_DEPTH", DataType.DOUBLE, stationDims);
     			ArrayDouble.D1 dDepth = new ArrayDouble.D1(stnN); 
@@ -349,6 +371,15 @@ public class NetCDFparamDSG
     	        			mooring_list += ",'" + st.mooring + "'";
     	        		
     	        		dInstName.setString(st.id, st.mooring + ":" + st.make + ":" + st.model + ":" + st.serial);
+    	        		
+    					long offsetTime = (st.start.getTime() - anchorTime) / 1000;
+    					double elapsedHours = ((double) offsetTime) / (3600 * 24);
+    					
+    					dDeploymentTime.setDouble(st.id, elapsedHours);
+
+    					offsetTime = (st.end.getTime() - anchorTime) / 1000;
+    					elapsedHours = ((double) offsetTime) / (3600 * 24);
+    					dRecoveryTime.setDouble(st.id, elapsedHours);
     	        }
 
     	        // create a variable for each parameter
@@ -486,7 +517,10 @@ public class NetCDFparamDSG
 			ndf.dataFile.write(vDepth, dDepth);
 			ndf.dataFile.write(vInst, dInst);
 			ndf.dataFile.write(vInstName, dInstName);
-	        
+
+			ndf.dataFile.write(vTimeDeploy, dDeploymentTime);
+			ndf.dataFile.write(vTimeRecovery, dRecoveryTime);
+
 	        select = "SELECT data_timestamp, instrument_id, depth, mooring_id, parameter_code, parameter_value, quality_code"
 	        			+ " FROM raw_instrument_data WHERE mooring_id in (" + mooring_list + ") AND parameter_code = '"+parameter+"'" 
 	        			+ " ORDER BY data_timestamp, depth, mooring_id";
