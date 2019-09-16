@@ -21,6 +21,7 @@ import java.sql.Timestamp;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.Comparator;
@@ -604,6 +605,12 @@ public class NetCDFfile
 
 	public class InstanceCoord
 	{
+		@Override
+		public String toString()
+		{
+			return "InstanceCoord [params=" + params + ", depths=" + Arrays.toString(depths) + ", instanceDim=" + instanceDim + ", varName=" + varName + "]";
+		}
+
 		public String params;
 		public String dataCode;
 		public Double[] depths;
@@ -1005,7 +1012,7 @@ public class NetCDFfile
 		{
 			String pt = params.trim();
 
-			if (varName.length() == 0)
+			//if (varName.length() == 0)
 				varName = pt;
 
 			if ((varName.compareTo("DEPTH") == 0) || (varName.compareTo("HEIGHT") == 0)) // because they are dimension names

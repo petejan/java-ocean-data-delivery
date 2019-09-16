@@ -386,7 +386,10 @@ public class InterpolatedProcessedDataCreationForm extends MemoryWindow implemen
                 pid.setDataTimestamp(new Timestamp((long)t * outputPeriod));
                 pid.setParameterValue(valueStats.getMean() * p.coeffs[1] + p.coeffs[0]);
                 //logger.debug(pid.getDataTimestamp() + " ," + pid.getParameterValue() + ": " + valueStats.getN() + " " + valueStats.getMean());
+                //logger.debug("ts " + ts + " cell start " + cellStart + " cell end " + cellEnd);
 
+                //logger.debug("print output time " + new Timestamp((long)t * outputPeriod));
+                
                 valueStats.clear();
 
                 boolean ok = pid.insert();
@@ -394,7 +397,7 @@ public class InterpolatedProcessedDataCreationForm extends MemoryWindow implemen
                 t++;
 
                 cellStart.setTime(t * outputPeriod - outputPeriod/2);
-                cellEnd.setTime((t + 1) * outputPeriod + outputPeriod/2);
+                cellEnd.setTime(t * outputPeriod + outputPeriod/2);
             }
             if (ts.after(cellStart))
             {
@@ -617,7 +620,7 @@ public class InterpolatedProcessedDataCreationForm extends MemoryWindow implemen
                     results.setFetchSize(50);
 
                     count = 0;
-                    if ((p.sampleInterval > (10 * 60)) || (p.count < 8000)) // should use (p.end - p.start) in hours maybe
+                    if ((p.sampleInterval > (10 * 60)) || (p.count < 1000)) // should use (p.end - p.start) in hours maybe
                     {
                         count = interpolate(p, results);
                         logger.info("interpolate count " + count);

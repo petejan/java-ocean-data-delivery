@@ -420,8 +420,8 @@ public class NetCDFcreateForm extends MemoryWindow
 				+ "      (SELECT CAST(parameter_code AS varchar(20)), imos_data_code , d.mooring_id, d.instrument_id, min(s.instrument_id) AS source, CAST(avg(depth) AS numeric(8,3)) AS depth FROM  " + table + " AS d JOIN instrument_data_files AS s ON (source_file_id = datafile_pk) "
 				+ "                        JOIN instrument ON (d.instrument_id = instrument.instrument_id) "
 				+ "                        JOIN parameters ON (d.parameter_code = parameters.code)"
-				//                    +         " WHERE d.mooring_id = " + StringUtilities.quoteString(selectedMooring.getMooringID()) + " AND quality_code not in ('INTERPOLATED', 'BAD') "
-				+         " WHERE d.mooring_id = " + StringUtilities.quoteString(selectedMooring.getMooringID()) + " AND quality_code not in ('BAD') "
+				+         " WHERE d.mooring_id = " + StringUtilities.quoteString(selectedMooring.getMooringID()) + " AND quality_code not in ('INTERPOLATED', 'BAD') "
+				//+         " WHERE d.mooring_id = " + StringUtilities.quoteString(selectedMooring.getMooringID()) + " AND quality_code not in ('BAD') "
 				+ selectInstrument + " " + selectLimited
 				+ " AND data_timestamp BETWEEN " + StringUtilities.quoteString(Common.getRawSQLTimestamp(dataStartTime)) + " AND " + StringUtilities.quoteString(Common.getRawSQLTimestamp(dataEndTime))
 				+ "          GROUP BY parameter_code, imos_data_code, d.mooring_id, d.instrument_id, make, model, serial_number ORDER BY 1, 2, depth, make, model, serial_number "
@@ -619,7 +619,7 @@ public class NetCDFcreateForm extends MemoryWindow
 		for (InstanceCoord ic : instanceCoords)
 		{
 			//InstanceCoord ic = dc.get(0);
-			logger.debug("writeInstanceCoordinateVariableAttributes:: depthVariable : " + ic.depthVariable);
+			logger.debug("writeInstanceCoordinateVariableAttributes:: depthVariable : " + ic.depthVariable.getShortName());
 			
 			ic.depthVariable.addAttribute(new Attribute("units", "meters"));
 			String comment = null;
