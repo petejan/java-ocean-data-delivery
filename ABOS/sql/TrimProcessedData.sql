@@ -1,41 +1,43 @@
-﻿---UPDATE PROCESSED_INSTRUMENT_DATA SET QUALITY_CODE = 'BAD' WHERE QUALITY_CODE != 'BAD' AND MOORING_ID = 'PULSE-6-2009' AND (DATA_TIMESTAMP < '2009-09-30' OR DATA_TIMESTAMP > '2010-03-18');
----UPDATE PROCESSED_INSTRUMENT_DATA SET QUALITY_CODE = 'BAD' WHERE QUALITY_CODE != 'BAD' AND MOORING_ID = 'PULSE-6-2009' AND (DATA_TIMESTAMP = '2010-03-08 03:00');
----UPDATE PROCESSED_INSTRUMENT_DATA SET QUALITY_CODE = 'BAD' WHERE QUALITY_CODE != 'BAD' AND PARAMETER_CODE = 'DOX2' AND PARAMETER_VALUE < 240;
----UPDATE PROCESSED_INSTRUMENT_DATA SET QUALITY_CODE = 'BAD' WHERE QUALITY_CODE != 'BAD' AND MOORING_ID = 'PULSE-7-2010' AND (DATA_TIMESTAMP < '2010-09-12' OR DATA_TIMESTAMP > '2011-04-17');
+﻿---UPDATE processed_instrument_data SET quality_code = 'BAD' WHERE quality_code != 'BAD' AND mooring_id = 'Pulse-6-2009' AND (data_timestamp < '2009-09-30' OR data_timestamp > '2010-03-18');
+---UPDATE processed_instrument_data SET quality_code = 'BAD' WHERE quality_code != 'BAD' AND mooring_id = 'Pulse-6-2009' AND (data_timestamp = '2010-03-08 03:00');
+---UPDATE processed_instrument_data SET quality_code = 'BAD' WHERE quality_code != 'BAD' AND parameter_code = 'DOX2' AND parameter_value < 240;
+---UPDATE processed_instrument_data SET quality_code = 'BAD' WHERE quality_code != 'BAD' AND mooring_id = 'Pulse-7-2010' AND (data_timestamp < '2010-09-12' OR data_timestamp > '2011-04-17');
 
----UPDATE PROCESSED_INSTRUMENT_DATA SET QUALITY_CODE = 'BAD' WHERE QUALITY_CODE != 'BAD' AND MOORING_ID = 'PULSE-8-2011' AND (DATA_TIMESTAMP < '2011-08-04' OR DATA_TIMESTAMP >= '2012-07-19');
----UPDATE PROCESSED_INSTRUMENT_DATA SET QUALITY_CODE = 'BAD' WHERE QUALITY_CODE != 'BAD' AND MOORING_ID = 'PULSE-8-2011' AND (DATA_TIMESTAMP < '2011-08-04' OR DATA_TIMESTAMP >= '2012-01-30') AND SOURCE_FILE = 100219;
+---UPDATE processed_instrument_data SET quality_code = 'BAD' WHERE quality_code != 'BAD' AND mooring_id = 'Pulse-8-2011' AND (data_timestamp < '2011-08-04' OR data_timestamp >= '2012-07-19');
+---UPDATE processed_instrument_data SET quality_code = 'BAD' WHERE quality_code != 'BAD' AND mooring_id = 'Pulse-8-2011' AND (data_timestamp < '2011-08-04' OR data_timestamp >= '2012-01-30') AND source_file = 100219;
 
----UPDATE PROCESSED_INSTRUMENT_DATA SET QUALITY_CODE = 'BAD' WHERE QUALITY_CODE != 'BAD' AND MOORING_ID = 'PULSE-9-2012' AND (DATA_TIMESTAMP < '2012-07-18' OR DATA_TIMESTAMP > '2012-12-29');
----UPDATE PROCESSED_INSTRUMENT_DATA SET QUALITY_CODE = 'BAD' WHERE QUALITY_CODE != 'BAD' AND MOORING_ID = 'SOFS-1-2010' AND (DATA_TIMESTAMP < '2010-03-18' OR DATA_TIMESTAMP > '2011-04-20');
----UPDATE PROCESSED_INSTRUMENT_DATA SET QUALITY_CODE = 'BAD' WHERE QUALITY_CODE != 'BAD' AND MOORING_ID = 'SOFS-2-2011' AND (DATA_TIMESTAMP < '2011-11-25' OR DATA_TIMESTAMP > '2012-07-18');
----UPDATE PROCESSED_INSTRUMENT_DATA SET QUALITY_CODE = 'BAD' WHERE QUALITY_CODE != 'BAD' AND MOORING_ID = 'SOFS-3-2012' AND (DATA_TIMESTAMP < '2012-07-15' OR DATA_TIMESTAMP > '2013-01-01');
+---UPDATE processed_instrument_data SET quality_code = 'BAD' WHERE quality_code != 'BAD' AND mooring_id = 'Pulse-9-2012' AND (data_timestamp < '2012-07-18' OR data_timestamp > '2012-12-29');
+---UPDATE processed_instrument_data SET quality_code = 'BAD' WHERE quality_code != 'BAD' AND mooring_id = 'SOFS-1-2010' AND (data_timestamp < '2010-03-18' OR data_timestamp > '2011-04-20');
+---UPDATE processed_instrument_data SET quality_code = 'BAD' WHERE quality_code != 'BAD' AND mooring_id = 'SOFS-2-2011' AND (data_timestamp < '2011-11-25' OR data_timestamp > '2012-07-18');
+---UPDATE processed_instrument_data SET quality_code = 'BAD' WHERE quality_code != 'BAD' AND mooring_id = 'SOFS-3-2012' AND (data_timestamp < '2012-07-15' OR data_timestamp > '2013-01-01');
 
--- PULSE-6 OPTODE CONFIGURATION NOT KNOWN
-DELETE FROM RAW_INSTRUMENT_DATA WHERE MOORING_ID = 'PULSE-6-2009' AND PARAMETER_CODE = 'OPTODE_BPHASE';
-UPDATE RAW_INSTRUMENT_DATA SET PARAMETER_CODE = 'OPTODE_VOLT' WHERE MOORING_ID = 'PULSE-6-2009' AND PARAMETER_CODE = 'OPTODE_BPHASE_VOLT';
--- Pulse-6 dox2 out of range
-UPDATE RAW_INSTRUMENT_DATA SET QUALITY_CODE = 'PBAD' WHERE QUALITY_CODE != 'BAD' AND MOORING_ID = 'PULSE-6-2009'
-	AND PARAMETER_CODE = 'DOX2' AND PARAMETER_VALUE < 240 AND INSTRUMENT_ID = 621;
-UPDATE RAW_INSTRUMENT_DATA SET QUALITY_CODE = 'PBAD' WHERE QUALITY_CODE != 'BAD' AND MOORING_ID = 'PULSE-6-2009'
-	AND PARAMETER_CODE = 'DOX2' AND DATA_TIMESTAMP BETWEEN '2010-02-16' AND '2010-02-18' AND INSTRUMENT_ID = 621;
--- Pulse-6 PSAL spikes
-UPDATE RAW_INSTRUMENT_DATA SET QUALITY_CODE = 'PBAD' WHERE QUALITY_CODE != 'BAD' AND MOORING_ID = 'PULSE-6-2009'
-	AND data_timestamp in (SELECT data_timestamp from raw_instrument_data WHERE mooring_id = 'Pulse-6-2009'
-		AND depth = 37.5 AND parameter_code = 'PSAL' AND parameter_value < 34 AND parameter_value > 2)
-	AND depth = 37.5;
-
-
-UPDATE PROCESSED_INSTRUMENT_DATA SET QUALITY_CODE = 'BAD' WHERE QUALITY_CODE != 'BAD' AND PARAMETER_CODE = 'DOX2' AND PARAMETER_VALUE < 240 and mooring_id = 'Pulse-7-2010';
+-- Pulse-6 Optode configuration not known
+delete from raw_instrument_data where mooring_id = 'Pulse-6-2009' and parameter_code = 'OPTODE_BPHASE';
+update raw_instrument_data set parameter_code = 'OPTODE_VOLT' where mooring_id = 'Pulse-6-2009' and parameter_code = 'OPTODE_BPHASE_VOLT';
+delete from raw_instrument_data where mooring_id = 'Pulse-6-2009' and parameter_code = 'XPOS' and parameter_value < 100;
+delete from raw_instrument_data where mooring_id = 'Pulse-6-2009' and parameter_code = 'YPOS' and parameter_value < -50;
+update raw_instrument_data set quality_code = 'BAD'
+	where data_timestamp in
+	(
+		select data_timestamp from raw_instrument_data where mooring_id = 'Pulse-6-2009' and parameter_code = 'PSAL' and (parameter_value < 34 and parameter_value > 2) order by data_timestamp
+	) and parameter_code in ('PSAL', 'DENSITY', 'OXSOL', 'DOX2', 'CNDC');
 
 UPDATE processed_instrument_data SET quality_code = 'BAD' WHERE quality_code != 'BAD' AND mooring_id = 'Pulse-8-2011' AND source_file_id = 200087 AND (data_timestamp > '2012-01-30 00:00');
 UPDATE processed_instrument_data SET quality_code = 'BAD' WHERE quality_code != 'BAD' AND mooring_id = 'Pulse-8-2011' AND instrument_id = 5;
 
 -- Pulse-9 SBE16 file is bad after 2012-12-29
 UPDATE processed_instrument_data SET quality_code = 'BAD' WHERE quality_code != 'BAD' AND mooring_id = 'Pulse-9-2012' AND source_file_id = 200125 AND (data_timestamp > '2012-12-29 11:30');
+update raw_instrument_data set quality_code = 'BAD' where mooring_id = 'Pulse-9-2012' and source_file_id = '200125' and data_timestamp > '2012-12-29 11:30'
 -- Pulse-9 ISUS is bad after 2012-09-05
 UPDATE processed_instrument_data SET quality_code = 'BAD' WHERE quality_code != 'BAD' AND mooring_id = 'Pulse-9-2012' AND instrument_id = 746 AND (data_timestamp > '2012-09-05 05:00');
 ---UPDATE processed_instrument_data SET quality_code = 'BAD' WHERE quality_code != 'BAD' AND mooring_id = 'Pulse-9-2012' AND (data_timestamp < '2012-07-17 08:00' AND data_timestamp > '2013-05-05 01:00');
+
+-- Pulse-9 PAR data
+update raw_instrument_data set quality_code = 'RAW' where mooring_id = 'Pulse-8-2011' and parameter_code = 'PAR' and data_timestamp > '2012-03-12' and instrument_id = 660;
+update raw_instrument_data set quality_code = 'RAW' where mooring_id = 'Pulse-9-2012' and parameter_code = 'PAR' and data_timestamp > '2013-01-01' and instrument_id = 619;
+
+-- Pulse-9 SBE63-ODO failed
+update processed_instrument_data set quality_code = 'BAD' where mooring_id = 'Pulse-9-2012' and source_file_id = 200127 and parameter_code='DOX2' and data_timestamp > '2012-07-21 08:00'
 
 update raw_instrument_data SET depth=28.5 where mooring_id = 'Pulse-9-2012' and instrument_id = 746;
 update raw_instrument_data SET depth=28.5 where mooring_id = 'Pulse-9-2012' and instrument_id = 748;
@@ -80,6 +82,7 @@ update processed_instrument_data set quality_code = 'BAD' where
 UPDATE processed_instrument_data SET quality_code = 'BAD' WHERE quality_code != 'BAD' AND mooring_id = 'Pulse-10-2013' AND parameter_code = 'PRES' AND source_file_id = 200470 AND (data_timestamp > '2013-10-03 13:55:00');
 -- Pulse-10-2013 oxygen @100m, 200m failed
 UPDATE processed_instrument_data SET quality_code = 'BAD' WHERE quality_code != 'BAD' AND mooring_id = 'Pulse-10-2013' AND parameter_code = 'DOX2' AND parameter_value < 230 ;
+UPDATE raw_instrument_data SET quality_code = 'BAD' WHERE quality_code != 'BAD' AND mooring_id = 'Pulse-10-2013' AND parameter_code = 'DOX2' AND instrument_id in (2402, 2217) and (data_timestamp > '2013-06-14') ;
 
 delete from raw_instrument_data  where mooring_id = 'Pulse-10-2013' and data_timestamp < '2013-04-01'
 
@@ -167,3 +170,25 @@ delete from raw_instrument_data where mooring_id = 'SOFS-6-2017' and source_file
 -- instruments set to wrong year, add 366 days (it was a leap year)
 update raw_instrument_data_sofs6 set data_timestamp = data_timestamp + interval '31622400 seconds' where mooring_id = 'SOFS-6-2017' and source_file_id = 2018058;
 update raw_instrument_data_sofs6 set data_timestamp = data_timestamp + interval '31622400 seconds' where mooring_id = 'SOFS-6-2017' and source_file_id = 2018059;
+
+-- SOFS-7.5-2018
+
+-- Starmon mini at 70, 75, 100m noisy
+update raw_instrument_data set quality_code = 'BAD' where instrument_id in (1527, 1528, 1535) and mooring_id = 'SOFS-7.5-2018';
+update raw_instrument_data set quality_code = 'BAD' where instrument_id in (3200) and parameter_code in ('CNDC', 'PSAL', 'DOX2', 'OXSOL') and mooring_id = 'SOFS-7.5-2018' AND data_timestamp > '2019-02-14';
+update raw_instrument_data set instrument_id = 3048 where mooring_id = 'SOFS-7.5-2018' and instrument_id = 1380 and parameter_code = 'XPOS'
+update raw_instrument_data set instrument_id = 3048 where mooring_id = 'SOFS-7.5-2018' and instrument_id = 1380 and parameter_code = 'YPOS'
+update raw_instrument_data set instrument_id = 855 where mooring_id = 'SOFS-7.5-2018' and instrument_id = 1380 and parameter_code = 'OPTODE_BPHASE'
+update raw_instrument_data set instrument_id = 855 where mooring_id = 'SOFS-7.5-2018' and instrument_id = 1380 and parameter_code = 'OPTODE_TEMP'
+update raw_instrument_data set instrument_id = 2197, depth=-2.64 where mooring_id = 'SOFS-7.5-2018' and instrument_id = 1380 and parameter_code = 'PAR_VOLT'
+update raw_instrument_data set depth=1.50 where mooring_id = 'SOFS-7.5-2018' and instrument_id in (661, 855)
+update raw_instrument_data set depth=1.51 where mooring_id = 'SOFS-7.5-2018' and instrument_id = 1626
+
+-- SOFS-7.5 Starmon mini data is set to local not UTC, remove 10 hours
+update raw_instrument_data set data_timestamp = data_timestamp + interval '8000 hours' WHERE mooring_id = 'SOFS-7.5-2018' and instrument_id in ( select instrument_id from instrument join mooring_attached_instruments USING (instrument_id) where model like 'Star%' and mooring_id = 'SOFS-7.5-2018')
+update raw_instrument_data set data_timestamp = data_timestamp - interval '8010 hours' WHERE mooring_id = 'SOFS-7.5-2018' and instrument_id in ( select instrument_id from instrument join mooring_attached_instruments USING (instrument_id) where model like 'Star%' and mooring_id = 'SOFS-7.5-2018')
+
+update raw_instrument_data set quality_code='BAD' where mooring_id='SOFS-7.5-2018' and instrument_id = 1382 AND parameter_code in ('AIRT', 'RELH') and data_timestamp > '2019-02-12 01:30';
+update raw_instrument_data set quality_code='BAD' where mooring_id='SOFS-7.5-2018' and instrument_id = 1382 AND parameter_code in ('LW', 'VPILE', 'TDOME', 'TBODY') and data_timestamp > '2018-09-22 14:00';
+update raw_instrument_data set quality_code='BAD' where mooring_id='SOFS-7.5-2018' and instrument_id = 1564 and data_timestamp > '2019-01-10';
+

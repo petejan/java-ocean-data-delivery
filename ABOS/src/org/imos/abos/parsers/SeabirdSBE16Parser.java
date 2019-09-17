@@ -13,6 +13,7 @@ import java.sql.Timestamp;
 import java.text.DecimalFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.Locale;
 import java.util.NoSuchElementException;
 import java.util.StringTokenizer;
 import org.imos.abos.dbms.RawInstrumentData;
@@ -54,7 +55,7 @@ public class SeabirdSBE16Parser extends AbstractDataParser
     @Override
     protected void parseData(String dataLine) throws ParseException, NoSuchElementException
     {
-        SimpleDateFormat dateParser = new SimpleDateFormat("dd MMM yyyy HH:mm:ss");
+        SimpleDateFormat dateParser = new SimpleDateFormat("d MMM yyyy HH:mm:ss", new Locale("en-US"));
         DecimalFormat deciFormat = new DecimalFormat("-######.0#");
 
         String temperatureString;
@@ -110,9 +111,9 @@ public class SeabirdSBE16Parser extends AbstractDataParser
                 GTDPressureString = st.nextToken();
                 GTDTemperatureString = st.nextToken();
             }
-            //if (tokenCount > 12)
+            if (tokenCount > 12)
             {
-                //st.nextToken();
+                st.nextToken();
             }
 
             dateString = st.nextToken();
@@ -141,8 +142,8 @@ public class SeabirdSBE16Parser extends AbstractDataParser
             volt6 = getDouble(volt6String);
             if (gtd)
             {
-                GTDPressureVal = getDouble(GTDPressureString);
-                GTDTemperatureVal = getDouble(GTDTemperatureString)/100000.0;
+                GTDPressureVal = getDouble(GTDPressureString)/100000.0;
+                GTDTemperatureVal = getDouble(GTDTemperatureString);
             }
             //
             // ok, we have parsed out the values we need, can now construct the raw data class

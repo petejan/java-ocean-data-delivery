@@ -499,25 +499,34 @@ public class WETLabsFLNTUSCalculationForm extends MemoryWindow implements DataPr
             row.setLatitude(selectedMooring.getLatitudeIn());
             row.setLongitude(selectedMooring.getLongitudeIn());
             row.setMooringID(selectedMooring.getMooringID());
-            row.setParameterCode("TURB");
-            row.setParameterValue(flntus.calculatedTurbidityValue);
             row.setSourceFileID(flntus.sourceFileID);
             row.setQualityCode("DERIVED");
 
-            boolean ok = row.insert();
+            boolean ok = false;
+            
+            if (flntus.calculatedTurbidityValue != null)
+            {
+	            row.setParameterCode("TURB");
+	            row.setParameterValue(flntus.calculatedTurbidityValue);
+	
+	            ok = row.insert();
+            }
 
-            row.setParameterCode("CPHL");
-            row.setParameterValue(flntus.calculatedChlorophyllValue);
-            ok = row.insert();
+            if (flntus.calculatedChlorophyllValue != null)
+            {
+	            row.setParameterCode("CPHL");
+	            row.setParameterValue(flntus.calculatedChlorophyllValue);
+	            ok = row.insert();
+            }
             
             // put in the counts if they were not there
-            if (!flntus.haveCcount)
+            if (!flntus.haveCcount & (flntus.calculatedChlorophyllValue != null))
             {
                 row.setParameterCode("ECO_FLNTUS_CHL");
                 row.setParameterValue(flntus.chlorophyll);                
                 ok = row.insert();
             }
-            if (!flntus.haveTcount)
+            if (!flntus.haveTcount & (flntus.calculatedTurbidityValue != null))
             {
                 row.setParameterCode("ECO_FLNTUS_TURB");
                 row.setParameterValue(flntus.turbidity);                
