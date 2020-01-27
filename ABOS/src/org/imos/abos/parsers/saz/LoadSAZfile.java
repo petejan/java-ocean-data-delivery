@@ -208,7 +208,7 @@ public class LoadSAZfile
 					pc.setString(2,  "ABOS-SOTS"); // facility
 					pc.setString(3,  "*"); // mooring
 					pc.setString(4,  sf.deployment); // deployment
-					pc.setNull(5,  java.sql.Types.INTEGER); // instrument_id
+					pc.setInt(5,  inst_id); // instrument_id
 					pc.setString(6,  dc.parameter_code.trim()); // parameter
 					pc.setString(7,  md.name.trim()); // attribute_name
 					String value = md.c.toString();
