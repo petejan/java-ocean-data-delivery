@@ -388,8 +388,10 @@ public class WriteMRU_SOFS
             dimSpec.add(specDim);
 
             Variable vSpec = ndf.dataFile.addVariable(null, "wave_spectra", DataType.FLOAT, dimSpec);
-            vSpec.addAttribute(new Attribute("long_name", "wave_spectral_density"));
+            vSpec.addAttribute(new Attribute("standard_name", "sea_surface_wave_variance_spectral_density"));
+            vSpec.addAttribute(new Attribute("long_name", "sea_surface_wave_variance_spectral_density"));
             vSpec.addAttribute(new Attribute("units", "m^2/Hz"));
+            vSpec.addAttribute(new Attribute("comment", "displacement (heave) spectra"));
             vSpec.addAttribute(new Attribute("_FillValue", Float.NaN));
             vSpec.addAttribute(new Attribute("coordinates", "TIME NOMINAL_DEPTH LATITUDE LONGITUDE"));
 
@@ -672,16 +674,34 @@ public class WriteMRU_SOFS
                 pf.close();
                 
                 double waveHeight = Double.NaN;
+                
+//        		double df = 2.5/256;
+//        		add("df", "#0.###E0", df);
+//        		add("log[0]", (b[0] / scale) + offset);
+//        		for (int j = 1; j < 256; j++)
+//        		{
+//        			d = (b[j] / scale) + offset;
+//        			double f = j * 2.5 / 256.0;
+//        			double wds = Math.pow(10, d) / Math.pow(2 * Math.PI * f , 4) / df;
+//        			add("wds["+j+"]", "#0.###E0", wds);
+//        		}
+                
+                
                 //if (sample >= NSAMPLE)
                 {
                     waveSpectra ws = new waveSpectra();
                     double spec[] = ws.computeSpec(zAccel, true);
 
                     Index2D idxSpec = new Index2D(specDims);
-                    for (i = 0; i < spec.length; i++)
+                    idxSpec.set(fileNo, 0);
+                    dataSpec.setFloat(idxSpec, Float.NaN);
+                    
+                    double df = WaveCalculator.DF;
+                    for (i = 1; i < spec.length; i++)
                     {
                         idxSpec.set(fileNo, i);
-                        dataSpec.setFloat(idxSpec, (float) spec[i]);
+                        double freq = i * df;
+                        dataSpec.setFloat(idxSpec, (float) (spec[i]/Math.pow(2 * Math.PI * freq , 4) / df));
                     }
 
                     WaveCalculator wd = new WaveCalculator();
@@ -692,7 +712,7 @@ public class WriteMRU_SOFS
                         logSpec[i] = Math.log10(spec[i]);
                     }
 
-                    waveHeight = wd.calculate(WaveCalculator.DF, logSpec);
+                    waveHeight = wd.calculate(df, logSpec);
                     dataSWH.setFloat(fileNo, (float) waveHeight);
 
                     if (ts.after(dataStartTime) & ts.before(dataEndTime))

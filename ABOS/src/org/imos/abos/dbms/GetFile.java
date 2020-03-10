@@ -38,7 +38,7 @@ public class GetFile
 		Connection conn = Common.getConnection();
 
 
-		String SQL = "SELECT file_name, file_data, mooring_id FROM " + args[0] + " WHERE datafile_pk = " + args[1];
+		String SQL = "SELECT file_name, file_data FROM " + args[0] + " WHERE datafile_pk = " + args[1];
 
 		Statement st;
 		try
@@ -50,17 +50,18 @@ public class GetFile
 			{
 				String name = rs.getString(1).trim();
 				byte[] imgBytes = rs.getBytes(2);
-				String mooring = rs.getString(3).trim();
+				//String mooring = rs.getString(3).trim();
 
-				System.out.println("mooring " + mooring);
+				//System.out.println("mooring " + mooring);
 
-				File dir = new File(mooring);
+				//File dir = new File(mooring);
 
-				dir.mkdir();
+				//dir.mkdir();
 
 				System.out.println("File name " + name);
 
-				File f = new File(mooring + "/" + name);
+				//File f = new File(mooring + "/" + name);
+				File f = new File(name);
 
 				FileOutputStream output = new FileOutputStream(f);
 
