@@ -905,7 +905,7 @@ public class NetCDFfile
 					+ " WHERE (deployment = " + StringUtilities.quoteString(getDeployment()) + " OR deployment = '*')"
 					+ " AND (instrument_id IS NOT NULL AND instrument_id IN ( " + instruments + ")) "
 					+ " AND NOT (attribute_name = 'keywords')" // don't add keywords, as these are added to the global list
-					+ " AND (parameter = " + StringUtilities.quoteString(dc.params.trim()) + " OR parameter = '*') ORDER BY attribute_name";
+					+ " AND (parameter = " + StringUtilities.quoteString(dc.params.trim()) + ") ORDER BY attribute_name";
 
 			query.setConnection(Common.getConnection());
 			query.executeQuery(SQL);
@@ -929,7 +929,7 @@ public class NetCDFfile
 					SQL = "SELECT attribute_name, attribute_type, attribute_value FROM netcdf_attributes "
 							+ " WHERE (deployment = " + StringUtilities.quoteString(getDeployment()) + " OR deployment = '*')"
 							+ " AND instrument_id = " + dc.instruments[i]
-									+ " AND (parameter = " + StringUtilities.quoteString(dc.params.trim()) + " OR parameter = '*') ORDER BY attribute_name";
+									+ " AND (parameter = " + StringUtilities.quoteString(dc.params.trim()) + ") ORDER BY attribute_name";
 
 					query.setConnection(Common.getConnection());
 					query.executeQuery(SQL);
@@ -986,7 +986,8 @@ public class NetCDFfile
 					+ " AND (mooring = " + StringUtilities.quoteString(mooringString) + " OR mooring = '*')"
 					+ " AND (deployment = " + StringUtilities.quoteString(deployment) + " OR deployment = '*')"
 					+ " AND instrument_id IN ( " + instruments + ") "
-					+ " AND attribute_name = 'keywords'"
+					+ " AND ((parameter = '*')"					
+					+ " OR attribute_name = 'keywords')"
 					+ " ORDER BY attribute_name";
 
 			query.executeQuery(SQL);

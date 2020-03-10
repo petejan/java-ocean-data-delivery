@@ -104,6 +104,8 @@ public final class ReadDiSAZfile
 	{
 		int row;
 		String name;
+		String global = null;
+		
 		public MetadataName(int i, String n)
 		{
 			row = i;
@@ -191,7 +193,7 @@ public final class ReadDiSAZfile
 						log.debug("parse::deployment col " + c);
 						deploymentCol = c;						
 					}
-					else if (cell0.getStringCellValue().matches("depth_nominal"))
+					else if (cell0.getStringCellValue().matches("depthnominal"))
 					{
 						log.debug("parse::depth col " + c);
 						depthCol = c;						
@@ -201,7 +203,7 @@ public final class ReadDiSAZfile
 						log.debug("parse::start time col " + c);
 						sampleTimeCol = c;						
 					}
-					else if (cell0.getStringCellValue().matches("depth_actual"))
+					else if (cell0.getStringCellValue().matches("pressurerel"))
 					{
 						log.debug("parse::depth actual col " + c);
 						depthActualCol = c;						
@@ -226,8 +228,13 @@ public final class ReadDiSAZfile
 									int i = md.indexOf(' ');
 									if (i > 0)
 										md = md.substring(0, md.indexOf(' '));
-									log.debug("parse::metadata row " + r + " " + md);
 									MetadataName mdN = new MetadataName(r, md);
+									Row rowglob = sheet.getRow(r);
+									Cell cellglob = row.getCell(c+1);
+									if (cellglob != null)
+										mdN.global = cellglob.toString();
+									log.debug("parse::metadata row " + r + " " + md + " global " + mdN.global);
+
 									metadataList.add(mdN);
 								}
 							}
@@ -239,7 +246,7 @@ public final class ReadDiSAZfile
 					else if (cell0.getStringCellValue().matches("Remote Access Sampler"))
 					{
 					}
-					else if (cell0.getStringCellValue().endsWith("_qc"))
+					else if (cell0.getStringCellValue().endsWith("qc"))
 					{
 					}
 					else
@@ -267,7 +274,7 @@ public final class ReadDiSAZfile
 							
 							// check if next column end in QC, use it as the QC column
 							Cell cell_qc = row.getCell(c + 1);
-							if (cell_qc.toString().endsWith("_qc"))
+							if (cell_qc.toString().endsWith("qc"))
 								dc.qcCol = c + 1;
 							
 							// metadata
@@ -276,8 +283,7 @@ public final class ReadDiSAZfile
 								Cell mdCell = sheet.getRow(mdn.row).getCell(c);
 								log.debug("meta data row " + mdn.row + " name " + mdn.name + " cell " + mdCell);
 								if (mdCell != null)
-								{
-									
+								{									
 									Metadata md = new Metadata(mdn.name, mdCell);
 									
 									dc.metadata.add(md);

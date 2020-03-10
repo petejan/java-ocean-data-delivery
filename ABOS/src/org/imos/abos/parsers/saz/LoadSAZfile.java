@@ -21,11 +21,12 @@ import org.imos.abos.dbms.ProcessedInstrumentData;
 import org.imos.abos.dbms.RawInstrumentData;
 import org.imos.abos.parsers.saz.ReadDiSAZfile.DataCol;
 import org.imos.abos.parsers.saz.ReadDiSAZfile.Metadata;
+import org.imos.abos.parsers.saz.ReadDiSAZfile.MetadataName;
 import org.wiley.core.Common;
 
 public class LoadSAZfile
 {
-    private static org.apache.log4j.Logger log = Logger.getLogger(ReadDiSAZfile.class);
+    private static org.apache.log4j.Logger log = Logger.getLogger(LoadSAZfile.class);
 
 	/**
 	 * Method main
@@ -208,7 +209,7 @@ public class LoadSAZfile
 					pc.setString(2,  "ABOS-SOTS"); // facility
 					pc.setString(3,  "*"); // mooring
 					pc.setString(4,  sf.deployment); // deployment
-					pc.setNull(5,  java.sql.Types.INTEGER); // instrument_id
+					pc.setInt(5, inst_id); // instrument_id, TODO: has issues with instrument ID in SAZ deployment file of multiple instrumenta
 					pc.setString(6,  dc.parameter_code.trim()); // parameter
 					pc.setString(7,  md.name.trim()); // attribute_name
 					String value = md.c.toString();
@@ -247,6 +248,27 @@ public class LoadSAZfile
 				}
 			}
 
+			for (MetadataName md : sf.metadataList)
+			{
+				log.info("Metadata global " + md.name + " : " + md.global);
+				if (md.global != null)
+				{
+					if (md.global.length() > 0)
+					{
+						pc.setString(1,  "*"); // nameing_authority
+						pc.setString(2,  "ABOS-SOTS"); // facility
+						pc.setString(3,  "*"); // mooring
+						pc.setString(4,  sf.deployment); // deployment
+						pc.setInt(5, inst_id); // instrument_id, TODO: has issues with instrument ID in SAZ deployment file of multiple instruments
+						pc.setString(6,  "*"); // parameter
+						pc.setString(7,  md.name.trim()); // attribute_name
+						pc.setString(8,  "STRING"); // attribute_type
+						pc.setString(9, md.global); // attribute_value
+						
+						pc.executeUpdate();
+					}
+				}
+			}
 			sf.close();
 
 			log.info("Loaded " + loaded + " records");
