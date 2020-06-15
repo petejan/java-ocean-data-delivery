@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="src" path="src"/>
+	<classpathentry kind="lib" path="lib/commons-lang3-3.1.jar"/>
+	<classpathentry kind="lib" path="lib/commons-math3-3.2.jar"/>
+	<classpathentry kind="lib" path="lib/gt-metadata-10.0.jar"/>
+	<classpathentry kind="lib" path="lib/gt-opengis-10.0.jar"/>
+	<classpathentry kind="lib" path="lib/gt-referencing-10.0.jar"/>
+	<classpathentry kind="lib" path="lib/itextpdf-5.4.2.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/jcommon-1.0.18.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/jfreechart-1.0.15.jar">
+		<attributes>
+			<attribute name="javadoc_location" value="http://www.jfree.org/jfreechart/api/javadoc"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="lib" path="lib/jsr-275-1.0-beta-2.jar"/>
+	<classpathentry kind="lib" path="lib/junit_4/junit-4.5.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/NeoNatalScreening.jar" sourcepath="/Users/peter/ABOS/git/neonatal-code/NeoNatalScreening/src"/>
+	<classpathentry kind="lib" path="lib/nujan-1.4.1.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/swing-layout/swing-layout-1.0.4.jar"/>
+	<classpathentry kind="lib" path="lib/postgresql-9.4-1201.jdbc4.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/log4j-1.2.15.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/netcdfAll-4.6.jar">
+		<attributes>
+			<attribute name="javadoc_location" value="http://www.unidata.ucar.edu/software/thredds/current/netcdf-java/javadoc/"/>
+			<attribute name="org.eclipse.jdt.launching.CLASSPATH_ATTR_LIBRARY_PATH_ENTRY" value="/opt/local/lib"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry exported="true" kind="lib" path="lib/slf4j-log4j12-1.7.21.jar"/>
+	<classpathentry kind="lib" path="lib/poi-3.15/ooxml-lib/xmlbeans-2.6.0.jar"/>
+	<classpathentry kind="lib" path="lib/poi-3.15/lib/commons-collections4-4.1.jar"/>
+	<classpathentry kind="lib" path="lib/poi-3.15/lib/commons-codec-1.10.jar"/>
+	<classpathentry kind="lib" path="lib/poi-3.15/poi-ooxml-schemas-3.15.jar"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+	<classpathentry kind="lib" path="lib/poi-3.15/poi-3.15.jar"/>
+	<classpathentry kind="lib" path="lib/poi-3.15/poi-ooxml-3.15.jar"/>
+	<classpathentry kind="output" path="build/classes"/>
+</classpath>

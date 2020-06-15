@@ -1,7 +1,0 @@
-INSERT INTO instrument_calibration_values VALUES (1562, 'SOFS-1-2010        ', 100246, 'C0                                      ', 'C0 coefficients', 'STRING    ', '5.27602E+03,-1.78336E+02,3.60337E+00,-3.17257E-02');
-INSERT INTO instrument_calibration_values VALUES (1562, 'SOFS-1-2010        ', 100246, 'C1                                      ', 'C1 coefficients', 'STRING    ', '-2.83515E+02,8.53926E+00,-1.70712E-01,1.51927E-03');
-INSERT INTO instrument_calibration_values VALUES (1562, 'SOFS-1-2010        ', 100246, 'C2                                      ', 'C2 coefficients', 'STRING    ', '6.14613E+00,-1.62949E-01,3.25579E-03,-2.94146E-05');
-INSERT INTO instrument_calibration_values VALUES (1562, 'SOFS-1-2010        ', 100246, 'C3                                      ', 'C3 coefficients', 'STRING    ', '-6.20004E-02,1.43629E-03,-2.90879E-05,2.67188E-07');
-INSERT INTO instrument_calibration_values VALUES (1562, 'SOFS-1-2010        ', 100246, 'C4                                      ', 'C4 coefficients', 'STRING    ', '2.39383E-04,-4.79250E-06,1.00060E-07,-9.33184E-10');
-INSERT INTO instrument_calibration_values VALUES (1562, 'SOFS-1-2010        ', 100246, 'BPhaseConstant                          ', 'BPhaseConstant', 'NUMBER    ', '2.59708');
-INSERT INTO instrument_calibration_values VALUES (1562, 'SOFS-1-2010        ', 100246, 'BPhaseMultiplier                        ', 'BPhaseMultiplier', 'NUMBER    ', '1.10680');

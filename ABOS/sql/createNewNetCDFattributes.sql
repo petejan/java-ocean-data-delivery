@@ -1,2 +1,0 @@
-﻿insert INTO netcdf_attributes (naming_authority, facility, mooring, deployment, instrument_id, parameter, attribute_name, attribute_type, attribute_value)  
-	(select naming_authority, facility, mooring, 'SOFS-5-2015', instrument_id, parameter, attribute_name, attribute_type, attribute_value FROM netcdf_attributes WHERE deployment = 'SOFS-4-2013') 
